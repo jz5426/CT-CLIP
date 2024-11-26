@@ -36,13 +36,25 @@ clip = CTCLIP(
 
 )
 
-clip.load("path_to_pretrained_model")
+# clip.load("path_to_pretrained_model")
+
+# inference = CTClipInference(
+#     clip,
+#     data_folder = 'path_to_preprocessed_validation_folder',
+#     reports_file= "path_to_validation_reports_csv",
+#     labels = "path_to_validation_labels_csv",
+#     batch_size = 1,
+#     results_folder="inference_zeroshot/",
+#     num_train_steps = 1,
+# )
+
+clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt")
 
 inference = CTClipInference(
     clip,
-    data_folder = 'path_to_preprocessed_validation_folder',
-    reports_file= "path_to_validation_reports_csv",
-    labels = "path_to_validation_labels_csv",
+    data_folder = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid/',
+    reports_file= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/dataset_radiology_text_reports_validation_reports.csv",
+    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
     batch_size = 1,
     results_folder="inference_zeroshot/",
     num_train_steps = 1,
