@@ -10,6 +10,7 @@ import torchvision.transforms as transforms
 from functools import partial
 import torch.nn.functional as F
 import tqdm
+import nibabel as nib
 
 
 class CTReportDatasetinfer(Dataset):
@@ -47,12 +48,14 @@ class CTReportDatasetinfer(Dataset):
             accession_folders = glob.glob(os.path.join(patient_folder, '*'))
 
             for accession_folder in accession_folders:
-                nii_files = glob.glob(os.path.join(accession_folder, '*.npz'))
+                # nii_files = glob.glob(os.path.join(accession_folder, '*.npz'))
+                nii_files = glob.glob(os.path.join(accession_folder, '*.nii.gz')) #NOTE: self modified
 
                 for nii_file in nii_files:
                     accession_number = nii_file.split("/")[-1]
 
                     accession_number = accession_number.replace(".npz", ".nii.gz")
+                    # accession_number = accession_number.replace(".nii", ".nii.gz") #NOTE: self modified
                     if accession_number not in self.accession_to_text:
                         continue
 
@@ -75,8 +78,9 @@ class CTReportDatasetinfer(Dataset):
         return len(self.samples)
 
     def nii_img_to_tensor(self, path, transform):
-        img_data = np.load(path)['arr_0']
-        img_data= np.transpose(img_data, (1, 2, 0))
+        img_data = nib.load(path).get_fdata()
+        # img_data = np.load(path)['arr_0']
+        # img_data= np.transpose(img_data, (1, 2, 0))
         img_data = img_data*1000
         hu_min, hu_max = -1000, 200
         img_data = np.clip(img_data, hu_min, hu_max)

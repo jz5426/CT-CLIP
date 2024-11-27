@@ -14,7 +14,7 @@ from torch.utils.data.distributed import DistributedSampler
 
 # from data_inference_nii import CTReportDatasetinfer
 # from data_external_valid import CTReportDatasetinfer
-from scripts.data_inference import CTReportDatasetinfer
+from data_inference import CTReportDatasetinfer
 
 import numpy as np
 import tqdm
@@ -179,7 +179,7 @@ class CTClipInference(nn.Module):
 
         self.dl = DataLoader(
             self.ds,
-            num_workers=6,
+            num_workers=1,
             batch_size=1,
             shuffle = True,
         )
