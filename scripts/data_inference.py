@@ -80,7 +80,7 @@ class CTReportDatasetinfer(Dataset):
     def nii_img_to_tensor(self, path, transform):
         img_data = nib.load(path).get_fdata()
         # img_data = np.load(path)['arr_0']
-        # img_data= np.transpose(img_data, (1, 2, 0))
+        # img_data= np.transpose(img_data, (1, 2, 0)) #NOTE: previously uncommented
         img_data = img_data*1000
         hu_min, hu_max = -1000, 200
         img_data = np.clip(img_data, hu_min, hu_max)
@@ -117,8 +117,8 @@ class CTReportDatasetinfer(Dataset):
 
         tensor = torch.nn.functional.pad(tensor, (pad_d_before, pad_d_after, pad_w_before, pad_w_after, pad_h_before, pad_h_after), value=-1)
 
-
-        tensor = tensor.permute(2, 0, 1)
+        #NOTE: transform the tensor back to the original shape
+        tensor = tensor.permute(2, 0, 1) # depth as the channel size: [Batch Size, Channels, Height, Width]
 
         tensor = tensor.unsqueeze(0)
 
