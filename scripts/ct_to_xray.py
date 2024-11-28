@@ -61,7 +61,7 @@ def convert_ct_to_xray(path, title, projection_axis, target_path):
     # Create the directories if they don't exist
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
-    plt.savefig(saving_path)
+    plt.savefig(saving_path, bbox_inches='tight')
 
 def ct_to_xrays(data_folder, reports_file, labels, target_path='./projected_xray'):
     ds = CTReportDatasetinfer(data_folder=data_folder, csv_file=reports_file, labels=labels, probing_mode=True)
