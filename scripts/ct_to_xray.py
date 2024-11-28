@@ -41,15 +41,14 @@ def convert_ct_to_xray(path, title, projection_axis=1):
             ct_image.GetPixelID(),
         )   
 
+    # project the ct image to xray
     mean_projection_filter = sitk.MeanProjectionImageFilter()
     mean_projection_filter.SetProjectionDimension(projection_axis)
     xray_image = mean_projection_filter.Execute(ct_image)
-    xray_array = sitk.GetArrayFromImage(xray_image)
-
     xray_array = sitk.GetArrayFromImage(xray_image)
     xray_array = np.rot90(np.squeeze(xray_array), k=2)
     plt.imshow(xray_array, cmap="gray")
     plt.tight_layout()
     plt.axis("off")
-    plt.show()
+    # plt.show()
     plt.savefig('./projected_xray/{}.png'.format(title))

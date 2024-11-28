@@ -80,7 +80,7 @@ class CTReportDatasetinfer(Dataset):
 
     def nii_img_to_tensor(self, path, transform):
 
-        # convert_ct_to_xray(path, 'sample')
+        convert_ct_to_xray(path, 'sample')
         nii = nib.load(path)
         img_data = nii.get_fdata()
         # img_data = np.load(path)['arr_0']
