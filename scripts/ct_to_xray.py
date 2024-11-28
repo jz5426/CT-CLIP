@@ -52,16 +52,23 @@ def convert_ct_to_xray(path, title, projection_axis, target_path):
     xray_image = mean_projection_filter.Execute(ct_image)
     xray_array = sitk.GetArrayFromImage(xray_image)
     xray_array = np.rot90(np.squeeze(xray_array), k=2)
-    plt.imshow(xray_array, cmap="gray")
-    plt.tight_layout()
-    plt.axis("off")
-    saving_path = os.path.join(target_path, '{}.png'.format(title))
 
     directory_path = os.path.dirname(saving_path)
     # Create the directories if they don't exist
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
-    plt.savefig(saving_path, bbox_inches='tight')
+
+    xray_image = sitk.GetImageFromArray(xray_array)
+    xray_image.SetSpacing((1.0, 1.0))  # Example spacing
+    xray_image.SetOrigin((0.0, 0.0))   # Example origin
+    saving_path = os.path.join(target_path, '{}.mha'.format(title))
+    sitk.WriteImage(xray_image, saving_path)
+
+    # plt.imshow(xray_array, cmap="gray")
+    # plt.tight_layout()
+    # plt.axis("off")
+    # saving_path = os.path.join(target_path, '{}.png'.format(title))
+    # plt.savefig(saving_path, bbox_inches='tight')
 
 def ct_to_xrays(data_folder, reports_file, labels, target_path='./projected_xray'):
     ds = CTReportDatasetinfer(data_folder=data_folder, csv_file=reports_file, labels=labels, probing_mode=True)
