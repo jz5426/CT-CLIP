@@ -56,6 +56,11 @@ def convert_ct_to_xray(path, title, projection_axis, target_path):
     plt.tight_layout()
     plt.axis("off")
     saving_path = os.path.join(target_path, '{}.png'.format(title))
+
+    directory_path = os.path.dirname(saving_path)
+    # Create the directories if they don't exist
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
     plt.savefig(saving_path)
 
 def ct_to_xrays(data_folder, reports_file, labels, target_path='./projected_xray'):
@@ -73,17 +78,22 @@ def ct_to_xrays(data_folder, reports_file, labels, target_path='./projected_xray
     for _ in tqdm.tqdm(range(len(ds))):
         _, _, _, acc_name, nii_file = next(dl_iter)
         
+        # construct saving path
         acc_name = acc_name[0]
         nii_file = nii_file[0]
+        paths = nii_file.split('/')
+        dirs = paths[-4:-1]
+        filename = paths[-1].split('.')[0]
+        dest = os.path.join(target_path, *dirs)
 
         #NOTE: only convert 1 axis for now, takes too long to load them one by one.
-        # convert_ct_to_xray(nii_file, acc_name+'_axis0', 0, target_path)
-        convert_ct_to_xray(nii_file, acc_name+'_axis1', 1, target_path)
-        # convert_ct_to_xray(nii_file, acc_name+'_axis2', 2, target_path)
+        # convert_ct_to_xray(nii_file, filename+'_axis0', 0, target_path)
+        convert_ct_to_xray(nii_file, filename+'_axis1', 1, dest)
+        # convert_ct_to_xray(nii_file, filename+'_axis2', 2, target_path)
 
 if __name__ == '__main__':
     data_folder='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid/'
     reports_file="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/dataset_radiology_text_reports_validation_reports.csv"
     labels="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv"
-
-    ct_to_xrays(data_folder, reports_file, labels)
+    target_path='./projected_xray'
+    ct_to_xrays(data_folder, reports_file, labels, target_path)
