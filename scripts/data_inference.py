@@ -51,7 +51,8 @@ class CTReportDatasetinfer(Dataset):
                 nii_files = glob.glob(os.path.join(accession_folder, '*.nii.gz')) #NOTE: self modified
 
                 for nii_file in nii_files:
-                    accession_number = nii_file.split("/")[-1]
+                    # accession_number = nii_file.split("/")[-1]
+                    accession_number = nii_file.split(os.sep)[-1]
 
                     accession_number = accession_number.replace(".npz", ".nii.gz")
                     # accession_number = accession_number.replace(".nii", ".nii.gz") #NOTE: self modified
@@ -131,5 +132,6 @@ class CTReportDatasetinfer(Dataset):
         input_text = input_text.replace('\'', '')  
         input_text = input_text.replace('(', '')  
         input_text = input_text.replace(')', '')  
-        name_acc = nii_file.split("/")[-2]
+        # name_acc = nii_file.split("/")[-2]
+        name_acc = nii_file.split(os.sep)[-2]
         return video_tensor, input_text, onehotlabels, name_acc, nii_file # add the nii_file for xray projections
