@@ -12,6 +12,7 @@ import torch.nn.functional as F
 import tqdm
 import nibabel as nib
 
+from ct_to_xray import convert_ct_to_xray
 
 class CTReportDatasetinfer(Dataset):
     def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv"):
@@ -78,13 +79,17 @@ class CTReportDatasetinfer(Dataset):
         return len(self.samples)
 
     def nii_img_to_tensor(self, path, transform):
-        img_data = nib.load(path).get_fdata()
+
+        # convert_ct_to_xray(path, 'sample')
+        nii = nib.load(path)
+        img_data = nii.get_fdata()
         # img_data = np.load(path)['arr_0']
         # img_data= np.transpose(img_data, (1, 2, 0)) #NOTE: previously uncommented
         img_data = img_data*1000
+
+        #NOTE: preprocessing the intensity values before crop and pad
         hu_min, hu_max = -1000, 200
         img_data = np.clip(img_data, hu_min, hu_max)
-
         img_data = (((img_data+400 ) / 600)).astype(np.float32)
         slices=[]
 
@@ -94,7 +99,7 @@ class CTReportDatasetinfer(Dataset):
         # Extract dimensions
         h, w, d = tensor.shape
 
-        # Calculate cropping/padding values for height, width, and depth
+        # Calculate cropping/padding values for height, width, and depth, NOTE: this is center cropping
         dh, dw, dd = target_shape
         h_start = max((h - dh) // 2, 0)
         h_end = min(h_start + dh, h)
@@ -119,9 +124,7 @@ class CTReportDatasetinfer(Dataset):
 
         #NOTE: transform the tensor back to the original shape
         tensor = tensor.permute(2, 0, 1) # depth as the channel size: [Batch Size, Channels, Height, Width]
-
         tensor = tensor.unsqueeze(0)
-
         return tensor
 
     def __getitem__(self, index):
