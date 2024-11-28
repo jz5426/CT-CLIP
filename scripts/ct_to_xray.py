@@ -1,8 +1,13 @@
 import matplotlib.pyplot as plt
 import SimpleITK as sitk
 import numpy as np
+from torch.utils.data import DataLoader
+import tqdm
+from data_inference import CTReportDatasetinfer
+from zero_shot import cycle
+import os
 
-def convert_ct_to_xray(path, title, projection_axis=1):
+def convert_ct_to_xray(path, title, projection_axis, target_path):
     """
     path: string path to the ct image
     title: title of the image being saved
@@ -50,5 +55,35 @@ def convert_ct_to_xray(path, title, projection_axis=1):
     plt.imshow(xray_array, cmap="gray")
     plt.tight_layout()
     plt.axis("off")
-    # plt.show()
-    plt.savefig('./projected_xray/{}.png'.format(title))
+    saving_path = os.path.join(target_path, '{}.png'.format(title))
+    plt.savefig(saving_path)
+
+def ct_to_xrays(data_folder, reports_file, labels, target_path='./projected_xray'):
+    ds = CTReportDatasetinfer(data_folder=data_folder, csv_file=reports_file, labels=labels, probing_mode=True)
+
+    dl = DataLoader(
+        ds,
+        num_workers=1,
+        batch_size=1,
+        shuffle = True,
+    )
+    # prepare with accelerator
+    dl_iter=cycle(dl)
+
+    for _ in tqdm.tqdm(range(len(ds))):
+        _, _, _, acc_name, nii_file = next(dl_iter)
+        
+        acc_name = acc_name[0]
+        nii_file = nii_file[0]
+
+        #NOTE: only convert 1 axis for now, takes too long to load them one by one.
+        # convert_ct_to_xray(nii_file, acc_name+'_axis0', 0, target_path)
+        convert_ct_to_xray(nii_file, acc_name+'_axis1', 1, target_path)
+        # convert_ct_to_xray(nii_file, acc_name+'_axis2', 2, target_path)
+
+if __name__ == '__main__':
+    data_folder='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid/'
+    reports_file="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/dataset_radiology_text_reports_validation_reports.csv"
+    labels="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv"
+
+    ct_to_xrays(data_folder, reports_file, labels)

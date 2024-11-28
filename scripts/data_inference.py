@@ -11,11 +11,8 @@ from functools import partial
 import torch.nn.functional as F
 import tqdm
 import nibabel as nib
-
-from ct_to_xray import convert_ct_to_xray
-
 class CTReportDatasetinfer(Dataset):
-    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv"):
+    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False):
         self.data_folder = data_folder
         self.min_slices = min_slices
         self.labels = labels
@@ -27,6 +24,7 @@ class CTReportDatasetinfer(Dataset):
             transforms.ToTensor()
         ])
         self.nii_to_tensor = partial(self.nii_img_to_tensor, transform = self.transform)
+        self.probing_mode = probing_mode
 
     def load_accession_text(self, csv_file):
         df = pd.read_csv(csv_file)
@@ -80,7 +78,6 @@ class CTReportDatasetinfer(Dataset):
 
     def nii_img_to_tensor(self, path, transform):
 
-        convert_ct_to_xray(path, 'sample')
         nii = nib.load(path)
         img_data = nii.get_fdata()
         # img_data = np.load(path)['arr_0']
@@ -129,10 +126,10 @@ class CTReportDatasetinfer(Dataset):
 
     def __getitem__(self, index):
         nii_file, input_text, onehotlabels = self.samples[index]
-        video_tensor = self.nii_to_tensor(nii_file)
+        video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
         input_text = input_text.replace('"', '')  
         input_text = input_text.replace('\'', '')  
         input_text = input_text.replace('(', '')  
         input_text = input_text.replace(')', '')  
         name_acc = nii_file.split("/")[-2]
-        return video_tensor, input_text, onehotlabels, name_acc
+        return video_tensor, input_text, onehotlabels, name_acc, nii_file # add the nii_file for xray projections
