@@ -21,8 +21,21 @@ for file in tqdm(valid_files[:1000]): # only download 1000 files (500MB x 1000) 
     # Extract the filename from the path
     filename = os.path.basename(file)
     dir_path = os.path.dirname(file)
+    
+    # Normalize each component to use consistent separators
+    destination_folder = os.path.normpath(destination_folder)
+    dir_path = os.path.normpath(dir_path)
+    
+    # Ensure the destination directory exists
+    destination_dir = os.path.join(destination_folder, dir_path)
+    os.makedirs(destination_dir, exist_ok=True)
 
-    # check if folder exists before downloading next time
+    # Move the downloaded file to the destination folder
+    file_dir = os.path.join(destination_dir, filename)
+
+    #NOTE check if folder exists before downloading next time
+    if os.path.exists(file_dir):
+        continue
 
     # Download the file
     file_path = hf_hub_download(
@@ -32,17 +45,6 @@ for file in tqdm(valid_files[:1000]): # only download 1000 files (500MB x 1000) 
         repo_type="dataset",
         token='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' # Ensure your token is set in the huggingface
     )
-
-    # Normalize each component to use consistent separators
-    destination_folder = os.path.normpath(destination_folder)
-    dir_path = os.path.normpath(dir_path)
-
-    # Ensure the destination directory exists
-    destination_dir = os.path.join(destination_folder, dir_path)
-    os.makedirs(destination_dir, exist_ok=True)
-
-    # Move the downloaded file to the destination folder
-    file_dir = os.path.join(destination_dir, filename)
     shutil.move(file_path, file_dir)
 
 print(f"Downloaded files are saved in {destination_folder}")
