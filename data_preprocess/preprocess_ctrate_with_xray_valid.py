@@ -80,31 +80,29 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     Returns:
     None
     """
+    file_name = os.path.basename(file_path)
     # should check if the file exists before preceed the loading so that save computation resources
     ct_save_folder = "valid_preprocessed_ct" #save folder for preprocessed
     ct_folder_path_new = os.path.join(shared_dst_dir, ct_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
     os.makedirs(ct_folder_path_new, exist_ok=True)
     file_name = file_name.split(".")[0]+".pt"
     ct_save_path = os.path.join(ct_folder_path_new, file_name)
-    #NOTE: check and proceed
-    if os.path.exists(ct_save_path):
-        return
 
     xray_save_folder = "valid_preprocessed_xray" #save folder for preprocessed
     xray_folder_path_new = os.path.join(shared_dst_dir, xray_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = file_name.split(".")[0]+".mha"
     xray_save_path = os.path.join(xray_folder_path_new, file_name)
+
     #NOTE: check and proceed
-    if os.path.exists(xray_save_path):
+    if os.path.exists(ct_save_path) and os.path.exists(xray_save_path):
         return
+
 
     img_data = read_nii_data(file_path)
     if img_data is None:
         print(f"Read {file_path} unsuccessful. Passing")
         return
-
-    file_name = os.path.basename(file_path)
 
     row = df[df['VolumeName'] == file_name]
     slope = float(row["RescaleSlope"].iloc[0])
