@@ -98,6 +98,7 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     if os.path.exists(ct_save_path) and os.path.exists(xray_save_path):
         return
 
+    # proceed with unsaved data
 
     img_data = read_nii_data(file_path)
     if img_data is None:
