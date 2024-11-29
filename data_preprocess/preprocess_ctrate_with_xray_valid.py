@@ -8,6 +8,9 @@ from multiprocessing import Pool
 from tqdm import tqdm
 import SimpleITK as sitk
 
+df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv') #select the metadata
+
+
 def read_nii_files(directory):
     """
     Retrieve paths of all NIfTI files in the given directory.
@@ -67,16 +70,35 @@ def resize_array(array, current_spacing, target_spacing):
     resized_array = F.interpolate(array, size=new_shape, mode='trilinear', align_corners=False).cpu().numpy()
     return resized_array
 
-def process_file(file_path):
+def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     """
     Process a single NIfTI file.
 
     Args:
     file_path (str): Path to the NIfTI file.
-
+    shared_dst_dir: parent path to store the files
     Returns:
     None
     """
+    # should check if the file exists before preceed the loading so that save computation resources
+    ct_save_folder = "valid_preprocessed_ct" #save folder for preprocessed
+    ct_folder_path_new = os.path.join(shared_dst_dir, ct_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
+    os.makedirs(ct_folder_path_new, exist_ok=True)
+    file_name = file_name.split(".")[0]+".pt"
+    ct_save_path = os.path.join(ct_folder_path_new, file_name)
+    #NOTE: check and proceed
+    if os.path.exists(ct_save_path):
+        return
+
+    xray_save_folder = "valid_preprocessed_xray" #save folder for preprocessed
+    xray_folder_path_new = os.path.join(shared_dst_dir, xray_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
+    os.makedirs(xray_folder_path_new, exist_ok=True)
+    file_name = file_name.split(".")[0]+".mha"
+    xray_save_path = os.path.join(xray_folder_path_new, file_name)
+    #NOTE: check and proceed
+    if os.path.exists(xray_save_path):
+        return
+
     img_data = read_nii_data(file_path)
     if img_data is None:
         print(f"Read {file_path} unsuccessful. Passing")
@@ -170,30 +192,23 @@ def process_file(file_path):
     tensor = tensor.unsqueeze(0)
 
     # save the ct image as a pt tensor
-    ct_save_folder = "valid_preprocessed_ct/" #save folder for preprocessed
-    ct_folder_path_new = os.path.join(ct_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
-    os.makedirs(ct_folder_path_new, exist_ok=True)
-    file_name = file_name.split(".")[0]+".pt"
-    save_path = os.path.join(ct_folder_path_new, file_name)
-    torch.save(tensor, save_path) # save as .pt file # np.savez(save_path, resized_array)
+    torch.save(tensor, ct_save_path) # save as .pt file # np.savez(save_path, resized_array)
     
     # save the xray as a .mha image
-    xray_save_folder = "valid_preprocessed_xray/" #save folder for preprocessed
-    xray_folder_path_new = os.path.join(xray_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
-    os.makedirs(xray_folder_path_new, exist_ok=True)
-    file_name = file_name.split(".")[0]+".mha"
-    save_path = os.path.join(xray_folder_path_new, file_name)
-    sitk.WriteImage(xray_image, save_path)
+    sitk.WriteImage(xray_image, xray_save_path)
 
 
 # Example usage:
 if __name__ == "__main__":
-    split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
+    # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
+    split_to_preprocess = "F:\\Chris\\CT-RATE\\dataset\\valid" #select the validation or test split
+    
     nii_files = read_nii_files(split_to_preprocess)
 
-    df = pd.read_csv("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv") #select the metadata
+    # df = pd.read_csv("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv") #select the metadata
+    # df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv') #select the metadata
 
-    num_workers = 1  # Number of worker processes
+    num_workers = 8  # Number of worker processes
 
     # Process files using multiprocessing with tqdm progress bar
     with Pool(num_workers) as pool:
