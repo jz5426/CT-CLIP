@@ -121,7 +121,7 @@ if __name__ == "__main__":
     split_to_preprocess = 'valid' #select the validation or test split
     nii_files = read_nii_files(split_to_preprocess)
 
-    df = pd.read_csv("validation_metadata.csv") #select the metadata
+    df = pd.read_csv("dataset_metadata_validation_metadata.csv") #select the metadata
 
     num_workers = 18  # Number of worker processes
 

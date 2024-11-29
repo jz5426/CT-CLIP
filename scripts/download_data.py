@@ -17,10 +17,12 @@ print(f"Files in the 'valid' folder: {valid_files}")
 destination_folder = 'F:\\Chris\\CT-RATE'
 os.makedirs(destination_folder, exist_ok=True)
 
-for file in tqdm(valid_files[:1000]):
+for file in tqdm(valid_files[:1000]): # only download 1000 files (500MB x 1000) otherwise too large
     # Extract the filename from the path
     filename = os.path.basename(file)
     dir_path = os.path.dirname(file)
+
+    # check if folder exists before downloading next time
 
     # Download the file
     file_path = hf_hub_download(

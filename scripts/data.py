@@ -119,7 +119,6 @@ class CTReportDataset(Dataset):
         target = (target_z_spacing, target_x_spacing, target_y_spacing)
 
         img_data = slope * img_data + intercept
-
         img_data = img_data.transpose(2, 0, 1)
 
         tensor = torch.tensor(img_data)
