@@ -763,8 +763,8 @@ class CTCLIP(nn.Module):
         text_embeds = text_embeds[:,0,:]  # NOTE: Take the `[CLS]` token from the seq dimension
 
         #text_embeds = torch.mean(text_embeds, dim=1)
-        text_latents = self.to_text_latent(text_embeds)
-        image_latents = self.to_visual_latent(image_embeds)
+        text_latents = self.to_text_latent(text_embeds) #NOTE bxd
+        image_latents = self.to_visual_latent(image_embeds) #NOTE bxd
 
 
         # normalize the features for both text and image
@@ -803,9 +803,9 @@ class CTCLIP(nn.Module):
             return einsum('b d, b d -> b', *einsum_args) * temp # NOTE: check the previous implementation, you see that the image feature is of the shape bxd under this condition
 
         # split out multiview dimension for text and images
-
-        text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts)
-        image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images)
+        # NOTE: for not multi view, m = 1
+        text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts) #NOTE: 1xbxd
+        image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 
         if self.extra_latent_projection:
             text_latents_extra = rearrange(text_latents_extra, '(m b) ... -> m b ...', m = num_batch_texts)
@@ -838,8 +838,8 @@ class CTCLIP(nn.Module):
             masked_sim = sim_image_to_text.masked_fill(~image_to_text_mask, max_neg_value(sim_image_to_text.dtype))
             image_to_text = reduce(reduce(masked_sim, '... t i -> ... i', 'max'), '... i -> ...', 'mean')
         else:
-            text_to_image = einsum('m t d, n i d -> m n t i', text_latents, image_latents) * temp
-            image_to_text = rearrange(text_to_image, '... t i -> ... i t') # transpose for bidirectional loss term in CL
+            text_to_image = einsum('m t d, n i d -> m n t i', text_latents, image_latents) * temp # NOTE: one axis of the similarity matrix, for m=n=1: 1x1xbxb
+            image_to_text = rearrange(text_to_image, '... t i -> ... i t') # NOTE: the other axis of the similarity matrix, for m=n=1: 1x1xbxb
             # NOTE: this compute the fine-grain token level similarity for each combination of views (mxn)
             if self.extra_latent_projection:
                 image_to_text = einsum('m t d, n i d -> m n i t', text_latents_extra, image_latents_extra) * temp
@@ -854,7 +854,7 @@ class CTCLIP(nn.Module):
         text_to_image_exp, image_to_text_exp = map(torch.exp, (text_to_image, image_to_text))
 
         # numerators NOTE: pick up the digonal terms in the matrix
-        text_to_image_pos, image_to_text_pos = map(matrix_diag, (text_to_image_exp, image_to_text_exp))
+        text_to_image_pos, image_to_text_pos = map(matrix_diag, (text_to_image_exp, image_to_text_exp)) # for m=n=1, get the diagonal terms from matrix of shape 1x1xbxb
 
         # denominator
 
@@ -863,16 +863,18 @@ class CTCLIP(nn.Module):
             text_to_image_exp, image_to_text_exp = map(lambda t: t.masked_fill(pos_mask, 0.), (text_to_image_exp, image_to_text_exp))
 
         #NOTE: this sum up the each axis of the similarity matrix
-        # (m, n, t) and (n, m, i)
-        text_to_image_denom, image_to_text_denom = map(lambda t: t.sum(dim = -1), (text_to_image_exp, image_to_text_exp))
+        # (m, n, t) and (m,n, i), if m = n = 1, then (1,1, b), (1,1, b)
+        text_to_image_denom, image_to_text_denom = map(lambda t: t.sum(dim = -1), (text_to_image_exp, image_to_text_exp)) #NOTE: in 1x1xbx1
 
         # loss
+        # NOTE: (1,1, b) + (1,1, b (denominator of the CL term for each image in the batch)) operation then take the average of it
+        # NOTE: the mean operation mainly to normalize in the batch direction, agnostic to the batch size essentially.
         text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1) # t->i log(CL)
         image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1) # i->t log(CL)
 
         # calculate CL loss
 
-        cl_losses = (text_to_image_loss + image_to_text_loss) / 2
+        cl_losses = (text_to_image_loss + image_to_text_loss) / 2 #NOTE: symmetry loss text->image and image->text
 
         # get main CL loss vs multiview CL losses
 
@@ -896,3 +898,105 @@ class CTCLIP(nn.Module):
             loss = loss + multiview_cl_loss.mean() * multiview_loss_weight
 
         return loss
+
+class CTCLIPwithXray(CTCLIP):
+    def __init__(
+            self,
+            *,
+            image_encoder = None,
+            text_encoder = None,
+            dim_text = 512,
+            dim_image = 512,
+            dim_latent = 512,
+            num_text_tokens = 28897,
+            text_enc_depth = 6,
+            text_seq_len = 256,
+            text_heads = 8,
+            text_dim_head = 64,
+            text_has_cls_token = False,
+            text_pad_id = 0,
+            text_rotary_pos_emb = False,
+            text_causal_mask = False,
+            text_eos_id = None,
+            text_encode_without_mask = False,
+            visual_enc_depth = 6,
+            visual_heads = 8,
+            visual_dim_head = 64,
+            visual_image_size = 256,
+            visual_patch_size = 32,
+            visual_patch_dropout = 0.5,
+            visual_has_cls_token = False,
+            channels = 3,
+            use_all_token_embeds = False,
+            downsample_image_embeds = False,
+            decoupled_contrastive_learning = False,
+            extra_latent_projection = False,
+            use_mlm = False,
+            text_ssl_loss_weight = 0.05,
+            use_visual_ssl = False,
+            visual_ssl = None,
+            visual_ssl_type = 'simsiam',
+            visual_ssl_hidden_layer = -1,
+            simclr_temperature = 0.1,
+            image_ssl_loss_weight = 0.05,
+            multiview_loss_weight = 0.1,
+            checkpoint_during_training = False,
+            **kwargs
+    ):
+        super().__init__(
+            image_encoder,
+            text_encoder,
+            dim_text,
+            dim_image,
+            dim_latent,
+            num_text_tokens,
+            text_enc_depth,
+            text_seq_len,
+            text_heads,
+            text_dim_head,
+            text_has_cls_token,
+            text_pad_id,
+            text_rotary_pos_emb,
+            text_causal_mask,
+            text_eos_id,
+            text_encode_without_mask,
+            visual_enc_depth,
+            visual_heads,
+            visual_dim_head,
+            visual_image_size,
+            visual_patch_size,
+            visual_patch_dropout,
+            visual_has_cls_token,
+            channels,
+            use_all_token_embeds,
+            downsample_image_embeds,
+            decoupled_contrastive_learning,
+            extra_latent_projection,
+            use_mlm,
+            text_ssl_loss_weight,
+            use_visual_ssl,
+            visual_ssl,
+            visual_ssl_type,
+            visual_ssl_hidden_layer,
+            simclr_temperature,
+            image_ssl_loss_weight,
+            multiview_loss_weight,
+            checkpoint_during_training,
+            **kwargs
+        )
+
+    def forward(
+            self,
+            text,
+            image,
+            device,
+            return_loss = False,
+            return_encodings = False,
+            return_latents = False,
+            freeze_image_encoder = False,   # image encoder is not trained if this is set to True, proposed by LiT paper
+            freeze_text_encoder = False,    # text encoder is not trained if this is set to True
+            text_to_image = True,           # in the case the extra projection is turned on, would return different similarity values depending on modality directionality
+            aug_text = None,                # augmented text (for multiview)
+            aug_image = None                # augmented image (for multiview)
+    ):
+        return
