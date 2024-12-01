@@ -267,7 +267,7 @@ class CTClipTrainer(nn.Module):
 
         steps = int(self.steps.item())
 
-        self.CTClip.train()
+        self.CTClip.train() # set the models in train mode for gradient descent
 
         # logs
         logs = {}

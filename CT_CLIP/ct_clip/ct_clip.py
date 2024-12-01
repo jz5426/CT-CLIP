@@ -548,9 +548,9 @@ class CTCLIP(nn.Module):
 
         self.to_text_latent = nn.Linear(dim_text, dim_latent, bias = False)
 
-        # image latent projection
+        # image latent projection for the CT
 
-        if downsample_image_embeds:
+        if downsample_image_embeds: # by default this is false: potentially due to lower performance with lower resoultion image
             #assert use_all_token_embeds, 'must be using all token embeds for contrastive learning in order to downsampling'
             dim_conv=512
             self.to_visual_latent = nn.Sequential(
@@ -683,7 +683,7 @@ class CTCLIP(nn.Module):
 
 
         text_embeddings = self.text_transformer(text.input_ids, attention_mask = text.attention_mask )
-        enc_text = text_embeddings[0]
+        enc_text = text_embeddings[0] # global view of the text embeddings
 
         # depending on whether text is using causal mask, post process, moving eos token to the first position
 
@@ -702,7 +702,7 @@ class CTCLIP(nn.Module):
 
             eos_tokens = rearrange(eos_tokens, '(b d) -> b 1 d', b = b)
             rest_tokens = rearrange(rest_tokens, '(b n d) -> b n d', b = b, n = text_len - 1)
-            enc_text = torch.cat((eos_tokens, rest_tokens), dim = 1)
+            enc_text = torch.cat((eos_tokens, rest_tokens), dim = 1) #NOTE: concatenate in the seq dimension
 
         # whether to train image encoder, in the case that the image net was pretrained as recommended in LiT
 
@@ -736,8 +736,8 @@ class CTCLIP(nn.Module):
         #print(enc_image.shape, flush=True)
         print("test all pooling")
     
-
-        enc_image = enc_image.view(enc_image.shape[0], -1)
+        # make the feature of the ct image in vector form batch x (h w z c)
+        enc_image = enc_image.view(enc_image.shape[0], -1) # global view for one image and we have batch number of images
 
        # print(enc_image.shape, flush=True)
 
@@ -751,28 +751,24 @@ class CTCLIP(nn.Module):
         if self.use_all_token_embeds:
             assert enc_text.ndim == 3, 'encoded text must have 3 dimensions (batch, seq, features)'
             assert enc_image.ndim == 3, 'encoded image must have 3 dimensions (batch, seq [height x width], features)'
-            text_embeds = enc_text[:, 1:] if self.text_has_cls_token else enc_text
-            image_embeds = enc_image[:, 1:] if self.visual_has_cls_token else enc_image
+            text_embeds = enc_text[:, 1:] if self.text_has_cls_token else enc_text # get rid of the text global token
+            image_embeds = enc_image[:, 1:] if self.visual_has_cls_token else enc_image # get rid of the visual global token
         else:
+            # the [:,:] retains the same shape in this case
             text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
             image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
 
-        # project to latents
+        ## project to latents for both the ct image and the text modality
         #text_embeds = text_embeds.view(text_embeds.shape[0], -1)
-        text_embeds = text_embeds[:,0,:]
+        text_embeds = text_embeds[:,0,:]  # NOTE: Take the `[CLS]` token from the seq dimension
 
         #text_embeds = torch.mean(text_embeds, dim=1)
         text_latents = self.to_text_latent(text_embeds)
-
         image_latents = self.to_visual_latent(image_embeds)
 
 
-
+        # normalize the features for both text and image
         text_latents, image_latents = map(l2norm, (text_latents, image_latents))
-
-
-
-
 
         # calculate another set of latents for image to text (vs text to image)
         # proposed by CLOOB
@@ -797,14 +793,14 @@ class CTCLIP(nn.Module):
 
         # early return, if needed
 
-
-        if not return_loss and self.use_all_token_embeds:
+        #NOTE: direct return the similarity score
+        if not return_loss and self.use_all_token_embeds: # Fine-grained token-to-token similarity
             einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
             return einsum('b d, b i d -> b t i', *einsum_args) * temp
 
-        if not return_loss and not self.use_all_token_embeds:
+        if not return_loss and not self.use_all_token_embeds: # Global text-to-image similarity
             einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
-            return einsum('b d, b d -> b', *einsum_args) * temp
+            return einsum('b d, b d -> b', *einsum_args) * temp # NOTE: check the previous implementation, you see that the image feature is of the shape bxd under this condition
 
         # split out multiview dimension for text and images
 
@@ -843,8 +839,8 @@ class CTCLIP(nn.Module):
             image_to_text = reduce(reduce(masked_sim, '... t i -> ... i', 'max'), '... i -> ...', 'mean')
         else:
             text_to_image = einsum('m t d, n i d -> m n t i', text_latents, image_latents) * temp
-            image_to_text = rearrange(text_to_image, '... t i -> ... i t')
-
+            image_to_text = rearrange(text_to_image, '... t i -> ... i t') # transpose for bidirectional loss term in CL
+            # NOTE: this compute the fine-grain token level similarity for each combination of views (mxn)
             if self.extra_latent_projection:
                 image_to_text = einsum('m t d, n i d -> m n i t', text_latents_extra, image_latents_extra) * temp
 
@@ -854,10 +850,10 @@ class CTCLIP(nn.Module):
         image_to_text = rearrange(image_to_text, 'm n ... -> (m n) ...')
 
 
-        # exponentiate
+        # exponentiate NOTE: expoential everything
         text_to_image_exp, image_to_text_exp = map(torch.exp, (text_to_image, image_to_text))
 
-        # numerators
+        # numerators NOTE: pick up the digonal terms in the matrix
         text_to_image_pos, image_to_text_pos = map(matrix_diag, (text_to_image_exp, image_to_text_exp))
 
         # denominator
@@ -866,12 +862,13 @@ class CTCLIP(nn.Module):
             pos_mask = torch.eye(b, device = device, dtype = torch.bool)
             text_to_image_exp, image_to_text_exp = map(lambda t: t.masked_fill(pos_mask, 0.), (text_to_image_exp, image_to_text_exp))
 
+        #NOTE: this sum up the each axis of the similarity matrix
+        # (m, n, t) and (n, m, i)
         text_to_image_denom, image_to_text_denom = map(lambda t: t.sum(dim = -1), (text_to_image_exp, image_to_text_exp))
 
         # loss
-
-        text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1)
-        image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1)
+        text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1) # t->i log(CL)
+        image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1) # i->t log(CL)
 
         # calculate CL loss
 
