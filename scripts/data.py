@@ -11,6 +11,7 @@ from functools import partial
 import torch.nn.functional as F
 import nibabel as nib
 import tqdm
+import SimpleITK as sitk
 
 def resize_array(array, current_spacing, target_spacing):
     """
@@ -190,8 +191,10 @@ class CTReportXRayDataset(CTReportDataset):
         self.xray_data_folder = xray_data_folder
 
         self.xray_transform = None
+            # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
+            # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
         self.xray_to_tensor = partial(self.xray_img_to_tensor, transform=self.xray_transform)
-
+        self.xray_paths = []
 
     def prepare_samples(self):
         samples = []
@@ -225,8 +228,26 @@ class CTReportXRayDataset(CTReportDataset):
         return img_data
 
     def xray_img_to_tensor(self, path, transform):
+        # Step 1: Read the .mha file using SimpleITK
+        itk_image = sitk.ReadImage(path)
         
-        return
+        # Step 2: Convert to a NumPy array
+        np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
+        np_image = np.stack([np_image] * 3, axis=0)  # Replicate grayscale values
+
+        # Step 3: Use torch.from_numpy for fast conversion (shares memory)
+        tensor_image = torch.from_numpy(np_image)
+        
+        # Step 4: Ensure the tensor has the correct dtype
+        tensor_image = tensor_image.to(torch.float32)
+        
+        # Step 5: Normalize TODO: should be according to the cxr_clip
+        tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
+        
+        # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)
+        tensor_image = tensor_image.unsqueeze(0)  # Add channel dimension
+        
+        return tensor_image
 
     def __getitem__(self, index):
         nii_file, input_text, xray_file = self.samples[index]

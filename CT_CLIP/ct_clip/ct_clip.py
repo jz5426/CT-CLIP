@@ -898,7 +898,7 @@ class CTCLIP(nn.Module):
 
         return loss
 
-class CTCLIPwithXray(CTCLIP):
+class CTCLIPwithXray(nn.Module):
     def __init__(
             self,
             *,
@@ -945,7 +945,8 @@ class CTCLIPwithXray(CTCLIP):
             checkpoint_during_training = False,
             **kwargs
     ):
-        super().__init__(
+        super().__init__()
+        self.CTCLIP = CTCLIP(
             image_encoder,
             text_encoder,
             dim_text,
@@ -990,7 +991,6 @@ class CTCLIPwithXray(CTCLIP):
         #NOTE: with the xray encoder
         self.xray_encoder = xray_encoder
         self.xray_model_type = xray_model_type
-
         self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
         #NOTE: freeze the image and text backbones
@@ -1032,7 +1032,7 @@ class CTCLIPwithXray(CTCLIP):
         b, device = text.input_ids.shape[0], device
         num_batch_texts = num_batch_images = 1
         
-        text_embeddings = self.text_transformer(text.input_ids, attention_mask = text.attention_mask )
+        text_embeddings = self.CTCLIP.text_transformer(text.input_ids, attention_mask = text.attention_mask )
         enc_text = text_embeddings[0] # global view of the text embeddings
 
         """enc_image = model_forward_with_context(
@@ -1041,7 +1041,7 @@ class CTCLIPwithXray(CTCLIP):
             freeze = freeze_image_encoder
         )"""
 
-        enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+        enc_image= self.CTCLIP.visual_transformer(image, return_encoded_tokens=True)
         enc_xray = self.xray_encoder(xray)
 
         #print("This is visual encoding")
@@ -1069,8 +1069,8 @@ class CTCLIPwithXray(CTCLIP):
         # if self.xray_model_type == 'vit':
         #     xray_embeds = xray_embeds[:,0, :]# NOTE: Take the `[CLS]` token from the seq dimension
 
-        text_latents = self.to_text_latent(text_embeds) #NOTE bxd
-        image_latents = self.to_visual_latent(image_embeds) #NOTE bxd
+        text_latents = self.CTCLIP.to_text_latent(text_embeds) #NOTE bxd
+        image_latents = self.CTCLIP.to_visual_latent(image_embeds) #NOTE bxd
         xray_latents = self.to_xray_latent(xray_embeds)
 
         # normalize the features for both text and image
@@ -1107,4 +1107,12 @@ class CTCLIPwithXray(CTCLIP):
 
 
         return
+    
+    def load(self, ctclip_path, cxr_path):
+        # load the pretrained model for the ctclip
+        self.CTCLIP.load(ctclip_path)
+
+        # load the pretrained model for cxrclip
+        ckpt = torch.load(cxr_path, map_location="cpu")
+        self.xray_encoder.load_state_dict(ckpt["model"], strict=False)
 

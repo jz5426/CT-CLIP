@@ -1,7 +1,18 @@
+from typing import Dict, Union
+from omegaconf import DictConfig, OmegaConf
 import torch
 from torch import nn
 from torchvision.models.resnet import resnet50
 from transformers import AutoConfig, AutoModel, SwinModel, ViTModel
+import albumentations
+import albumentations.pytorch.transforms
+import numpy as np
+from PIL import Image
+from torchvision import transforms
+from transformers import AutoTokenizer
+import random
+import hydra
+import os
 
 class HuggingfaceImageEncoder(nn.Module):
     def __init__(
@@ -74,3 +85,83 @@ class ResNet50(nn.Module):
         # x = self.fc(x)
 
         return x
+    
+
+def transform_image(image_transforms, image: Union[Image.Image, np.ndarray], normalize="huggingface"):
+    for tr in image_transforms:
+        if isinstance(tr, albumentations.BasicTransform):
+            image = np.array(image) if not isinstance(image, np.ndarray) else image
+            image = tr(image=image)["image"]
+        else:
+            image = transforms.ToPILImage()(image) if not isinstance(image, Image.Image) else image
+            image = tr(image)
+
+    if normalize == "huggingface":
+        image = transforms.ToTensor()(image)
+        image = transforms.Normalize(mean=[0.5] * 3, std=[0.5] * 3)(image)
+
+    elif normalize == "imagenet":
+        image = transforms.ToTensor()(image)
+        image = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])(image)
+
+    else:
+        raise KeyError(f"Not supported Normalize: {normalize}")
+
+    return image
+
+def load_transform(split: str = "train", transform_config: Dict = None):
+    assert split in {"train", "valid", "test", "aug"}
+
+    config = []
+    if transform_config:
+        if split in transform_config:
+            config = transform_config[split]
+    image_transforms = []
+
+    for name in config:
+        if hasattr(transforms, name):
+            tr_ = getattr(transforms, name)
+        else:
+            tr_ = getattr(albumentations, name)
+        tr = tr_(**config[name])
+        image_transforms.append(tr)
+
+    return image_transforms
+
+def seed_everything(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    return seed
+
+
+def convert_dictconfig_to_dict(cfg):
+    if isinstance(cfg, DictConfig):
+        return {k: convert_dictconfig_to_dict(v) for k, v in cfg.items()}
+    else:
+        return cfg
+
+
+@hydra.main(version_base=None, config_path="configs", config_name="train")
+def get_config(cfg: DictConfig):
+
+    OmegaConf.resolve(cfg)
+
+    if "LOCAL_RANK" in os.environ:
+        # for ddp
+        # passed by torchrun or torch.distributed.launch
+        local_rank = int(os.environ["LOCAL_RANK"])
+    else:
+        # for debugging
+        local_rank = -1
+
+    if local_rank < 1:
+        print(f"Configurations:\n{OmegaConf.to_yaml(cfg)}")
+
+    seed_everything(1234)
+    # torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True
+
+    cfg = convert_dictconfig_to_dict(cfg)
+    return cfg

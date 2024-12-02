@@ -1,4 +1,6 @@
+from cxr_clip_utils import get_config
 import torch
+from torch_geometric import seed_everything
 from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIP, TextTransformer, CTCLIPwithXray
@@ -57,6 +59,21 @@ clip_xray = CTCLIPwithXray(
     downsample_image_embeds = False,
     use_all_token_embeds = False
 )
+
+# NOTE: get the related config file
+config = get_config()
+
+# NOTE: load the pretrained backbones
+clip_xray.load("C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\CT-CLIP_v2.pt",
+               "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\cxr_clip")
+
+"""
+TODO: load the checkpoint for ct-clip (DONE)
+TODO: load the checkpoint for cxr-clip (DONE)
+TODO: tranformation config for cxr-clip (DONE)
+TODO: ULIP style loss function integration for cxr-clip and ct-clip
+TODO: look for the dimension output from the image encoder of the xray clip
+"""
 
 trainer = CTClipTrainer(
     clip_xray,
