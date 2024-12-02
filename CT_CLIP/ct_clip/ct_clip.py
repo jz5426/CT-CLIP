@@ -1119,9 +1119,6 @@ class CTCLIPwithXray(nn.Module):
         ckpt = torch.load(cxr_path, map_location="cpu")
         self.xray_encoder.load_state_dict(ckpt["model"], strict=False)
         print('     finished loading the checkpoint for xray encoder')
-        
-        # cxrclip_model = build_model(self.cfg["model"], self.cfg["loss"], tokenizer=None)
-        # cxrclip_model.load_state_dict(ckpt["model"], strict=False)
 
         # cxrclip_model = cxrclip_model.to(device)   
         # if distributed:
