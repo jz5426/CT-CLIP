@@ -72,10 +72,11 @@ class CTReportDataset(Dataset):
         samples = []
         for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
             for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
-
-                for nii_file in glob.glob(os.path.join(accession_folder, '*.nii.gz')):
+                nii_files = glob.glob(os.path.join(accession_folder, '*.nii.gz'))
+                # nii_files = glob.glob(os.path.join(accession_folder, '*.pt'))
+                for nii_file in nii_files:
                     accession_number = nii_file.split("/")[-1]
-                    #accession_number = accession_number.replace(".npz", ".nii.gz")
+                    # accession_number = accession_number.replace(".pt", ".nii.gz")
                     if accession_number not in self.accession_to_text:
                         continue
 
@@ -95,8 +96,6 @@ class CTReportDataset(Dataset):
 
     def __len__(self):
         return len(self.samples)
-
-
 
     def nii_img_to_tensor(self, path, transform):
         nii_img = nib.load(str(path))
@@ -181,3 +180,63 @@ class CTReportDataset(Dataset):
         input_text = input_text.replace(')', '')
 
         return video_tensor, input_text
+    
+
+class CTReportXRayDataset(CTReportDataset):
+
+    def __init__(self, nii_data_folder, xray_data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
+        super().__init__(nii_data_folder, csv_file, min_slices, resize_dim, force_num_frames)
+
+        self.xray_data_folder = xray_data_folder
+
+        self.xray_transform = None
+        self.xray_to_tensor = partial(self.xray_img_to_tensor, transform=self.xray_transform)
+
+
+    def prepare_samples(self):
+        samples = []
+        for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
+            for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
+                pt_files = glob.glob(os.path.join(accession_folder, '*.pt'))
+                for nii_file in pt_files:
+                    accession_number = nii_file.split("/")[-1]
+                    accession_number = accession_number.replace(".pt", ".nii.gz")
+                    if accession_number not in self.accession_to_text:
+                        continue
+
+                    impression_text = self.accession_to_text[accession_number]
+
+                    if impression_text == "Not given.":
+                        impression_text=""
+
+                    input_text_concat = ""
+                    for text in impression_text:
+                        input_text_concat = input_text_concat + str(text)
+                    input_text_concat = impression_text[0]
+                    input_text = f'{impression_text}'
+                    #TODO: add the paired xray image here
+                    samples.append((nii_file, input_text_concat))
+                    self.paths.append(nii_file)
+        return samples
+
+
+    def nii_img_to_tensor(self, path, transform):
+        img_data = torch.load(path)
+        return img_data
+
+    def xray_img_to_tensor(self, path, transform):
+        
+        return
+
+    def __getitem__(self, index):
+        nii_file, input_text, xray_file = self.samples[index]
+        video_tensor = self.nii_to_tensor(nii_file)
+        xray_tensor = self.xray_img_to_tensor(xray_file)
+        input_text = str(input_text)
+        input_text = input_text.replace('"', '')
+        input_text = input_text.replace('\'', '')
+        input_text = input_text.replace('(', '')
+        input_text = input_text.replace(')', '')
+
+        return video_tensor, input_text, xray_tensor
+    

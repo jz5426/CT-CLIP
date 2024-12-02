@@ -8,6 +8,7 @@ from multiprocessing import Pool
 from tqdm import tqdm
 import SimpleITK as sitk
 
+# "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
 df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv') #select the metadata
 
 
@@ -203,10 +204,6 @@ if __name__ == "__main__":
     split_to_preprocess = "F:\\Chris\\CT-RATE\\dataset\\valid" #select the validation or test split
     
     nii_files = read_nii_files(split_to_preprocess)
-
-    # df = pd.read_csv("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv") #select the metadata
-    # df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv') #select the metadata
-
     num_workers = 8  # Number of worker processes
 
     # Process files using multiprocessing with tqdm progress bar

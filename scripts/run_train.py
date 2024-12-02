@@ -50,6 +50,7 @@ clip_xray = CTCLIPwithXray(
     text_encoder = text_encoder,
     dim_text = 768,
     dim_image = 294912,
+    dim_xray=999999,# NOTE modify this.
     dim_latent = 512,
     extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
     use_mlm=False,
@@ -59,13 +60,13 @@ clip_xray = CTCLIPwithXray(
 
 trainer = CTClipTrainer(
     clip_xray,
-    reports_file_train= "path_to_train_reports_csv",
-    reports_file_valid= "path_to_validation_reports_csv",
-    data_train= "path_to_preprocessed_train",
-    data_valid = "path_to_preprocessed_valid",
-    labels = "path_to_validation_labels_csv",
+    reports_file_train= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
+    reports_file_valid= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
+    data_train= "F:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
+    data_valid = "F:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
+    labels = "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\multi_abnormality_labels\\dataset_multi_abnormality_labels_valid_predicted_labels.csv",
     batch_size = 2,
-    results_folder="output_folder",
+    results_folder=".\\test",
     num_train_steps = 100001,
     num_workers = 4,
 )
