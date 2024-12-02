@@ -76,13 +76,12 @@ def run(cfg):
 
     # )
 
-
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
         dim_text = 768,
         dim_image = 294912,
-        dim_xray=768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048,
+        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048,
         dim_latent = 512,
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
         use_mlm=False,
@@ -103,8 +102,12 @@ def run(cfg):
     TODO: load the checkpoint for cxr-clip (DONE)
     TODO: tranformation config for cxr-clip (DONE)
     TODO: look for the dimension output from the image encoder of the xray clip (DONE)
-    TODO: ULIP-style loss function integration for cxr-clip and ct-clip
+    TODO: custom dataloader for triplet
     TODO: transformation of the input to the xray encoders
+    TODO: ULIP-style loss function integration for cxr-clip and ct-clip
+    TODO: double check the number of trainable parameters before and after freeze the ctclip model
+    TODO: double check the orientation of the xray and the ct after processing.
+    TODO: brainstorm different approachs for the contrastive learnining function.
     """
 
     trainer = CTClipTrainer(
