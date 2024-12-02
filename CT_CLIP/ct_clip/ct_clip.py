@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from functools import partial, wraps
 from pathlib import Path
 
+from cxr_clip_utils import build_model, load_image_encoder
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
@@ -903,7 +904,6 @@ class CTCLIPwithXray(nn.Module):
             self,
             *,
             image_encoder = None,
-            xray_encoder = None,
             text_encoder = None,
             xray_model_type = 'vit', # any vit based
             dim_text = 512,
@@ -943,6 +943,7 @@ class CTCLIPwithXray(nn.Module):
             image_ssl_loss_weight = 0.05,
             multiview_loss_weight = 0.1,
             checkpoint_during_training = False,
+            cfg=None,
             **kwargs
     ):
         super().__init__()
@@ -989,9 +990,11 @@ class CTCLIPwithXray(nn.Module):
         )
 
         #NOTE: with the xray encoder
-        self.xray_encoder = xray_encoder
+        self.cfg = cfg
+        self.xray_encoder = load_image_encoder(cfg["model"]["image_encoder"])
         self.xray_model_type = xray_model_type
         self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
+
 
         #NOTE: freeze the image and text backbones
         print("    freezing image encoder to not be trained")
@@ -1111,8 +1114,16 @@ class CTCLIPwithXray(nn.Module):
     def load(self, ctclip_path, cxr_path):
         # load the pretrained model for the ctclip
         self.CTCLIP.load(ctclip_path)
-
+        print('     finished loading the checkpoint for ct clip encoders')
         # load the pretrained model for cxrclip
         ckpt = torch.load(cxr_path, map_location="cpu")
         self.xray_encoder.load_state_dict(ckpt["model"], strict=False)
+        print('     finished loading the checkpoint for xray encoder')
+        
+        # cxrclip_model = build_model(self.cfg["model"], self.cfg["loss"], tokenizer=None)
+        # cxrclip_model.load_state_dict(ckpt["model"], strict=False)
+
+        # cxrclip_model = cxrclip_model.to(device)   
+        # if distributed:
+        #     cxrclip_model = DDP(cxrclip_model, device_ids=[device], find_unused_parameters=True) 
 
