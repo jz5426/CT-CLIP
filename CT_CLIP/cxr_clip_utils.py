@@ -3,7 +3,6 @@ from torch import nn
 from torchvision.models.resnet import resnet50
 from transformers import AutoConfig, AutoModel, SwinModel, ViTModel
 
-
 class HuggingfaceImageEncoder(nn.Module):
     def __init__(
         self,

@@ -168,6 +168,11 @@ class CTClipTrainer(nn.Module):
         kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=36000))
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
+
+        self.triplet_modality = False
+        if hasattr('xray_encoder', self.CTClip):
+            self.triplet_modality = True
+
         if tokenizer != None:
             self.tokenizer=tokenizer
         else:
@@ -264,7 +269,6 @@ class CTClipTrainer(nn.Module):
 
     def train_step(self):
         device = self.device
-
         steps = int(self.steps.item())
 
         self.CTClip.train() # set the models in train mode for gradient descent
@@ -273,18 +277,26 @@ class CTClipTrainer(nn.Module):
         logs = {}
 
         # update CTClip model
-        video, text = next(self.dl_iter)
+        data = next(self.dl_iter)
+        if self.triplet_modality:
+            video, text, xray = data
+            xray=xray.to(device)
+        else:
+            video, text = data
+
         print(video.shape)
-        device=self.device
+        
         video=video.to(device)
         mask = torch.ones((video.shape[0], video.shape[2])).bool().to(device)
-        #text = text.to(device)
         text = list(text)
         text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
 
-        #video = video
+        #NOTE: this is the actual forward pass of the CTCLIP
         with self.accelerator.autocast():
-            loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
+            if self.triplet_modality:
+                loss = self.CTClip(text_tokens, video, xray, return_loss=True, device=device)
+            else:
+                loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
 
         self.accelerator.backward(loss)
         accum_log(logs, {'loss': loss.item()})
@@ -294,8 +306,6 @@ class CTClipTrainer(nn.Module):
         self.optim.step()
         self.optim.zero_grad()
         self.print(f"{steps}: loss: {logs['loss']}")
-
-
 
         if self.is_main and not (steps % self.save_results_every):
             with torch.no_grad():

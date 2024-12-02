@@ -1,7 +1,7 @@
 import torch
 from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
-from ct_clip import CTCLIP, TextTransformer
+from ct_clip import CTCLIP, TextTransformer, CTCLIPwithXray
 from CTCLIPTrainer import CTClipTrainer
 
 
@@ -41,14 +41,30 @@ clip = CTCLIP(
     use_all_token_embeds = False
 
 )
+
+xray_encoder = None
+
+clip_xray = CTCLIPwithXray(
+    image_encoder = image_encoder,
+    xray_encoder = xray_encoder,
+    text_encoder = text_encoder,
+    dim_text = 768,
+    dim_image = 294912,
+    dim_latent = 512,
+    extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+    use_mlm=False,
+    downsample_image_embeds = False,
+    use_all_token_embeds = False
+)
+
 trainer = CTClipTrainer(
-    clip,
+    clip_xray,
     reports_file_train= "path_to_train_reports_csv",
     reports_file_valid= "path_to_validation_reports_csv",
     data_train= "path_to_preprocessed_train",
     data_valid = "path_to_preprocessed_valid",
     labels = "path_to_validation_labels_csv",
-    batch_size = 8,
+    batch_size = 2,
     results_folder="output_folder",
     num_train_steps = 100001,
     num_workers = 4,

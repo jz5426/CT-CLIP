@@ -747,7 +747,6 @@ class CTCLIP(nn.Module):
             return enc_text, enc_image
 
         # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
-
         if self.use_all_token_embeds:
             assert enc_text.ndim == 3, 'encoded text must have 3 dimensions (batch, seq, features)'
             assert enc_image.ndim == 3, 'encoded image must have 3 dimensions (batch, seq [height x width], features)'
@@ -904,9 +903,12 @@ class CTCLIPwithXray(CTCLIP):
             self,
             *,
             image_encoder = None,
+            xray_encoder = None,
             text_encoder = None,
+            xray_model_type = 'vit', # any vit based
             dim_text = 512,
             dim_image = 512,
+            dim_xray = 512, #TODO: modifiy this
             dim_latent = 512,
             num_text_tokens = 28897,
             text_enc_depth = 6,
@@ -985,15 +987,26 @@ class CTCLIPwithXray(CTCLIP):
             **kwargs
         )
 
-        #TODO: with the xray encoder
+        #NOTE: with the xray encoder
+        self.xray_encoder = xray_encoder
+        self.xray_model_type = xray_model_type
 
-        #TODO: freeze the image and text backbones
+        self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
+        #NOTE: freeze the image and text backbones
+        print("    freezing image encoder to not be trained")
+        for param in self.image_encoder.parameters():
+            param.requires_grad = False
+
+        print("    freezing text encoder to not be trained")
+        for param in self.text_encoder.parameters():
+            param.requires_grad = False
 
     def forward(
             self,
             text,
             image,
+            xray,
             device,
             return_loss = False,
             return_encodings = False,
@@ -1007,4 +1020,91 @@ class CTCLIPwithXray(CTCLIP):
         
         #TODO: define a loss function that distill the knowledge from the CT to the xray
             # check the losses.py in the ULIP paper of the sample implementation
+
+        """
+        NOTE: the following implementation mostly adapted from the parent class without 
+                multiview,
+                casual mask,
+                use_all_token_embeds,
+                extra_latent_projection,
+                decoupled_contrastive_learning
+        """
+        b, device = text.input_ids.shape[0], device
+        num_batch_texts = num_batch_images = 1
+        
+        text_embeddings = self.text_transformer(text.input_ids, attention_mask = text.attention_mask )
+        enc_text = text_embeddings[0] # global view of the text embeddings
+
+        """enc_image = model_forward_with_context(
+            fn = self.visual_transformer,
+            args = (image,),
+            freeze = freeze_image_encoder
+        )"""
+
+        enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+        enc_xray = self.xray_encoder(xray)
+
+        #print("This is visual encoding")
+        global h_r, w_r, z_r
+        h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
+
+        # make the feature of the ct image in vector form batch x (h w z c)
+        enc_image = torch.mean(enc_image, dim=1)
+        enc_image = enc_image.view(enc_image.shape[0], -1) # global view for one image and we have batch number of images
+        
+        enc_xray = torch.mean(enc_xray, dim=1)
+        enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for one xray and we have batch number of images
+
+        if return_encodings:
+            return enc_text, enc_image
+
+        # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
+        text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
+        image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
+        xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
+        
+        ## project to latents for both the ct image and the text modality
+        text_embeds = text_embeds[:,0,:]  # NOTE: Take the `[CLS]` token from the seq dimension
+
+        # if self.xray_model_type == 'vit':
+        #     xray_embeds = xray_embeds[:,0, :]# NOTE: Take the `[CLS]` token from the seq dimension
+
+        text_latents = self.to_text_latent(text_embeds) #NOTE bxd
+        image_latents = self.to_visual_latent(image_embeds) #NOTE bxd
+        xray_latents = self.to_xray_latent(xray_embeds)
+
+        # normalize the features for both text and image
+        text_latents, image_latents, xray_latents = map(l2norm, (text_latents, image_latents, xray_latents))
+
+        # get temperature
+        temp = self.temperature.exp()
+
+        # split out multiview dimension for text and images
+        text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts) #NOTE: 1xbxd
+        image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
+        text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
+
+        # TODO: integrate xray modality into the contrastive learning function
+        text_to_image = einsum('m t d, n i d -> m n t i', text_latents, image_latents) * temp # NOTE: one axis of the similarity matrix, for m=n=1: 1x1xbxb
+        image_to_text = rearrange(text_to_image, '... t i -> ... i t') # NOTE: the other axis of the similarity matrix, for m=n=1: 1x1xbxb
+
+        ## calculate loss
+        text_to_image = rearrange(text_to_image, 'm n ... -> (m n) ...')
+        image_to_text = rearrange(image_to_text, 'm n ... -> (m n) ...')
+
+        # exponentiate NOTE: expoential everything
+        text_to_image_exp, image_to_text_exp = map(torch.exp, (text_to_image, image_to_text))
+
+        # numerators NOTE: pick up the digonal terms in the matrix
+        text_to_image_pos, image_to_text_pos = map(matrix_diag, (text_to_image_exp, image_to_text_exp)) # for m=n=1, get the diagonal terms from matrix of shape 1x1xbxb
+
+        # denominator
+        #NOTE: this sum up the each axis of the similarity matrix
+        # (m, n, t) and (m,n, i), if m = n = 1, then (1,1, b), (1,1, b)
+        text_to_image_denom, image_to_text_denom = map(lambda t: t.sum(dim = -1), (text_to_image_exp, image_to_text_exp)) #NOTE: in 1x1xbx1
+
+        # loss
+
+
         return
+
