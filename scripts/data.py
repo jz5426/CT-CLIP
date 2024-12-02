@@ -197,6 +197,12 @@ class CTReportXRayDataset(CTReportDataset):
         self.xray_paths = []
 
     def prepare_samples(self):
+        """
+        override the parent method
+
+        assume the files inside the path are preprocessed and saved in as .pt object from torch.save
+        check the file: preprocess_ctrate_with_xray_valid
+        """
         samples = []
         for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
             for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
@@ -224,6 +230,9 @@ class CTReportXRayDataset(CTReportDataset):
 
 
     def nii_img_to_tensor(self, path, transform):
+        """
+        override the parent method
+        """
         img_data = torch.load(path)
         return img_data
 
@@ -242,7 +251,7 @@ class CTReportXRayDataset(CTReportDataset):
         tensor_image = tensor_image.to(torch.float32)
         
         # Step 5: Normalize TODO: should be according to the cxr_clip
-        tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
+        # tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
         
         # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)
         tensor_image = tensor_image.unsqueeze(0)  # Add channel dimension
