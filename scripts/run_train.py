@@ -31,18 +31,18 @@ image_encoder = CTViT(
 #dim_image = 131072,
 
 
-clip = CTCLIP(
-    image_encoder = image_encoder,
-    text_encoder = text_encoder,
-    dim_text = 768,
-    dim_image = 294912,
-    dim_latent = 512,
-    extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
-    use_mlm=False,
-    downsample_image_embeds = False,
-    use_all_token_embeds = False
+# clip = CTCLIP(
+#     image_encoder = image_encoder,
+#     text_encoder = text_encoder,
+#     dim_text = 768,
+#     dim_image = 294912,
+#     dim_latent = 512,
+#     extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+#     use_mlm=False,
+#     downsample_image_embeds = False,
+#     use_all_token_embeds = False
 
-)
+# )
 
 xray_encoder = None
 
@@ -65,7 +65,7 @@ config = get_config()
 
 # NOTE: load the pretrained backbones
 clip_xray.load("C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\CT-CLIP_v2.pt",
-               "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\cxr_clip")
+               "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\cxr_clip\\")
 
 """
 TODO: load the checkpoint for ct-clip (DONE)

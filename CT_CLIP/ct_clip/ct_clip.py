@@ -947,44 +947,44 @@ class CTCLIPwithXray(nn.Module):
     ):
         super().__init__()
         self.CTCLIP = CTCLIP(
-            image_encoder,
-            text_encoder,
-            dim_text,
-            dim_image,
-            dim_latent,
-            num_text_tokens,
-            text_enc_depth,
-            text_seq_len,
-            text_heads,
-            text_dim_head,
-            text_has_cls_token,
-            text_pad_id,
-            text_rotary_pos_emb,
-            text_causal_mask,
-            text_eos_id,
-            text_encode_without_mask,
-            visual_enc_depth,
-            visual_heads,
-            visual_dim_head,
-            visual_image_size,
-            visual_patch_size,
-            visual_patch_dropout,
-            visual_has_cls_token,
-            channels,
-            use_all_token_embeds,
-            downsample_image_embeds,
-            decoupled_contrastive_learning,
-            extra_latent_projection,
-            use_mlm,
-            text_ssl_loss_weight,
-            use_visual_ssl,
-            visual_ssl,
-            visual_ssl_type,
-            visual_ssl_hidden_layer,
-            simclr_temperature,
-            image_ssl_loss_weight,
-            multiview_loss_weight,
-            checkpoint_during_training,
+            image_encoder=image_encoder,
+            text_encoder=text_encoder,
+            dim_text=dim_text,
+            dim_image=dim_image,
+            dim_latent=dim_latent,
+            num_text_tokens=num_text_tokens,
+            text_enc_depth=text_enc_depth,
+            text_seq_len=text_seq_len,
+            text_heads=text_heads,
+            text_dim_head=text_dim_head,
+            text_has_cls_token=text_has_cls_token,
+            text_pad_id=text_pad_id,
+            text_rotary_pos_emb=text_rotary_pos_emb,
+            text_causal_mask=text_causal_mask,
+            text_eos_id=text_eos_id,
+            text_encode_without_mask=text_encode_without_mask,
+            visual_enc_depth=visual_enc_depth,
+            visual_heads=visual_heads,
+            visual_dim_head=visual_dim_head,
+            visual_image_size=visual_image_size,
+            visual_patch_size=visual_patch_size,
+            visual_patch_dropout=visual_patch_dropout,
+            visual_has_cls_token=visual_has_cls_token,
+            channels=channels,
+            use_all_token_embeds=use_all_token_embeds,
+            downsample_image_embeds=downsample_image_embeds,
+            decoupled_contrastive_learning=decoupled_contrastive_learning,
+            extra_latent_projection=extra_latent_projection,
+            use_mlm=use_mlm,
+            text_ssl_loss_weight=text_ssl_loss_weight,
+            use_visual_ssl=use_visual_ssl,
+            visual_ssl=visual_ssl,
+            visual_ssl_type=visual_ssl_type,
+            visual_ssl_hidden_layer=visual_ssl_hidden_layer,
+            simclr_temperature=simclr_temperature,
+            image_ssl_loss_weight=image_ssl_loss_weight,
+            multiview_loss_weight=multiview_loss_weight,
+            checkpoint_during_training=checkpoint_during_training,
             **kwargs
         )
 
@@ -995,11 +995,11 @@ class CTCLIPwithXray(nn.Module):
 
         #NOTE: freeze the image and text backbones
         print("    freezing image encoder to not be trained")
-        for param in self.image_encoder.parameters():
+        for param in self.CTCLIP.visual_transformer.parameters():
             param.requires_grad = False
 
         print("    freezing text encoder to not be trained")
-        for param in self.text_encoder.parameters():
+        for param in self.CTCLIP.text_transformer.parameters():
             param.requires_grad = False
 
     def forward(

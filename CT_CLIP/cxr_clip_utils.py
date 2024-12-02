@@ -143,7 +143,10 @@ def convert_dictconfig_to_dict(cfg):
         return cfg
 
 
-@hydra.main(version_base=None, config_path="configs", config_name="train")
+@hydra.main(
+        version_base=None,
+        config_path="C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\configs",
+        config_name="train")
 def get_config(cfg: DictConfig):
 
     OmegaConf.resolve(cfg)
