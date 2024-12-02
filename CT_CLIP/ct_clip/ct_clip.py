@@ -985,6 +985,11 @@ class CTCLIPwithXray(CTCLIP):
             **kwargs
         )
 
+        #TODO: with the xray encoder
+
+        #TODO: freeze the image and text backbones
+
+
     def forward(
             self,
             text,
@@ -999,4 +1004,7 @@ class CTCLIPwithXray(CTCLIP):
             aug_text = None,                # augmented text (for multiview)
             aug_image = None                # augmented image (for multiview)
     ):
+        
+        #TODO: define a loss function that distill the knowledge from the CT to the xray
+            # check the losses.py in the ULIP paper of the sample implementation
         return
