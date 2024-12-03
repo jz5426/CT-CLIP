@@ -357,9 +357,9 @@ class CTClipTrainer(nn.Module):
                             output = model(text_tokens, valid_data, xray_image, device=device, eval_mode=True)
                             output = apply_softmax(output)
 
-                            print(output)
-                            append_out=output.detach().cpu().numpy()
-                            print(output)
+                            # print(output)
+                            # append_out=output.detach().cpu().numpy()
+                            # print(output)
                             if output[0]>output[1]:
                                 # predictedlabels.append(append_out[0])
                                 predictedlabels.append(0)
