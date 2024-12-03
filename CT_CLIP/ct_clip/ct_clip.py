@@ -1080,36 +1080,49 @@ class CTCLIPwithXray(nn.Module):
         # split out multiview dimension for text and images
         text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts) #NOTE: 1xbxd
         image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
-        # text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
+        xray_latents = rearrange(xray_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 
-        # TODO: integrate xray modality into the contrastive learning function
-        text_to_image = einsum('m t d, n i d -> m n t i', text_latents, image_latents) * temp # NOTE: one axis of the similarity matrix, for m=n=1: 1x1xbxb
-        image_to_text = rearrange(text_to_image, '... t i -> ... i t') # NOTE: the other axis of the similarity matrix, for m=n=1: 1x1xbxb
+        """
+        NOTE: CL between image and xray and CL between text and xray
+        """
+        cl_text_to_xray = self.cl_loss(text_latents, xray_latents, temp)
+        cl_img_to_xray = self.cl_loss(image_latents, xray_latents, temp)
+        loss = cl_text_to_xray + cl_img_to_xray
+      
+        return loss
+
+    def cl_loss(self, m1_latent, m2_latent, temp):
+        """
+        compute the contrastive loss between the latent features of m1 and m2 modality
+        """
+        
+        m1_to_m2 = einsum('m t d, n i d -> m n t i', m1_latent, m2_latent) * temp # NOTE: one axis of the similarity matrix, for m=n=1: 1x1xbxb
+        m2_to_m1 = rearrange(m1_to_m2, '... t i -> ... i t') # NOTE: the other axis of the similarity matrix, for m=n=1: 1x1xbxb
 
         ## calculate loss
-        text_to_image = rearrange(text_to_image, 'm n ... -> (m n) ...')
-        image_to_text = rearrange(image_to_text, 'm n ... -> (m n) ...')
+        m1_to_m2 = rearrange(m1_to_m2, 'm n ... -> (m n) ...')
+        m2_to_m1 = rearrange(m2_to_m1, 'm n ... -> (m n) ...')
 
         # exponentiate NOTE: expoential everything
-        text_to_image_exp, image_to_text_exp = map(torch.exp, (text_to_image, image_to_text))
+        m1_to_m2_exp, m2_to_m1_exp = map(torch.exp, (m1_to_m2, m2_to_m1))
 
         # numerators NOTE: pick up the digonal terms in the matrix
-        text_to_image_pos, image_to_text_pos = map(matrix_diag, (text_to_image_exp, image_to_text_exp)) # for m=n=1, get the diagonal terms from matrix of shape 1x1xbxb
+        m1_to_m2_pos, m2_to_m1_pos = map(matrix_diag, (m1_to_m2_exp, m2_to_m1_exp)) # for m=n=1, get the diagonal terms from matrix of shape 1x1xbxb
 
         # denominator
         #NOTE: this sum up the each axis of the similarity matrix
         # (m, n, t) and (m,n, i), if m = n = 1, then (1,1, b), (1,1, b)
-        text_to_image_denom, image_to_text_denom = map(lambda t: t.sum(dim = -1), (text_to_image_exp, image_to_text_exp)) #NOTE: in 1x1xbx1
+        m1_to_m2_denom, m2_to_m1_denom = map(lambda t: t.sum(dim = -1), (m1_to_m2_exp, m2_to_m1_exp)) #NOTE: in 1x1xbx1
 
         # loss
-        text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1) # t->i log(CL)
-        image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1) # i->t log(CL)
+        m1_to_m2_loss = (-log(m1_to_m2_pos) + log(m1_to_m2_denom)).mean(dim = -1) # t->i log(CL)
+        m2_to_m1_loss = (-log(m2_to_m1_pos) + log(m2_to_m1_denom)).mean(dim = -1) # i->t log(CL)
 
         # calculate CL loss
-        loss = (text_to_image_loss + image_to_text_loss) / 2 #NOTE: symmetry loss text->image and image->text
+        loss = (m1_to_m2_loss + m2_to_m1_loss) / 2 #NOTE: symmetry loss m1->m2 and m2->m1
 
         return loss
-    
+
     def load(self, ctclip_path, cxr_path):
         # load the pretrained model for the ctclip
         self.CTCLIP.load(ctclip_path)
