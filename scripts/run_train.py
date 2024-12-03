@@ -90,7 +90,12 @@ def run(cfg):
         cfg=cfg
     )
 
-    # NOTE: get the related config file
+    # check the trainable parameters
+    xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
+    ct_clip_trainable = sum(p.numel() for p in clip_xray.CTCLIP.parameters() if p.requires_grad)
+    assert(xray_encoder_trainable > 0)
+    assert(ct_clip_trainable == 0)
+
 
     # NOTE: load the pretrained backbones
     ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar'
