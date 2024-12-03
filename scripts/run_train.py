@@ -105,6 +105,7 @@ def run(cfg):
     TODO: custom dataloader for triplet
     TODO: transformation of the input to the xray encoders
     TODO: ULIP-style loss function integration for cxr-clip and ct-clip
+
     TODO: double check the number of trainable parameters before and after freeze the ctclip model
     TODO: double check the orientation of the xray and the ct after processing.
     TODO: brainstorm different approachs for the contrastive learnining function.

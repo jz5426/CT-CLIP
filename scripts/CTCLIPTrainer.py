@@ -15,7 +15,7 @@ from torch.utils.data import Dataset, DataLoader, random_split
 from torch.utils.data.distributed import DistributedSampler
 
 from data import CTReportDataset, CTReportXRayDataset
-from data_inference import CTReportDatasetinfer
+from data_inference import CTReportDatasetinfer, CTReportXRayDatasetinfer
 
 import numpy as np
 import pandas as pd
@@ -194,7 +194,7 @@ class CTClipTrainer(nn.Module):
         # Load the pre-trained weights
         if self.triplet_modality:
             self.ds = CTReportXRayDataset(data_folder=data_train, csv_file=reports_file_train)
-            self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
+            self.valid_ds = CTReportXRayDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
         else:
             self.ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train)
             self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
