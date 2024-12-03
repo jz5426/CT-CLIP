@@ -102,7 +102,7 @@ def run(cfg):
     TODO: load the checkpoint for cxr-clip (DONE)
     TODO: tranformation config for cxr-clip (DONE)
     TODO: look for the dimension output from the image encoder of the xray clip (DONE)
-    TODO: custom dataloader for triplet
+    TODO: custom dataloader for triplet (DONE)
     TODO: transformation of the input to the xray encoders
     TODO: ULIP-style loss function integration for cxr-clip and ct-clip
     TODO: rotate the volume/image so that it matches the respective encoder input orientation
@@ -114,6 +114,7 @@ def run(cfg):
 
     trainer = CTClipTrainer(
         clip_xray,
+        cfg=cfg,
         reports_file_train= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
         reports_file_valid= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
         data_train= "F:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",

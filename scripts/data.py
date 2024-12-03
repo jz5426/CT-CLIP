@@ -1,6 +1,7 @@
 import os
 import glob
 import json
+from cxr_clip_utils import load_transform, transform_image
 import torch
 import pandas as pd
 import numpy as np
@@ -185,14 +186,34 @@ class CTReportDataset(Dataset):
 
 class CTReportXRayDataset(CTReportDataset):
 
-    def __init__(self, data_folder, xray_data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
+    def __init__(self, data_folder, xray_data_folder, cfg, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
         self.xray_data_folder = xray_data_folder
         self.xray_paths = []
         super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames)
-        self.xray_transform = None
+        self.cfg = cfg
+
+        # from trainer.py in cxr_clip
+        # the following is not needed for now as we use the synthic paired xray
+        # data_config = {}
+        # if "data_train" in cfg:
+        #     data_config["train"] = cfg["data_train"]
+        # if "data_valid" in cfg:
+        #     data_config["valid"] = cfg["data_valid"]
+        # if "data_test" in cfg:
+        #     data_config["test"] = cfg["data_test"]
+        # if cfg["model"]["image_encoder"]["name"] == "resnet":
+        #     for _split in data_config:
+        #         for _dataset in data_config[_split]:
+        #             data_config[_split][_dataset]["normalize"] = "imagenet"
+
+        self.normalize = "huggingface" # when use swin or non-resnet architecture
+        if cfg["model"]["image_encoder"]["name"] == "resnet":
+            self.normalize = "imagenet" # only for resnet architecture
+
+        self.xray_transform = load_transform(split='train', transform_config=cfg['transform'])
             # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
             # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
-        self.xray_to_tensor = partial(self.xray_img_to_tensor, transform=self.xray_transform)
+        self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
 
     def prepare_samples(self):
         """
@@ -240,37 +261,45 @@ class CTReportXRayDataset(CTReportDataset):
         img_data = torch.load(path)
         return img_data
 
-    def xray_img_to_tensor(self, path, transform):
+    def xray_mha_to_rgb(self, path, transform):
         # Step 1: Read the .mha file using SimpleITK
         itk_image = sitk.ReadImage(path)
         
         # Step 2: Convert to a NumPy array
         np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
-        np_image = np.stack([np_image] * 3, axis=0)  # Replicate grayscale values to have 3 channels
 
-        # Step 3: Use torch.from_numpy for fast conversion (shares memory)
-        tensor_image = torch.from_numpy(np_image)
+        np_image = (np_image - np_image.min()) / (np_image.max() - np_image.min()) * 255
+        np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
+
+        rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
+        rgb_image = Image.fromarray(rgb_image, mode="RGB")
+
+        # # Step 3: Use torch.from_numpy for fast conversion (shares memory)
+        # tensor_image = torch.from_numpy(np_image)
         
-        # Step 4: Ensure the tensor has the correct dtype
-        tensor_image = tensor_image.to(torch.float32)
+        # # Step 4: Ensure the tensor has the correct dtype
+        # tensor_image = tensor_image.to(torch.float32)
         
-        # Step 5: Normalize TODO: should be according to the cxr_clip
-        # tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
+        # # Step 5: Normalize TODO: should be according to the cxr_clip
+        # # tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
         
-        # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)
-        tensor_image = tensor_image.unsqueeze(0)  # Add batch dimension
+        # # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)
+        # tensor_image = tensor_image.unsqueeze(0)  # Add batch dimension
         
-        return tensor_image
+        return rgb_image
 
     def __getitem__(self, index):
         nii_file, input_text, xray_file = self.samples[index]
         video_tensor = self.nii_to_tensor(nii_file)
-        xray_tensor = self.xray_to_tensor(xray_file)
+
+        xray_image = self.xray_to_rgb(xray_file)
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+
         input_text = str(input_text)
         input_text = input_text.replace('"', '')
         input_text = input_text.replace('\'', '')
         input_text = input_text.replace('(', '')
         input_text = input_text.replace(')', '')
 
-        return video_tensor, input_text, xray_tensor
+        return video_tensor, input_text, xray_image
     

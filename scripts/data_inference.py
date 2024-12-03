@@ -1,6 +1,7 @@
 import os
 import glob
 import json
+from cxr_clip_utils import load_transform, transform_image
 import torch
 import pandas as pd
 import numpy as np
@@ -265,8 +266,123 @@ class CTReportDatasetinfer(Dataset):
 
 class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
-    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels="labels.csv", probing_mode=False):
+    def __init__(self, data_folder, xray_data_folder, cfg, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels="labels.csv", probing_mode=False):
+        self.xray_data_folder = xray_data_folder
+        self.xray_paths = []
         super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames, labels, probing_mode)
+        self.cfg = cfg
+
+        # from trainer.py in cxr_clip
+        # the following is not needed for now as we use the synthic paired xray
+        # data_config = {}
+        # if "data_train" in cfg:
+        #     data_config["train"] = cfg["data_train"]
+        # if "data_valid" in cfg:
+        #     data_config["valid"] = cfg["data_valid"]
+        # if "data_test" in cfg:
+        #     data_config["test"] = cfg["data_test"]
+        # if cfg["model"]["image_encoder"]["name"] == "resnet":
+        #     for _split in data_config:
+        #         for _dataset in data_config[_split]:
+        #             data_config[_split][_dataset]["normalize"] = "imagenet"
+
+        self.normalize = "huggingface" # when use swin or non-resnet architecture
+        if cfg["model"]["image_encoder"]["name"] == "resnet":
+            self.normalize = "imagenet" # only for resnet architecture
+
+        self.xray_transform = load_transform(split='valid', transform_config=cfg['transform'])
+            # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
+            # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
+            # NOTE: inference transformation would be different than that during training.
+        self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
+
+    def xray_mha_to_rgb(self, path, transform):
+        # Step 1: Read the .mha file using SimpleITK
+        itk_image = sitk.ReadImage(path)
+        
+        # Step 2: Convert to a NumPy array
+        np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
+
+        np_image = (np_image - np_image.min()) / (np_image.max() - np_image.min()) * 255
+        np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
+
+        rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
+        rgb_image = Image.fromarray(rgb_image, mode="RGB")
+
+        # # Step 3: Use torch.from_numpy for fast conversion (shares memory)
+        # tensor_image = torch.from_numpy(np_image)
+        
+        # # Step 4: Ensure the tensor has the correct dtype
+        # tensor_image = tensor_image.to(torch.float32)
+        
+        # # Step 5: Normalize TODO: should be according to the cxr_clip, the inference version
+        # # tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
+        
+        # # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)
+        # tensor_image = tensor_image.unsqueeze(0)  # Add batch dimension
+        
+        return rgb_image
+
+
+    def prepare_samples(self):
+        samples = []
+        xray_path_dirs = self.xray_data_folder.split(os.sep)
+        patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
+
+        # Read labels once outside the loop
+        test_df = pd.read_csv(self.labels)
+        test_label_cols = list(test_df.columns[1:])
+        test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
+
+        for patient_folder in tqdm.tqdm(patient_folders):
+            accession_folders = glob.glob(os.path.join(patient_folder, '*'))
+
+            for accession_folder in accession_folders:
+                # nii_files = glob.glob(os.path.join(accession_folder, '*.npz'))
+                # nii_files = glob.glob(os.path.join(accession_folder, '*.nii.gz')) #NOTE: self modified
+                nii_files = glob.glob(os.path.join(accession_folder, '*.pt'))
+
+
+                for nii_file in nii_files:
+                    path_dirs = nii_file.split(os.sep)
+                    accession_number = path_dirs[-1]
+
+                    accession_number = accession_number.replace(".pt", ".nii.gz")
+
+                    # corresponding xray file
+                    xray_file = os.sep.join(xray_path_dirs + path_dirs[path_dirs.index('valid_preprocessed_ct')+1:])
+                    xray_file = xray_file.replace('.pt', '.mha')
+
+                    if accession_number not in self.accession_to_text:
+                        continue
+
+                    impression_text = self.accession_to_text[accession_number]
+                    text_final = ""
+                    for text in list(impression_text):
+                        text = str(text)
+                        if text == "Not given.":
+                            text = ""
+
+                        text_final = text_final + text
+
+                    onehotlabels = test_df[test_df["VolumeName"] == accession_number]["one_hot_labels"].values
+                    if len(onehotlabels) > 0:
+                        samples.append((nii_file, text_final, onehotlabels[0], xray_file))
+                        self.paths.append(nii_file)
+                        self.xray_paths.append(xray_file)
+        return samples
+
 
     def __getitem__(self, index):
-        return
+        nii_file, input_text, onehotlabels, xray_file = self.samples[index]
+        video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
+
+        xray_image = self.xray_to_rgb(xray_file)
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+
+        input_text = input_text.replace('"', '')  
+        input_text = input_text.replace('\'', '')  
+        input_text = input_text.replace('(', '')  
+        input_text = input_text.replace(')', '')  
+        name_acc = nii_file.split(os.sep)[-2]
+        return video_tensor, input_text, onehotlabels, xray_image, name_acc, nii_file # add the nii_file for xray projections
