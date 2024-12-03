@@ -213,11 +213,11 @@ def process_file(file_path, shared_dst_dir='G:\\Chris\\dataset'):
     tensor = tensor.permute(2, 0, 1)
     tensor = tensor.unsqueeze(0)
 
-    # save the ct image as a pt tensor
-    torch.save(tensor, ct_save_path) # save as .pt file # np.savez(save_path, resized_array)
+    # # save the ct image as a pt tensor
+    # torch.save(tensor, ct_save_path) # save as .pt file # np.savez(save_path, resized_array)
     
-    # save the xray as a .mha image
-    sitk.WriteImage(xray_image, xray_save_path)
+    # # save the xray as a .mha image
+    # sitk.WriteImage(xray_image, xray_save_path)
 
 
 # Example usage:

@@ -81,6 +81,7 @@ def run(cfg):
         text_encoder = text_encoder,
         dim_text = 768,
         dim_image = 294912,
+        xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet',
         dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048,
         dim_latent = 512,
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
@@ -122,15 +123,15 @@ def run(cfg):
         cfg=cfg,
         reports_file_train= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
         reports_file_valid= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
-        data_train= "F:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
-        data_valid = "F:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
-        data_xray_train="F:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
-        data_xray_valid="F:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
+        data_train= "G:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
+        data_valid = "G:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
+        data_xray_train="G:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
+        data_xray_valid="G:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
         labels = "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\multi_abnormality_labels\\dataset_multi_abnormality_labels_valid_predicted_labels.csv",
         batch_size = 2,
         results_folder=".\\test",
         num_train_steps = 100001,
-        num_workers = 4,
+        num_workers = 1,
     )
 
     trainer.train()

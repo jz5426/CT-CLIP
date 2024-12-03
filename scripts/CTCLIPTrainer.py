@@ -298,8 +298,7 @@ class CTClipTrainer(nn.Module):
         video=video.to(device)
         mask = torch.ones((video.shape[0], video.shape[2])).bool().to(device)
         text = list(text)
-        text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-
+        text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device) # automatically prepend the [CLS] token with id 2, 511 actual content maximum.
         #NOTE: this is the actual forward pass of the CTCLIP
         with self.accelerator.autocast():
             if self.triplet_training:

@@ -905,7 +905,7 @@ class CTCLIPwithXray(nn.Module):
             *,
             image_encoder = None,
             text_encoder = None,
-            xray_model_type = 'vit', # any vit based
+            xray_model_type = 'swin', # any vit based
             dim_text = 512,
             dim_image = 512,
             dim_xray = 512, #TODO: modifiy this
@@ -1027,11 +1027,11 @@ class CTCLIPwithXray(nn.Module):
                 extra_latent_projection,
                 decoupled_contrastive_learning
         """
-        b, device = text.input_ids.shape[0], device
+        b, device = text.input_ids.shape[0], device # batch size, device
         num_batch_texts = num_batch_images = 1
         
         text_embeddings = self.CTCLIP.text_transformer(text.input_ids, attention_mask = text.attention_mask )
-        enc_text = text_embeddings[0] # global view of the text embeddings
+        enc_text = text_embeddings[0] # [0] are the tokens feature, [1] is the pooled features
 
         """enc_image = model_forward_with_context(
             fn = self.visual_transformer,
@@ -1047,11 +1047,11 @@ class CTCLIPwithXray(nn.Module):
         h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
 
         # make the feature of the ct image in vector form batch x (h w z c)
-        enc_image = torch.mean(enc_image, dim=1)
-        enc_image = enc_image.view(enc_image.shape[0], -1) # global view for one image and we have batch number of images
+        enc_image = torch.mean(enc_image, dim=1) # pool the patch features
+        enc_image = enc_image.view(enc_image.shape[0], -1) # global view for each vol in a batch
         
-        enc_xray = torch.mean(enc_xray, dim=1)
-        enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for one xray and we have batch number of images
+        enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features
+        enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch
 
         if return_encodings:
             return enc_text, enc_image
@@ -1064,7 +1064,7 @@ class CTCLIPwithXray(nn.Module):
         ## project to latents for both the ct image and the text modality
         text_embeds = text_embeds[:,0,:]  # NOTE: Take the `[CLS]` token from the seq dimension
 
-        # if self.xray_model_type == 'vit':
+        # if self.xray_model_type == 'swin':
         #     xray_embeds = xray_embeds[:,0, :]# NOTE: Take the `[CLS]` token from the seq dimension
 
         text_latents = self.CTCLIP.to_text_latent(text_embeds) #NOTE bxd
@@ -1075,12 +1075,12 @@ class CTCLIPwithXray(nn.Module):
         text_latents, image_latents, xray_latents = map(l2norm, (text_latents, image_latents, xray_latents))
 
         # get temperature
-        temp = self.temperature.exp()
+        temp = self.CTCLIP.temperature.exp()
 
         # split out multiview dimension for text and images
         text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts) #NOTE: 1xbxd
         image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
-        text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
+        # text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 
         # TODO: integrate xray modality into the contrastive learning function
         text_to_image = einsum('m t d, n i d -> m n t i', text_latents, image_latents) * temp # NOTE: one axis of the similarity matrix, for m=n=1: 1x1xbxb

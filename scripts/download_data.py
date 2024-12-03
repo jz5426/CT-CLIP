@@ -14,7 +14,7 @@ valid_files = [f for f in all_files if f.startswith(folder_path)]
 
 print(f"Files in the 'valid' folder: {valid_files}")
 
-destination_folder = 'F:\\Chris\\CT-RATE'
+destination_folder = 'G:\\Chris\\CT-RATE'
 os.makedirs(destination_folder, exist_ok=True)
 
 for file in tqdm(valid_files[:1000]): # only download 1000 files (500MB x 1000) otherwise too large
