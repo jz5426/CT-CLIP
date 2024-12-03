@@ -114,7 +114,7 @@ def run(cfg):
     
     TODO: ULIP-style loss function integration for cxr-clip and ct-clip
     TODO: double check the number of trainable parameters before and after freeze the ctclip model (DONE)
-    TODO: brainstorm different approachs for the contrastive learnining function.
+    TODO: brainstorm different approachs for the contrastive learning function.
     """
 
     trainer = CTClipTrainer(

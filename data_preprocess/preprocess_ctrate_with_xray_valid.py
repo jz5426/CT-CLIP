@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from multiprocessing import Pool
 from tqdm import tqdm
 import SimpleITK as sitk
+from PIL import Image
 
 # "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
 df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv') #select the metadata
@@ -71,7 +72,7 @@ def resize_array(array, current_spacing, target_spacing):
     resized_array = F.interpolate(array, size=new_shape, mode='trilinear', align_corners=False).cpu().numpy()
     return resized_array
 
-def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
+def process_file(file_path, shared_dst_dir='G:\\Chris\\dataset'):
     """
     Process a single NIfTI file.
 
@@ -81,6 +82,7 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     Returns:
     None
     """
+    original_file_name = os.path.basename(file_path)
     file_name = os.path.basename(file_path)
     # should check if the file exists before preceed the loading so that save computation resources
     ct_save_folder = "valid_preprocessed_ct" #save folder for preprocessed
@@ -89,14 +91,20 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     file_name = file_name.split(".")[0]+".pt"
     ct_save_path = os.path.join(ct_folder_path_new, file_name)
 
-    xray_save_folder = "valid_preprocessed_xray" #save folder for preprocessed
+    xray_save_folder = "valid_preprocessed_xray_mha" #save folder for preprocessed
     xray_folder_path_new = os.path.join(shared_dst_dir, xray_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = file_name.split(".")[0]+".mha"
     xray_save_path = os.path.join(xray_folder_path_new, file_name)
 
+    xray_rgb_save_folder = "valid_preprocessed_xray_rgb" #save folder for preprocessed
+    xray_folder_path_new = os.path.join(shared_dst_dir, xray_rgb_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
+    os.makedirs(xray_folder_path_new, exist_ok=True)
+    file_name = file_name.split(".")[0]+".png"
+    xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
+
     #NOTE: check and proceed
-    if os.path.exists(ct_save_path) and os.path.exists(xray_save_path):
+    if os.path.exists(ct_save_path) and os.path.exists(xray_save_path) and os.path.exists(xray_rgb_save_path):
         return
 
     # proceed with unsaved data
@@ -106,7 +114,7 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
         print(f"Read {file_path} unsuccessful. Passing")
         return
 
-    row = df[df['VolumeName'] == file_name]
+    row = df[df['VolumeName'] == original_file_name]
     slope = float(row["RescaleSlope"].iloc[0])
     intercept = float(row["RescaleIntercept"].iloc[0])
     xy_spacing = float(row["XYSpacing"].iloc[0][1:][:-2].split(",")[0])
@@ -143,17 +151,31 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
 
     ct_image = _scale_clip_resize(img_data, current, (target_z_spacing, target_x_spacing, target_y_spacing))
     xray_image = _scale_clip_resize(img_data, current, (1,1,1))
+
+    #TEST
+    # sitk.WriteImage(sitk.GetImageFromArray(ct_image), './test_{}'.format(original_file_name))
     
     # for xray
     xray_image = sitk.GetImageFromArray(xray_image)
     mean_projection_filter = sitk.MeanProjectionImageFilter()
-    mean_projection_filter.SetProjectionDimension(1)
+    mean_projection_filter.SetProjectionDimension(2)
     xray_image = mean_projection_filter.Execute(xray_image) # execute projection
 
     #TODO: not sure why we need manual flipping here to match nii image for the frontal view
     xray_array = sitk.GetArrayFromImage(xray_image)
-    xray_array = np.flip(np.squeeze(xray_array), axis=0)
-    
+    # xray_array = np.flip(np.squeeze(xray_array), axis=0)
+    # xray_array = np.rot90(np.squeeze(xray_array)) # make the image upright but NOTE that it is flipped with respect to the y-axis
+    xray_array = np.squeeze(xray_array) # make the image upright but NOTE that it is flipped with respect to the y-axis
+
+    np_image = (xray_array - xray_array.min()) / (xray_array.max() - xray_array.min()) * 255
+    np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
+    rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
+    rgb_image = Image.fromarray(rgb_image, mode="RGB")
+    rgb_image.show()
+
+    # save the xray image as .png image
+    rgb_image.save('./test_{}.png'.format(original_file_name[:-len('.nii.gz')]))
+
     xray_image = sitk.GetImageFromArray(xray_array)
     xray_image.SetSpacing((1.0, 1.0))  # Example spacing
     xray_image.SetOrigin((0.0, 0.0))   # Example origin
@@ -201,10 +223,10 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
 # Example usage:
 if __name__ == "__main__":
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
-    split_to_preprocess = "F:\\Chris\\CT-RATE\\dataset\\valid" #select the validation or test split
+    split_to_preprocess = "G:\\Chris\\CT-RATE\\dataset\\valid" #select the validation or test split
     
     nii_files = read_nii_files(split_to_preprocess)
-    num_workers = 8  # Number of worker processes
+    num_workers = 1  # Number of worker processes
 
     # Process files using multiprocessing with tqdm progress bar
     with Pool(num_workers) as pool:

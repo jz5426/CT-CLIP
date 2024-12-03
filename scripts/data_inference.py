@@ -297,6 +297,9 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
 
     def xray_mha_to_rgb(self, path, transform):
+        """
+        assume the path to the xray is mha format
+        """
         # Step 1: Read the .mha file using SimpleITK
         itk_image = sitk.ReadImage(path)
         
