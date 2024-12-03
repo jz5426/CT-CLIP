@@ -1102,9 +1102,13 @@ class CTCLIPwithXray(nn.Module):
         text_to_image_denom, image_to_text_denom = map(lambda t: t.sum(dim = -1), (text_to_image_exp, image_to_text_exp)) #NOTE: in 1x1xbx1
 
         # loss
+        text_to_image_loss = (-log(text_to_image_pos) + log(text_to_image_denom)).mean(dim = -1) # t->i log(CL)
+        image_to_text_loss = (-log(image_to_text_pos) + log(image_to_text_denom)).mean(dim = -1) # i->t log(CL)
 
+        # calculate CL loss
+        loss = (text_to_image_loss + image_to_text_loss) / 2 #NOTE: symmetry loss text->image and image->text
 
-        return
+        return loss
     
     def load(self, ctclip_path, cxr_path):
         # load the pretrained model for the ctclip
