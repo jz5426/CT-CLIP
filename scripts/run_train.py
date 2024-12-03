@@ -113,7 +113,7 @@ def run(cfg):
     TODO: rotate the volume/image so that it matches the respective encoder input orientation
     TODO: double check the orientation of the xray and the ct after processing.
     
-    TODO: ULIP-style loss function integration for cxr-clip and ct-clip
+    TODO: ULIP-style loss function integration for cxr-clip and ct-clip (DONE)
     TODO: double check the number of trainable parameters before and after freeze the ctclip model (DONE)
     TODO: brainstorm different approachs for the contrastive learning function.
     """
