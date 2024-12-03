@@ -263,7 +263,7 @@ class CTReportDatasetinfer(Dataset):
         return video_tensor, input_text, onehotlabels, name_acc, nii_file # add the nii_file for xray projections
 
 
-class CTReportDatasetinfer(CTReportDatasetinfer):
+class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
     def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels="labels.csv", probing_mode=False):
         super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames, labels, probing_mode)
