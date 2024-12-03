@@ -150,6 +150,8 @@ class CTClipTrainer(nn.Module):
         batch_size,
         data_train = "train",
         data_valid = "valid",
+        data_xray_train = None,
+        data_xray_valid = None,
         reports_file_train = "data_reports.xslx",
         reports_file_valid = "data_reports.xslx",
         labels = "labels.csv",
@@ -171,8 +173,9 @@ class CTClipTrainer(nn.Module):
 
         # alter to ULIP-style mode if the xray encoder exists in the CTCLIP
         self.triplet_modality = False
-        if hasattr('xray_encoder', self.CTClip):
+        if hasattr(self.CTClip, 'xray_encoder'):
             self.triplet_modality = True
+            assert(data_xray_train is not None and data_xray_valid is not None)
 
         if tokenizer != None:
             self.tokenizer=tokenizer
@@ -193,7 +196,7 @@ class CTClipTrainer(nn.Module):
         
         # Load the pre-trained weights
         if self.triplet_modality:
-            self.ds = CTReportXRayDataset(data_folder=data_train, csv_file=reports_file_train)
+            self.ds = CTReportXRayDataset(data_folder=data_train, xray_data_folder=data_xray_train, csv_file=reports_file_train)
             self.valid_ds = CTReportXRayDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
         else:
             self.ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train)

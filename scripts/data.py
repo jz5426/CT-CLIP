@@ -64,8 +64,8 @@ class CTReportDataset(Dataset):
         df = pd.read_csv(csv_file)
         accession_to_text = {}
         for index, row in df.iterrows():
-            accession_to_text[row['AccessionNo']] = row["Findings_EN"],row['Impressions_EN']
-
+            # accession_to_text[row['AccessionNo']] = row["Findings_EN"],row['Impressions_EN']
+            accession_to_text[row['VolumeName']] = row["Findings_EN"],row['Impressions_EN']
         return accession_to_text
 
 
@@ -185,16 +185,14 @@ class CTReportDataset(Dataset):
 
 class CTReportXRayDataset(CTReportDataset):
 
-    def __init__(self, nii_data_folder, xray_data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
-        super().__init__(nii_data_folder, csv_file, min_slices, resize_dim, force_num_frames)
-
+    def __init__(self, data_folder, xray_data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
         self.xray_data_folder = xray_data_folder
-
+        self.xray_paths = []
+        super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames)
         self.xray_transform = None
             # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
             # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
         self.xray_to_tensor = partial(self.xray_img_to_tensor, transform=self.xray_transform)
-        self.xray_paths = []
 
     def prepare_samples(self):
         """
@@ -204,12 +202,18 @@ class CTReportXRayDataset(CTReportDataset):
         check the file: preprocess_ctrate_with_xray_valid
         """
         samples = []
+        xray_path_dirs = self.xray_data_folder.split(os.sep)
         for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
             for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
                 pt_files = glob.glob(os.path.join(accession_folder, '*.pt'))
                 for nii_file in pt_files:
-                    accession_number = nii_file.split("/")[-1]
+                    path_dirs = nii_file.split(os.sep)
+                    accession_number = path_dirs[-1]
                     accession_number = accession_number.replace(".pt", ".nii.gz")
+
+                    # corresponding xray file
+                    xray_file = os.sep.join(xray_path_dirs + path_dirs[path_dirs.index('valid_preprocessed_ct')+1:])
+                    xray_file = xray_file.replace('.pt', '.mha')
                     if accession_number not in self.accession_to_text:
                         continue
 
@@ -222,10 +226,10 @@ class CTReportXRayDataset(CTReportDataset):
                     for text in impression_text:
                         input_text_concat = input_text_concat + str(text)
                     input_text_concat = impression_text[0]
-                    input_text = f'{impression_text}'
-                    #TODO: add the paired xray image here
-                    samples.append((nii_file, input_text_concat))
+                    # input_text = f'{impression_text}'
+                    samples.append((nii_file, input_text_concat, xray_file))
                     self.paths.append(nii_file)
+                    self.xray_paths.append(xray_file)
         return samples
 
 
@@ -242,7 +246,7 @@ class CTReportXRayDataset(CTReportDataset):
         
         # Step 2: Convert to a NumPy array
         np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
-        np_image = np.stack([np_image] * 3, axis=0)  # Replicate grayscale values
+        np_image = np.stack([np_image] * 3, axis=0)  # Replicate grayscale values to have 3 channels
 
         # Step 3: Use torch.from_numpy for fast conversion (shares memory)
         tensor_image = torch.from_numpy(np_image)
@@ -254,14 +258,14 @@ class CTReportXRayDataset(CTReportDataset):
         # tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
         
         # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)
-        tensor_image = tensor_image.unsqueeze(0)  # Add channel dimension
+        tensor_image = tensor_image.unsqueeze(0)  # Add batch dimension
         
         return tensor_image
 
     def __getitem__(self, index):
         nii_file, input_text, xray_file = self.samples[index]
         video_tensor = self.nii_to_tensor(nii_file)
-        xray_tensor = self.xray_img_to_tensor(xray_file)
+        xray_tensor = self.xray_to_tensor(xray_file)
         input_text = str(input_text)
         input_text = input_text.replace('"', '')
         input_text = input_text.replace('\'', '')

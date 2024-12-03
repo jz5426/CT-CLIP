@@ -105,6 +105,7 @@ def run(cfg):
     TODO: custom dataloader for triplet
     TODO: transformation of the input to the xray encoders
     TODO: ULIP-style loss function integration for cxr-clip and ct-clip
+    TODO: rotate the volume/image so that it matches the respective encoder input orientation
 
     TODO: double check the number of trainable parameters before and after freeze the ctclip model
     TODO: double check the orientation of the xray and the ct after processing.
@@ -117,6 +118,8 @@ def run(cfg):
         reports_file_valid= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
         data_train= "F:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
         data_valid = "F:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
+        data_xray_train="F:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
+        data_xray_valid="F:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
         labels = "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\multi_abnormality_labels\\dataset_multi_abnormality_labels_valid_predicted_labels.csv",
         batch_size = 2,
         results_folder=".\\test",
