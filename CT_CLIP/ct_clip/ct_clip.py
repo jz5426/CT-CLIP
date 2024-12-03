@@ -1006,6 +1006,7 @@ class CTCLIPwithXray(nn.Module):
             image,
             xray,
             device,
+            eval_mode = False,
             return_loss = False,
             return_encodings = False,
             return_latents = False,
@@ -1042,7 +1043,6 @@ class CTCLIPwithXray(nn.Module):
         enc_image= self.CTCLIP.visual_transformer(image, return_encoded_tokens=True)
         enc_xray = self.xray_encoder(xray)
 
-        #print("This is visual encoding")
         global h_r, w_r, z_r
         h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
 
@@ -1050,6 +1050,7 @@ class CTCLIPwithXray(nn.Module):
         enc_image = torch.mean(enc_image, dim=1) # pool the patch features
         enc_image = enc_image.view(enc_image.shape[0], -1) # global view for each vol in a batch
         
+        #TODO: also experiment with the 1st token.
         enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features
         enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch
 
@@ -1063,10 +1064,6 @@ class CTCLIPwithXray(nn.Module):
         
         ## project to latents for both the ct image and the text modality
         text_embeds = text_embeds[:,0,:]  # NOTE: Take the `[CLS]` token from the seq dimension
-
-        # if self.xray_model_type == 'swin':
-        #     xray_embeds = xray_embeds[:,0, :]# NOTE: Take the `[CLS]` token from the seq dimension
-
         text_latents = self.CTCLIP.to_text_latent(text_embeds) #NOTE bxd
         image_latents = self.CTCLIP.to_visual_latent(image_embeds) #NOTE bxd
         xray_latents = self.to_xray_latent(xray_embeds)
@@ -1082,6 +1079,10 @@ class CTCLIPwithXray(nn.Module):
         image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
         xray_latents = rearrange(xray_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 
+        if eval_mode:
+            logits = einsum('m t d, n i d -> m n t i', text_latents, xray_latents) * temp # compute similarity matrix
+            return logits.squeeze()
+
         """
         NOTE: CL between image and xray and CL between text and xray
         """
@@ -1096,8 +1097,8 @@ class CTCLIPwithXray(nn.Module):
         compute the contrastive loss between the latent features of m1 and m2 modality
         """
         
-        m1_to_m2 = einsum('m t d, n i d -> m n t i', m1_latent, m2_latent) * temp # NOTE: one axis of the similarity matrix, for m=n=1: 1x1xbxb
-        m2_to_m1 = rearrange(m1_to_m2, '... t i -> ... i t') # NOTE: the other axis of the similarity matrix, for m=n=1: 1x1xbxb
+        m1_to_m2 = einsum('m t d, n i d -> m n t i', m1_latent, m2_latent) * temp # compute similarity matrix
+        m2_to_m1 = rearrange(m1_to_m2, '... t i -> ... i t') # another axis
 
         ## calculate loss
         m1_to_m2 = rearrange(m1_to_m2, 'm n ... -> (m n) ...')

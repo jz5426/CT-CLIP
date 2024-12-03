@@ -308,14 +308,14 @@ class CTClipTrainer(nn.Module):
 
         self.accelerator.backward(loss)
         accum_log(logs, {'loss': loss.item()})
-        if exists(self.max_grad_norm):
-            self.accelerator.clip_grad_norm_(self.CTClip.parameters(), self.max_grad_norm)
+        # if exists(self.max_grad_norm):
+        #     self.accelerator.clip_grad_norm_(self.CTClip.parameters(), self.max_grad_norm)
 
         self.optim.step()
         self.optim.zero_grad()
         self.print(f"{steps}: loss: {logs['loss']}")
 
-        if self.is_main and not (steps % self.save_results_every):
+        if self.is_main and not (steps % self.save_results_every): # execute for every self.save_results_every
             with torch.no_grad():
 
                 models_to_evaluate = ((self.CTClip, str(steps)),)
@@ -332,6 +332,7 @@ class CTClipTrainer(nn.Module):
 
                         if self.triplet_training:
                             valid_data, text, onehotlabels, xray_image, _, _ = val_data
+                            xray_image = xray_image.to(device)
                         else:
                             valid_data, text, onehotlabels, _, _ = val_data
 
@@ -342,27 +343,31 @@ class CTClipTrainer(nn.Module):
 
                         pathologies = ['Medical material','Arterial wall calcification', 'Cardiomegaly', 'Pericardial effusion','Coronary artery wall calcification', 'Hiatal hernia','Lymphadenopathy', 'Emphysema', 'Atelectasis', 'Lung nodule','Lung opacity', 'Pulmonary fibrotic sequela', 'Pleural effusion', 'Mosaic attenuation pattern','Peribronchial thickening', 'Consolidation', 'Bronchiectasis','Interlobular septal thickening']
                         plotdir = str(self.results_folder / f'CTClip_{steps}' )
-                        plotdir = plotdir + "/"
+                        plotdir = plotdir + os.sep
 
                         Path(plotdir).mkdir(parents=True, exist_ok=True)
 
                         predictedlabels=[]
                         for pathology in pathologies:
-                            text = [f"There is {pathology}.", f"There is no {pathology}."]
+                            text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
                             text_tokens=self.tokenizer(
                                             text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-                            output = model(text_tokens, valid_data,  device=device)
-
-
+                            
+                            # this should be the logit score between the text and xray
+                            output = model(text_tokens, valid_data, xray_image, device=device, eval_mode=True)
                             output = apply_softmax(output)
 
                             print(output)
                             append_out=output.detach().cpu().numpy()
                             print(output)
                             if output[0]>output[1]:
-                                predictedlabels.append(append_out[0])
+                                # predictedlabels.append(append_out[0])
+                                predictedlabels.append(0)
                             else:
-                                predictedlabels.append(append_out[0])
+                                # predictedlabels.append(append_out[0])
+                                predictedlabels.append(1) #NOTE: i do this.
+                        
+                        # append the pathology classifications for one validation image
                         predictedall.append(predictedlabels)
                         realall.append(onehotlabels.detach().cpu().numpy()[0])
                         # Print and save classification report
