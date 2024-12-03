@@ -109,11 +109,11 @@ def run(cfg):
     TODO: look for the dimension output from the image encoder of the xray clip (DONE)
     TODO: custom dataloader for triplet (DONE)
     TODO: transformation of the input to the xray encoders (DONE)
-    TODO: ULIP-style loss function integration for cxr-clip and ct-clip
     TODO: rotate the volume/image so that it matches the respective encoder input orientation
-
-    TODO: double check the number of trainable parameters before and after freeze the ctclip model
     TODO: double check the orientation of the xray and the ct after processing.
+    
+    TODO: ULIP-style loss function integration for cxr-clip and ct-clip
+    TODO: double check the number of trainable parameters before and after freeze the ctclip model (DONE)
     TODO: brainstorm different approachs for the contrastive learnining function.
     """
 
