@@ -173,9 +173,9 @@ class CTClipTrainer(nn.Module):
         self.CTClip = CTClip
 
         # alter to ULIP-style mode if the xray encoder exists in the CTCLIP
-        self.triplet_modality = False
+        self.triplet_training = False
         if hasattr(self.CTClip, 'xray_encoder'):
-            self.triplet_modality = True
+            self.triplet_training = True
             assert(data_xray_train is not None and data_xray_valid is not None and cfg is not None)
 
         if tokenizer != None:
@@ -196,7 +196,7 @@ class CTClipTrainer(nn.Module):
         self.lr=lr
         
         # Load the pre-trained weights
-        if self.triplet_modality:
+        if self.triplet_training:
             self.ds = CTReportXRayDataset(data_folder=data_train, xray_data_folder=data_xray_train, cfg=cfg, csv_file=reports_file_train)
             self.valid_ds = CTReportXRayDatasetinfer(data_folder=data_valid, xray_data_folder=data_xray_valid, cfg=cfg, csv_file=reports_file_valid, labels = labels)
         else:
@@ -287,7 +287,7 @@ class CTClipTrainer(nn.Module):
 
         # update CTClip model
         data = next(self.dl_iter)
-        if self.triplet_modality:
+        if self.triplet_training:
             video, text, xray = data
             xray=xray.to(device)
         else:
@@ -302,7 +302,7 @@ class CTClipTrainer(nn.Module):
 
         #NOTE: this is the actual forward pass of the CTCLIP
         with self.accelerator.autocast():
-            if self.triplet_modality:
+            if self.triplet_training:
                 loss = self.CTClip(text_tokens, video, xray, return_loss=True, device=device)
             else:
                 loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
@@ -327,9 +327,15 @@ class CTClipTrainer(nn.Module):
                     realall=[]
 
                     #Fast inference on 100 images
-                    for i in range(10):
+                    for i in range(10): #NOTE: might need to change this to evaluate on the whole validation set.
                         print("test")
-                        valid_data, text, onehotlabels, name_acc = next(self.valid_dl_iter)
+                        val_data = next(self.valid_dl_iter)
+
+                        if self.triplet_training:
+                            valid_data, text, onehotlabels, xray_image, _, _ = val_data
+                        else:
+                            valid_data, text, onehotlabels, _, _ = val_data
+
                         valid_data = valid_data.to(device)
 
                         if "module" in model.__dict__:

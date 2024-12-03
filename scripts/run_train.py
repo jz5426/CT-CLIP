@@ -103,7 +103,7 @@ def run(cfg):
     TODO: tranformation config for cxr-clip (DONE)
     TODO: look for the dimension output from the image encoder of the xray clip (DONE)
     TODO: custom dataloader for triplet (DONE)
-    TODO: transformation of the input to the xray encoders
+    TODO: transformation of the input to the xray encoders (DONE)
     TODO: ULIP-style loss function integration for cxr-clip and ct-clip
     TODO: rotate the volume/image so that it matches the respective encoder input orientation
 
