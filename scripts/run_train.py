@@ -115,6 +115,7 @@ def run(cfg):
     
     TODO: ULIP-style loss function integration for cxr-clip and ct-clip (DONE)
     TODO: double check the number of trainable parameters before and after freeze the ctclip model (DONE)
+    TODO: check the performance when the xray encoder is initialized from scratch.
     TODO: brainstorm different approachs for the contrastive learning function.
     """
 

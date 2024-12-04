@@ -4,7 +4,8 @@ import shutil
 from tqdm import tqdm
 
 repo_id = "ibrahimhamamci/CT-RATE"
-folder_path = "dataset/valid"
+# folder_path = "dataset/valid"
+folder_path = "dataset/train"
 
 # List all files in the repository
 all_files = list_repo_files(repo_id, repo_type="dataset")
@@ -12,12 +13,13 @@ all_files = list_repo_files(repo_id, repo_type="dataset")
 # Filter files in the 'valid' folder
 valid_files = [f for f in all_files if f.startswith(folder_path)]
 
-print(f"Files in the 'valid' folder: {valid_files}")
+# print(f"Files in the 'valid' folder: {valid_files}")
+print(f"Files in the 'train' folder: {valid_files}")
 
-destination_folder = 'G:\\Chris\\CT-RATE'
+destination_folder = 'F:\\Chris\\CT-RATE'
 os.makedirs(destination_folder, exist_ok=True)
 
-for file in tqdm(valid_files[:1000]): # only download 1000 files (500MB x 1000) otherwise too large
+for file in tqdm(valid_files[:3000]): # only download 1000 files (500MB x 1000) otherwise too large
     # Extract the filename from the path
     filename = os.path.basename(file)
     dir_path = os.path.dirname(file)
@@ -41,9 +43,9 @@ for file in tqdm(valid_files[:1000]): # only download 1000 files (500MB x 1000) 
     file_path = hf_hub_download(
         repo_id=repo_id,
         filename=filename,
-        subfolder=dir_path,
+        subfolder=dir_path.replace('\\', '/'),
         repo_type="dataset",
-        token='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' # Ensure your token is set in the huggingface
+        token='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' # Ensure your token is set in the huggingface
     )
     shutil.move(file_path, file_dir)
 

@@ -10,7 +10,7 @@ import SimpleITK as sitk
 from PIL import Image
 
 # "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
-df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv') #select the metadata
+df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\train_metadata.csv') #select the metadata
 
 
 def read_nii_files(directory):
@@ -85,20 +85,20 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     original_file_name = os.path.basename(file_path)
     file_name = os.path.basename(file_path)
     # should check if the file exists before preceed the loading so that save computation resources
-    ct_save_folder = "valid_preprocessed_ct" #save folder for preprocessed
-    ct_folder_path_new = os.path.join(shared_dst_dir, ct_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
+    ct_save_folder = "train_preprocessed_ct" #save folder for preprocessed
+    ct_folder_path_new = os.path.join(shared_dst_dir, ct_save_folder, "train_" + file_name.split("_")[1], "train_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
     os.makedirs(ct_folder_path_new, exist_ok=True)
     file_name = file_name.split(".")[0]+".pt"
     ct_save_path = os.path.join(ct_folder_path_new, file_name)
 
-    xray_save_folder = "valid_preprocessed_xray_mha" #save folder for preprocessed
-    xray_folder_path_new = os.path.join(shared_dst_dir, xray_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
+    xray_save_folder = "train_preprocessed_xray_mha" #save folder for preprocessed
+    xray_folder_path_new = os.path.join(shared_dst_dir, xray_save_folder, "train_" + file_name.split("_")[1], "train_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = file_name.split(".")[0]+".mha"
     xray_save_path = os.path.join(xray_folder_path_new, file_name)
 
-    xray_rgb_save_folder = "valid_preprocessed_xray_rgb" #save folder for preprocessed
-    xray_folder_path_new = os.path.join(shared_dst_dir, xray_rgb_save_folder, "valid_" + file_name.split("_")[1], "valid_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
+    xray_rgb_save_folder = "train_preprocessed_xray_rgb" #save folder for preprocessed
+    xray_folder_path_new = os.path.join(shared_dst_dir, xray_rgb_save_folder, "train_" + file_name.split("_")[1], "train_" + file_name.split("_")[1] + file_name.split("_")[2]) #folder name for train or validation
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = file_name.split(".")[0]+".png"
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
@@ -173,9 +173,6 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     rgb_image = Image.fromarray(rgb_image, mode="RGB")
     # rgb_image.show()
 
-    # save the xray image as .png image
-    rgb_image.save('./test_{}.png'.format(original_file_name[:-len('.nii.gz')]))
-
     xray_image = sitk.GetImageFromArray(xray_array)
     xray_image.SetSpacing((1.0, 1.0))  # Example spacing
     xray_image.SetOrigin((0.0, 0.0))   # Example origin
@@ -219,11 +216,13 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     # save the xray as a .mha image
     sitk.WriteImage(xray_image, xray_save_path)
 
+    # save the xray image as .png image
+    rgb_image.save(xray_rgb_save_path)
 
 # Example usage:
 if __name__ == "__main__":
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
-    split_to_preprocess = "F:\\Chris\\CT-RATE\\dataset\\valid" #select the validation or test split
+    split_to_preprocess = "F:\\Chris\\CT-RATE\\dataset\\train" #select the validation or test split
     
     nii_files = read_nii_files(split_to_preprocess)
     num_workers = 8  # Number of worker processes

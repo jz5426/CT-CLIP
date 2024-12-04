@@ -157,10 +157,10 @@ class CTClipTrainer(nn.Module):
         reports_file_valid = "data_reports.xslx",
         labels = "labels.csv",
         tokenizer = None,
-        lr = 1.25e-6,
+        lr = 0.001, # 1.25e-6, suggested by ULIP
         wd = 0.,
         max_grad_norm = 0.5,
-        save_results_every = 1000,
+        save_results_every = 1000, # TODO: should be 250 epochs
         save_model_every = 1000 ,
         results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
         num_workers = 8,
@@ -190,6 +190,7 @@ class CTClipTrainer(nn.Module):
 
         all_parameters = set(CTClip.parameters())
 
+        #TODO: might add a option to use the adamw optimizer
         self.optim = get_optimizer(all_parameters, lr=lr, wd=wd)
 
         self.max_grad_norm = max_grad_norm
@@ -341,7 +342,24 @@ class CTClipTrainer(nn.Module):
                         if "module" in model.__dict__:
                             model = model.module
 
-                        pathologies = ['Medical material','Arterial wall calcification', 'Cardiomegaly', 'Pericardial effusion','Coronary artery wall calcification', 'Hiatal hernia','Lymphadenopathy', 'Emphysema', 'Atelectasis', 'Lung nodule','Lung opacity', 'Pulmonary fibrotic sequela', 'Pleural effusion', 'Mosaic attenuation pattern','Peribronchial thickening', 'Consolidation', 'Bronchiectasis','Interlobular septal thickening']
+                        pathologies = ['Medical material',
+                                       'Arterial wall calcification', 
+                                       'Cardiomegaly', 
+                                       'Pericardial effusion',
+                                       'Coronary artery wall calcification', 
+                                       'Hiatal hernia',
+                                       'Lymphadenopathy', 
+                                       'Emphysema', 
+                                       'Atelectasis', 
+                                       'Lung nodule',
+                                       'Lung opacity', 
+                                       'Pulmonary fibrotic sequela', 
+                                       'Pleural effusion', 
+                                       'Mosaic attenuation pattern',
+                                       'Peribronchial thickening', 
+                                       'Consolidation', 
+                                       'Bronchiectasis',
+                                       'Interlobular septal thickening']
                         plotdir = str(self.results_folder / f'CTClip_{steps}' )
                         plotdir = plotdir + os.sep
 
