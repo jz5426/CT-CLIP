@@ -15,6 +15,7 @@ from ct_clip import CTCLIP
 import accelerate
 import preprocess_utils
 from zero_shot import CTClipInference
+from pathlib import Path
 
 if __name__ == '__main__':
 
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     split = 'train'
 
     # perform feature extraction after download 100 of them
-    feature_extraction_frequency = 1000
+    feature_extraction_frequency = 2
 
     repo_id = "ibrahimhamamci/CT-RATE"
     folder_path = "dataset/{}".format(split)
@@ -63,17 +64,28 @@ if __name__ == '__main__':
     # Filter files in the folder
     files = [f for f in all_files if f.startswith(folder_path)]
 
-    print(f"Files in the '{split}' folder: {files}")
-    total_files = len(files)
+    # Filter out the files that are already processed previously
+    saving_path = os.path.join('/mnt/f/Chris/dataset/features_embeddings', split)
+    img_feature_path = os.path.join(saving_path, 'image_features.pth')
+    text_feature_path = os.path.join(saving_path, 'text_features.pth')
+    if os.path.exists(img_feature_path):
+        image_features = torch.load(img_feature_path)
+    if os.path.exists(text_feature_path):
+        text_features = torch.load(text_feature_path)
+    assert text_features.keys() == image_features.keys()
+    keys = set(text_features.keys())
+    files = [f for f in files if Path(Path(f).stem).stem not in keys] # nested path.stem due to .nii.gz, each remove one extension
+
+    print(f"Files in the '{split}' folder: {len(files)}")
+    total_files = 5 #len(files)
 
     destination_folder = os.path.normpath('/mnt/f/Chris/CT-RATE-temp')
     os.makedirs(destination_folder, exist_ok=True)
 
-    counter = 1
-    with tqdm(total=total_files) as pbar:
-        while counter < total_files and counter % feature_extraction_frequency != 0:
-            file = files[counter]
+    for i in tqdm(range(0, total_files, feature_extraction_frequency)):
+        batch = files[i:i + feature_extraction_frequency]
 
+        for file in batch:
             # Extract the filename from the path
             filename = os.path.basename(file)
             dir_path = os.path.dirname(file)
@@ -88,27 +100,27 @@ if __name__ == '__main__':
             # Move the downloaded file to the destination folder
             file_dir = os.path.join(destination_dir, filename)
 
-            #NOTE: prevent repeated download.
-            if os.path.exists(file_dir):
-                continue
 
             # Download the file
             file_path = hf_hub_download(
                 repo_id=repo_id,
                 filename=filename,
-                subfolder=dir_path.replace('\\', '/'),
+                subfolder=dir_path,
                 repo_type="dataset",
+                cache_dir='/mnt/f/cache', # must be placed in the same external hard drive for wsl to work for shutil.move operations
                 token='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' # Ensure your token is set in the huggingface
             )
-            shutil.move(file_path, file_dir)
-            counter += 1
 
+            shutil.move(file_path, file_dir)
+
+        print('    processing raw ct files')
         # NOTE: preprocess the downloaded files and save the corresponding xray
         raw_ct_path = os.path.join(destination_folder, 'dataset', f'{split}') # load the data for processing from here
         processed_ct_dest = os.path.join(destination_folder, 'processed_dataset') # destination folder to hold the processed ct and xray files
-        preprocess_utils.process(nii_path=raw_ct_path, shared_dest=processed_ct_dest, split=split, num_workers=4)
+        preprocess_utils.process(nii_path=raw_ct_path, shared_dest=processed_ct_dest, split=split)
 
         # NOTE: remove the raw CT files and keep the xray files
+        print('    removing raw ct files')
         shutil.rmtree(raw_ct_path)
 
         # start to do feature extraction
@@ -125,9 +137,11 @@ if __name__ == '__main__':
         )
 
         # feature extraction save the features to the phe object
+        print('    performing feature extraction')
         inference.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', f'{split}')
 
         #NOTE: remove the preprocessed ct files ONLY
+        print('    removing processed ct files')
         shutil.rmtree(processed_ct_directory)
         
     print("Finished")
