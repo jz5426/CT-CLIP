@@ -82,6 +82,7 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     Returns:
     None
     """
+
     original_file_name = os.path.basename(file_path)
     file_name = os.path.basename(file_path)
     # should check if the file exists before preceed the loading so that save computation resources
