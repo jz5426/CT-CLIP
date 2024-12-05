@@ -53,7 +53,7 @@ if __name__ == '__main__':
     split = 'train'
 
     # perform feature extraction after download 100 of them
-    feature_extraction_frequency = 2
+    feature_extraction_frequency = 2000
 
     repo_id = "ibrahimhamamci/CT-RATE"
     folder_path = "dataset/{}".format(split)
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     files = [f for f in files if Path(Path(f).stem).stem not in keys] # nested path.stem due to .nii.gz, each remove one extension
 
     print(f"Files in the '{split}' folder: {len(files)}")
-    total_files = 5 #len(files)
+    total_files = len(files)
 
     destination_folder = os.path.normpath('/mnt/f/Chris/CT-RATE-temp')
     os.makedirs(destination_folder, exist_ok=True)
