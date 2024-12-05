@@ -19,7 +19,6 @@ from data_inference import CTReportDatasetinfer, CTReportXRayDatasetinfer
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 
 from einops import rearrange
 import accelerate
@@ -430,13 +429,12 @@ class CTClipTrainer(nn.Module):
         self.print('training complete')
 
     def train_by_epoch(self, epochs):
+        print('Epoch Training Starts\n')
         model = self.CTClip
         device = self.device
 
         train_size = 4 # len(self.train_ds) TODO:
         val_size = 4 # len(self.valid_ds) TODO:
-        epoch_progress_bar = tqdm(total=epochs, desc='Epoch Progress: ')
-        train_split_progress_bar = tqdm(total=train_size, desc='Training Split Progress:')
 
         for epoch in range(epochs):
             model.train()
@@ -469,21 +467,17 @@ class CTClipTrainer(nn.Module):
 
                 # Print loss for every N batches (optional)
                 if (batch_idx + 1) % 10 == 0:
-                    print(f"\n Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}], Training Loss: {loss.item():.4f}")
+                    print(f"Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}], Training Loss: {loss.item():.4f}\n")
 
                 # Accumulate loss
                 running_loss += loss.item()
 
-                train_split_progress_bar.update(1)
-
             # Print average loss for the epoch
             epoch_loss = running_loss / train_size
-            print(f"\n Epoch [{epoch+1}/{epochs}] completed with average training loss: {epoch_loss:.4f}")
+            print(f"Epoch [{epoch+1}/{epochs}] completed with average training loss: {epoch_loss:.4f}\n")
 
             # after training each epoch, test the model in the validation split
             if self.is_main:
-                val_split_progress_bar = tqdm(total=val_size, desc='Validation Split Progress')
-
                 with torch.no_grad():
                     model.eval()
                     predictedall=[]
@@ -544,8 +538,6 @@ class CTClipTrainer(nn.Module):
                         predictedall.append(predictedlabels)
                         realall.append(onehotlabels.detach().cpu().numpy()[0])
 
-                        val_split_progress_bar.update(1)
-
                     # Print and save classification report
                     realall=np.array(realall)
                     predictedall=np.array(predictedall)
@@ -556,7 +548,7 @@ class CTClipTrainer(nn.Module):
                     
                     f1 = f1_score(realall, predictedall,average='micro')
                     flat_acc = accuracy_score(realall.flatten(), predictedall.flatten())
-                    print('Validation F1 Accuracy: {}; Validation Flat Accuracy: {}'.format(f1, flat_acc))
+                    print('Validation F1 Accuracy: {}; Validation Flat Accuracy: {}\n'.format(f1, flat_acc))
                     # NOTE: high flat accuracy but low f1 accuracy indicates poor minority class performance
                     writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
 
@@ -568,22 +560,20 @@ class CTClipTrainer(nn.Module):
                     model_path = str(self.results_folder / f'CTClip.{epoch}.pt')
                     state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
                     self.accelerator.save(state_dict, model_path)
-                    self.print(f'{epoch}: saving model to {str(self.results_folder)}')
+                    print(f'{epoch}: saving model to {str(self.results_folder)}\n')
                     
                     if self.best_f1_val_acc < f1:
                         self.best_f1_val_acc = f1
                         model_path = str(self.results_folder / 'CTClip_best_f1_val.pt')
                         state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
                         self.accelerator.save(state_dict, model_path)
-                        print(f'{epoch}: saving model to {str(self.results_folder)} -- best f1 accuracy achieved!!')
+                        print(f'{epoch}: saving model to {str(self.results_folder)} -- best f1 accuracy achieved!!\n')
                     
                     if self.best_flat_val_acc < flat_acc:
                         self.best_flat_val_acc = flat_acc
                         model_path = str(self.results_folder / 'CTClip_best_flat_acc_val.pt')
                         state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
                         self.accelerator.save(state_dict, model_path)
-                        print(f'{epoch}: saving model to {str(self.results_folder)} -- best flat accuracy achieved!!')
+                        print(f'{epoch}: saving model to {str(self.results_folder)} -- best flat accuracy achieved!!\n')
                 
-                epoch_progress_bar.update(1)
-
-        print('training by epochs complete')
+        print('Training by epochs complete\n')
