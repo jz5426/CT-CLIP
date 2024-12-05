@@ -155,7 +155,7 @@ def run(cfg):
         train_from_scratch = True
     )
 
-    # trainer.train()
+    # trainer.train() # train by iterations
     trainer.train_by_epoch(250)
 
 if __name__ == '__main__':

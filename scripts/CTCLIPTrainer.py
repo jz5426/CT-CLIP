@@ -434,8 +434,8 @@ class CTClipTrainer(nn.Module):
         model = self.CTClip
         device = self.device
 
-        train_size = 4 # len(self.train_ds) TODO:
-        val_size = 4 # len(self.valid_ds) TODO:
+        train_size = len(self.train_ds)
+        val_size = len(self.valid_ds)
 
         for epoch in range(epochs):
             model.train()
