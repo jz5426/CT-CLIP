@@ -92,3 +92,11 @@ inference_train = CTClipInference(
 
 # inference_train.infer()
 inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'train')
+
+"""
+TODO: update the .ph object if exists
+TODO: train in epochs instead of iterations
+TODO: change the download script such that it is in the unit of patient instead of number of volumes
+        - which also should take into account the cases where the the volumes (via a path) already exists
+TODO: hyperparameters for the xray encoder with temperature 0.07
+"""

@@ -3,7 +3,7 @@ from cxr_clip_utils import convert_dictconfig_to_dict
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import torch
-from torch_geometric import seed_everything
+# from torch_geometric import seed_everything
 from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIP, TextTransformer, CTCLIPwithXray
@@ -28,7 +28,7 @@ def main(cfg: DictConfig):
     if local_rank < 1:
         print(f"Configurations:\n{OmegaConf.to_yaml(cfg)}")
 
-    seed_everything(1234)
+    # seed_everything(1234)
     # torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
 
@@ -110,9 +110,8 @@ def run(cfg):
     TODO: look for the dimension output from the image encoder of the xray clip (DONE)
     TODO: custom dataloader for triplet (DONE)
     TODO: transformation of the input to the xray encoders (DONE)
-    TODO: rotate the volume/image so that it matches the respective encoder input orientation
-    TODO: double check the orientation of the xray and the ct after processing.
-    
+    TODO: rotate the volume/image so that it matches the respective encoder input orientation (DONE)
+    TODO: double check the orientation of the xray and the ct after processing. (DONE)
     TODO: ULIP-style loss function integration for cxr-clip and ct-clip (DONE)
     TODO: double check the number of trainable parameters before and after freeze the ctclip model (DONE)
     TODO: check the performance when the xray encoder is initialized from scratch.
