@@ -324,13 +324,26 @@ class CTClipInference(nn.Module):
         self.print('Inference complete')
 
     def feature_extraction(self, directory, split='valid'):
+        # load the .pth object if exists
+        saving_path = os.path.join(directory, split)
+        img_feature_path = os.path.join(saving_path, 'image_features.pth')
+        text_feature_path = os.path.join(saving_path, 'text_features.pth')
+        if os.path.exists(img_feature_path):
+            self.image_features = torch.load(img_feature_path)
+        if os.path.exists(text_feature_path):
+            self.text_features = torch.load(text_feature_path)
+
         device = self.device
         with torch.no_grad():
             self.CTClip.eval()
             for i in tqdm.tqdm(range(len(self.ds))): #len(self.ds)
                 valid_data, text, _, _, instance_name, _ = next(self.dl_iter)
 
+                # skip the forward pass if exists
                 key = instance_name[0]
+                if key in self.image_features and key in self.text_features:
+                    continue
+
                 text_tokens=self.tokenizer(
                                 text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
                 output = self.CTClip(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
@@ -342,10 +355,9 @@ class CTClipInference(nn.Module):
                 self.text_features[key] = text_feature
         
         # save the feature embeddings
-        saving_path = os.path.join(directory, split)
         os.makedirs(saving_path, exist_ok=True)
-        torch.save(self.image_features, os.path.join(saving_path, 'image_features.pth'))
-        torch.save(self.text_features, os.path.join(saving_path, 'text_features.pth')) 
+        torch.save(self.image_features, img_feature_path)
+        torch.save(self.text_features, text_feature_path) 
 
         #test
         # loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
