@@ -152,6 +152,7 @@ def run(cfg):
         results_folder="./checkpoints",
         num_train_steps = 100001,
         num_workers = 1, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        train_from_scratch = True
     )
 
     # trainer.train()

@@ -95,7 +95,7 @@ inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', '
 
 """
 TODO: update the .ph object if exists (DONE)
-TODO: train in epochs instead of iterations
+TODO: train in epochs instead of iterations (DONE)
 TODO: change the download script such that it is in the unit of patient instead of number of volumes
         - which also should take into account the cases where the the volumes (via a path) already exists
 TODO: hyperparameters for the xray encoder with temperature 0.07

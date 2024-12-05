@@ -162,6 +162,7 @@ class CTClipTrainer(nn.Module):
         save_model_every = 1000 ,
         results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
         num_workers = 8,
+        train_from_scratch = True,
         accelerate_kwargs: dict = dict()
     ):
         super().__init__()
@@ -240,7 +241,7 @@ class CTClipTrainer(nn.Module):
 
         self.results_folder = Path(results_folder)
 
-        if len([*self.results_folder.glob('**/*')]) > 0 and yes_or_no('do you want to clear previous experiment checkpoints and results?'):
+        if len([*self.results_folder.glob('**/*')]) > 0 and train_from_scratch:
             rmtree(str(self.results_folder))
 
         self.results_folder.mkdir(parents=True, exist_ok=True)
@@ -467,14 +468,14 @@ class CTClipTrainer(nn.Module):
 
                 # Print loss for every N batches (optional)
                 if (batch_idx + 1) % 10 == 0:
-                    print(f"Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}], Training Loss: {loss.item():.4f}\n")
+                    print(f"Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}], Training Loss: {loss.item():.4f}")
 
                 # Accumulate loss
                 running_loss += loss.item()
 
             # Print average loss for the epoch
             epoch_loss = running_loss / train_size
-            print(f"Epoch [{epoch+1}/{epochs}] completed with average training loss: {epoch_loss:.4f}\n")
+            print(f"Epoch [{epoch+1}/{epochs}] completed with average training loss: {epoch_loss:.4f}")
 
             # after training each epoch, test the model in the validation split
             if self.is_main:
@@ -548,7 +549,7 @@ class CTClipTrainer(nn.Module):
                     
                     f1 = f1_score(realall, predictedall,average='micro')
                     flat_acc = accuracy_score(realall.flatten(), predictedall.flatten())
-                    print('Validation F1 Accuracy: {}; Validation Flat Accuracy: {}\n'.format(f1, flat_acc))
+                    print('    Validation F1 Accuracy: {}; Validation Flat Accuracy: {}'.format(f1, flat_acc))
                     # NOTE: high flat accuracy but low f1 accuracy indicates poor minority class performance
                     writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
 
@@ -560,20 +561,20 @@ class CTClipTrainer(nn.Module):
                     model_path = str(self.results_folder / f'CTClip.{epoch}.pt')
                     state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
                     self.accelerator.save(state_dict, model_path)
-                    print(f'{epoch}: saving model to {str(self.results_folder)}\n')
+                    print(f'    {epoch}: saving model to {str(self.results_folder)}')
                     
                     if self.best_f1_val_acc < f1:
                         self.best_f1_val_acc = f1
                         model_path = str(self.results_folder / 'CTClip_best_f1_val.pt')
                         state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
                         self.accelerator.save(state_dict, model_path)
-                        print(f'{epoch}: saving model to {str(self.results_folder)} -- best f1 accuracy achieved!!\n')
+                        print(f'    {epoch}: saving model to {str(self.results_folder)} -- best f1 accuracy achieved!!')
                     
                     if self.best_flat_val_acc < flat_acc:
                         self.best_flat_val_acc = flat_acc
                         model_path = str(self.results_folder / 'CTClip_best_flat_acc_val.pt')
                         state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
                         self.accelerator.save(state_dict, model_path)
-                        print(f'{epoch}: saving model to {str(self.results_folder)} -- best flat accuracy achieved!!\n')
+                        print(f'    {epoch}: saving model to {str(self.results_folder)} -- best flat accuracy achieved!!')
                 
         print('Training by epochs complete\n')
