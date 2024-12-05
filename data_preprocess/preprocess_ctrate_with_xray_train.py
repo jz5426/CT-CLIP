@@ -104,8 +104,8 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
 
     #NOTE: check and proceed
-    if os.path.exists(ct_save_path) and os.path.exists(xray_save_path) and os.path.exists(xray_rgb_save_path):
-        return
+    # if os.path.exists(ct_save_path) and os.path.exists(xray_save_path) and os.path.exists(xray_rgb_save_path):
+    #     return
 
     # proceed with unsaved data
 
@@ -164,8 +164,8 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     #TODO: not sure why we need manual flipping here to match nii image for the frontal view
     xray_array = sitk.GetArrayFromImage(xray_image)
     # xray_array = np.flip(np.squeeze(xray_array), axis=0)
-    # xray_array = np.rot90(np.squeeze(xray_array)) # make the image upright but NOTE that it is flipped with respect to the y-axis
-    xray_array = np.squeeze(xray_array) # make the image upright but NOTE that it is flipped with respect to the y-axis
+    xray_array = np.rot90(np.squeeze(xray_array)) # make the image upright but NOTE that it is flipped with respect to the y-axis
+    # xray_array = np.squeeze(xray_array) # make the image upright but NOTE that it is flipped with respect to the y-axis
 
     np_image = (xray_array - xray_array.min()) / (xray_array.max() - xray_array.min()) * 255
     np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility

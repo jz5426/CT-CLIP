@@ -38,7 +38,6 @@ class CTReportDatasetinfer(Dataset):
             accession_to_text[row['VolumeName']] = row["Findings_EN"],row['Impressions_EN']
         return accession_to_text
 
-
     def prepare_samples(self):
         samples = []
         patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
@@ -258,10 +257,11 @@ class CTReportDatasetinfer(Dataset):
         input_text = input_text.replace('"', '')  
         input_text = input_text.replace('\'', '')  
         input_text = input_text.replace('(', '')  
-        input_text = input_text.replace(')', '')  
-        # name_acc = nii_file.split("/")[-2]
-        name_acc = nii_file.split(os.sep)[-2]
-        return video_tensor, input_text, onehotlabels, name_acc, nii_file # add the nii_file for xray projections
+        input_text = input_text.replace(')', '')
+        dir_path = os.path.splitext(nii_file)[0].split(os.sep)
+        name_acc = dir_path[-2] 
+        instance_name = dir_path[-1]
+        return video_tensor, input_text, onehotlabels, name_acc, instance_name, nii_file # add the nii_file for xray projections
 
 
 class CTReportXRayDatasetinfer(CTReportDatasetinfer):

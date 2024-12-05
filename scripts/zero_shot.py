@@ -29,6 +29,7 @@ from accelerate import DistributedDataParallelKwargs
 import math
 import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP
+import os
 
 # helpers
 
@@ -144,6 +145,7 @@ class CTClipInference(nn.Module):
         *,
         num_train_steps,
         batch_size,
+        feature_extraction_mode = False,
         data_folder = "external_valid",
         reports_file = "data_reports.xslx",
         lr = 1e-4,
@@ -175,9 +177,15 @@ class CTClipInference(nn.Module):
         # Load the pre-trained weights
         self.ds = CTReportDatasetinfer(data_folder=data_folder, csv_file=reports_file,labels=labels)
 
+        self.feature_extraction_mode = feature_extraction_mode
+
+        self.image_features = None
+        self.text_features = None
+        if self.feature_extraction_mode:
+            self.image_features = {}
+            self.text_features = {}
+
         # Split dataset into train and validation sets
-
-
         self.dl = DataLoader(
             self.ds,
             num_workers=1,
@@ -190,7 +198,7 @@ class CTClipInference(nn.Module):
         self.CTClip.to(self.device)
         self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
                                                   T_0=4000000,    # Maximum number of iterations
-                                                  T_warmup=10000, # Number of warmup steps
+                                                  T_warmup=10000, # Number of warmup steps NOTE: TODO: verify this 
                                                   eta_max=lr)   # Maximum learning rate
 
 
@@ -212,8 +220,6 @@ class CTClipInference(nn.Module):
         self.results_folder = Path(results_folder)
 
         self.results_folder.mkdir(parents=True, exist_ok=True)
-
-
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
@@ -238,7 +244,6 @@ class CTClipInference(nn.Module):
     def print(self, msg):
         self.accelerator.print(msg)
 
-
     @property
     def is_main(self):
         return self.accelerator.is_main_process
@@ -248,11 +253,8 @@ class CTClipInference(nn.Module):
 
         steps = int(self.steps.item())
 
-
         # logs
         logs = {}
-
-
 
         if True:
             with torch.no_grad():
@@ -270,20 +272,19 @@ class CTClipInference(nn.Module):
                     accession_names=[]
                     pathologies = ['Medical material','Arterial wall calcification', 'Cardiomegaly', 'Pericardial effusion','Coronary artery wall calcification', 'Hiatal hernia','Lymphadenopathy', 'Emphysema', 'Atelectasis', 'Lung nodule','Lung opacity', 'Pulmonary fibrotic sequela', 'Pleural effusion', 'Mosaic attenuation pattern','Peribronchial thickening', 'Consolidation', 'Bronchiectasis','Interlobular septal thickening']
                     for i in tqdm.tqdm(range(len(self.ds))):
-                        valid_data, text, onehotlabels, acc_name, nii_file = next(self.dl_iter)
+                        valid_data, text, onehotlabels, acc_name, instance_name, nii_file = next(self.dl_iter)
 
                         plotdir = self.result_folder_txt
                         Path(plotdir).mkdir(parents=True, exist_ok=True)
 
                         predictedlabels=[]
                         onehotlabels_append=[]
-
                         for pathology in pathologies:
                             text = [f"{pathology} is present.", f"{pathology} is not present."]
                             text_tokens=self.tokenizer(
                                             text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
 
-                            output = model(text_tokens, valid_data.cuda(),  device=device)
+                            output = model(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
 
                             output = apply_softmax(output)
 
@@ -303,7 +304,6 @@ class CTClipInference(nn.Module):
                         for item in accession_names:
                             file.write(item + "\n")
 
-
                     dfs=evaluate_internal(predictedall,realall,pathologies, plotdir)
 
                     writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
@@ -314,9 +314,6 @@ class CTClipInference(nn.Module):
         self.steps += 1
         return logs
 
-
-
-
     def infer(self, log_fn=noop):
         device = next(self.CTClip.parameters()).device
         device=torch.device('cuda')
@@ -325,3 +322,32 @@ class CTClipInference(nn.Module):
             log_fn(logs)
 
         self.print('Inference complete')
+
+    def feature_extraction(self, directory, split='valid'):
+        device = self.device
+        with torch.no_grad():
+            self.CTClip.eval()
+            for i in tqdm.tqdm(range(len(self.ds))): #len(self.ds)
+                valid_data, text, _, _, instance_name, _ = next(self.dl_iter)
+
+                key = instance_name[0]
+                text_tokens=self.tokenizer(
+                                text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+                output = self.CTClip(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
+                text_feature, img_feature, _ = output
+                text_feature, img_feature = text_feature.cpu().numpy(), img_feature.cpu().numpy()
+                assert key not in self.image_features
+                assert key not in self.text_features
+                self.image_features[key] = img_feature
+                self.text_features[key] = text_feature
+        
+        # save the feature embeddings
+        saving_path = os.path.join(directory, split)
+        os.makedirs(saving_path, exist_ok=True)
+        torch.save(self.image_features, os.path.join(saving_path, 'image_features.pth'))
+        torch.save(self.text_features, os.path.join(saving_path, 'text_features.pth')) 
+
+        #test
+        # loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
+        # loaded_txt_features = torch.load(os.path.join(saving_path, 'text_features.pth'))
+        # print('verify now')

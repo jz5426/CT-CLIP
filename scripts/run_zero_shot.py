@@ -49,17 +49,46 @@ clip = CTCLIP(
 # )
 
 clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt")
+# clip.load("C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\models\\CT-CLIP_v2.pt")
 
-# 
 # '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid/'
-inference = CTClipInference(
+# inference = CTClipInference(
+#     clip,
+#     data_folder = "F:\\Chris\\dataset\\valid\\valid_preprocessed_ct",
+#     reports_file= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
+#     labels = "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\multi_abnormality_labels\\dataset_multi_abnormality_labels_valid_predicted_labels.csv",
+#     batch_size = 1,
+#     results_folder="inference_zeroshot\\",
+#     num_train_steps = 1,
+#     feature_extraction_mode = True # extract only the text and ct features only
+# )
+# inference.infer()
+
+# NOTE: to work on the WSL drive, do the sudo mount -t drvfs F: /mnt/f if the external drive has no content
+inference_valid = CTClipInference(
     clip,
-    data_folder = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/valid_preprocessed_ct',
+    data_folder = "/mnt/f/Chris/dataset/valid_preprocessed_ct",
     reports_file= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/dataset_radiology_text_reports_validation_reports.csv",
     labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
     batch_size = 1,
     results_folder="inference_zeroshot/",
     num_train_steps = 1,
+    feature_extraction_mode = True # extract only the text and ct features only
 )
 
-inference.infer()
+# inference_valid.infer()
+inference_valid.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'valid')
+
+inference_train = CTClipInference(
+    clip,
+    data_folder = "/mnt/f/Chris/dataset/train_preprocessed_ct",
+    reports_file= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv",
+    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv",
+    batch_size = 1,
+    results_folder="inference_zeroshot/",
+    num_train_steps = 1,
+    feature_extraction_mode = True # extract only the text and ct features only
+)
+
+# inference_train.infer()
+inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'train')

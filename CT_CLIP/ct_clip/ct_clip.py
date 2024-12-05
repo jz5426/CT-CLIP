@@ -779,12 +779,11 @@ class CTCLIP(nn.Module):
             image_latents_extra = self.to_visual_latent_extra(image_embeds)
             text_latents_extra, image_latents_extra = map(l2norm, (text_latents_extra, image_latents_extra))
 
-        # whether to early return latents
+        # whether to early return latents NOTE: without computing the loss
 
         if return_latents:
             if self.extra_latent_projection:
                 return text_latents, image_latents, text_latents_extra, image_latents_extra
-
             return text_latents, image_latents, enc_image_send
 
         # get temperature
