@@ -105,9 +105,13 @@ if __name__ == '__main__':
             )
             shutil.move(file_path, file_dir)
             tracking += 1
+        
+        # TODO: preprocess the downloaded files and save the corresponding xray
 
-        # get the file from the destination folder
-        inference_train = CTClipInference(
+        # TODO: remove the raw CT files and keep the xray files
+
+        # start to do feature extraction TODO: change the paths
+        inference = CTClipInference(
             clip,
             data_folder = "/mnt/f/Chris/dataset/train_preprocessed_ct",
             reports_file= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv",
@@ -118,14 +122,7 @@ if __name__ == '__main__':
             feature_extraction_mode = True # extract only the text and ct features only
         )
 
-        # feedforward to the model for feature extraction
+        # feature extraction save the features to the phe object TODO: change the paths
+        inference.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'train')
 
-        # add the embeddings
-
-        # save the corresponding xray
-
-        #save it periodically
-
-
-
-    print(f"Downloaded files are saved in {destination_folder}")
+    print("Finished")
