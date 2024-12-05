@@ -165,7 +165,7 @@ def evaluate_internal(y_pred, y_true, cxr_labels, plot_dir,
     num_classes = y_pred.shape[-1] # number of total labels
 
     dataframes = []
-    print(num_classes)
+    # print(num_classes)
     counter=0
     for i in range(num_classes):
 

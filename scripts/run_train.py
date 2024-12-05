@@ -151,10 +151,11 @@ def run(cfg):
         batch_size = 2,
         results_folder="./checkpoints",
         num_train_steps = 100001,
-        num_workers = 1,
+        num_workers = 1, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
     )
 
-    trainer.train()
+    # trainer.train()
+    trainer.train_by_epoch(250)
 
 if __name__ == '__main__':
     main()

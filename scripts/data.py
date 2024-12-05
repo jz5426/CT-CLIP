@@ -13,6 +13,7 @@ import torch.nn.functional as F
 import nibabel as nib
 import tqdm
 import SimpleITK as sitk
+import warnings
 
 def resize_array(array, current_spacing, target_spacing):
     """
@@ -259,7 +260,9 @@ class CTReportXRayDataset(CTReportDataset):
         """
         override the parent method
         """
-        img_data = torch.load(path)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            img_data = torch.load(path)
         return img_data
 
     def xray_mha_to_rgb(self, path, transform):

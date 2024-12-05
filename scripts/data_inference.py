@@ -14,8 +14,10 @@ import tqdm
 import nibabel as nib
 import SimpleITK as sitk
 import matplotlib.pyplot as plt
-
+import warnings
 from data import resize_array
+
+
 class CTReportDatasetinfer(Dataset):
     def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False):
         self.data_folder = data_folder
@@ -88,7 +90,9 @@ class CTReportDatasetinfer(Dataset):
         """
         path: this should be the path for the processed data instead of the original data
         """
-        img_data = torch.load(path)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            img_data = torch.load(path)
 
         return img_data
 
