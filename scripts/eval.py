@@ -184,8 +184,8 @@ def evaluate_internal(y_pred, y_true, cxr_labels, plot_dir,
 
         ''' ROC CURVE '''
         roc_name = cxr_label + ' ROC Curve'
-        print(y_pred_i.shape)
-        print(y_true_i.shape)
+        # print(y_pred_i.shape)
+        # print(y_true_i.shape)
         fpr, tpr, thresholds, roc_auc = plot_roc(y_pred_i, y_true_i, roc_name, plot_dir, plot=False)
         df = pd.DataFrame([roc_auc], columns=[cxr_label+'_auc'])
         dataframes.append(df)

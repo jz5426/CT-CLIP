@@ -16,7 +16,7 @@ from ct_clip.mlm import MLM
 from ct_clip.visual_ssl import SimSiam, SimCLR
 
 from transformers import BertTokenizer, BertModel
-
+import warnings
 # helper functions
 
 def identity(t, *args, **kwargs):
@@ -592,6 +592,7 @@ class CTCLIP(nn.Module):
         return super().load_state_dict(*args, **kwargs)
 
     def load(self, path):
+        warnings.filterwarnings('ignore')
         path = Path(path)
         assert path.exists()
         pt = torch.load(str(path))
@@ -1124,11 +1125,12 @@ class CTCLIPwithXray(nn.Module):
         return loss
 
     def load(self, ctclip_path, cxr_path):
+        warnings.filterwarnings('ignore')
         # load the pretrained model for the ctclip
         self.CTCLIP.load(ctclip_path)
-        print('     finished loading the checkpoint for ct clip encoders')
+        print('    finished loading the checkpoint for ct clip encoders')
 
         # load the pretrained model for cxrclip
         ckpt = torch.load(cxr_path, map_location="cpu")
         self.xray_encoder.load_state_dict(ckpt["model"], strict=False)
-        print('     finished loading the checkpoint for xray encoder')
+        print('    finished loading the checkpoint for xray encoder')
