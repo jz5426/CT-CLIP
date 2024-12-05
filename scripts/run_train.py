@@ -11,7 +11,8 @@ from CTCLIPTrainer import CTClipTrainer
 
 @hydra.main(
         version_base=None,
-        config_path="C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\configs",
+        # config_path="C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\configs",
+        config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/configs",
         config_name="train")
 def main(cfg: DictConfig):
 
@@ -100,8 +101,11 @@ def run(cfg):
 
     # NOTE: load the pretrained backbones
     ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar'
-    clip_xray.load("C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\CT-CLIP_v2.pt",
-                "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\cxr_clip\\{}".format(ckpt_name))
+    # clip_xray.load("C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\CT-CLIP_v2.pt",
+    #             "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\cxr_clip\\{}".format(ckpt_name))
+
+    clip_xray.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt",
+                "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
 
     """
     TODO: load the checkpoint for ct-clip (DONE)
@@ -118,18 +122,34 @@ def run(cfg):
     TODO: brainstorm different approachs for the contrastive learning function.
     """
 
+    # trainer = CTClipTrainer(
+    #     clip_xray,
+    #     cfg=cfg,
+    #     reports_file_train= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
+    #     reports_file_valid= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
+    #     data_train= "G:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
+    #     data_valid = "G:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
+    #     data_xray_train="G:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
+    #     data_xray_valid="G:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
+    #     labels = "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\multi_abnormality_labels\\dataset_multi_abnormality_labels_valid_predicted_labels.csv",
+    #     batch_size = 2,
+    #     results_folder=".\\test",
+    #     num_train_steps = 100001,
+    #     num_workers = 1,
+    # )
+
     trainer = CTClipTrainer(
         clip_xray,
         cfg=cfg,
-        reports_file_train= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
-        reports_file_valid= "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\radiology_text_reports\\dataset_radiology_text_reports_validation_reports.csv",
-        data_train= "G:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
-        data_valid = "G:\\Chris\\dataset_preprocessed\\valid_preprocessed_ct",
-        data_xray_train="G:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
-        data_xray_valid="G:\\Chris\\dataset_preprocessed\\valid_preprocessed_xray",
-        labels = "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\multi_abnormality_labels\\dataset_multi_abnormality_labels_valid_predicted_labels.csv",
+        reports_file_train= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv",
+        reports_file_valid= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/dataset_radiology_text_reports_validation_reports.csv",
+        data_train= "/mnt/f/Chris/dataset/train_preprocessed_ct",
+        data_valid = "/mnt/f/Chris/dataset/valid_preprocessed_ct",
+        data_xray_train="/mnt/f/Chris/dataset/train_preprocessed_xray_mha",
+        data_xray_valid="/mnt/f/Chris/dataset/valid_preprocessed_xray_mha",
+        labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
         batch_size = 2,
-        results_folder=".\\test",
+        results_folder="./checkpoints",
         num_train_steps = 100001,
         num_workers = 1,
     )

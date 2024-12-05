@@ -1127,12 +1127,8 @@ class CTCLIPwithXray(nn.Module):
         # load the pretrained model for the ctclip
         self.CTCLIP.load(ctclip_path)
         print('     finished loading the checkpoint for ct clip encoders')
+
         # load the pretrained model for cxrclip
         ckpt = torch.load(cxr_path, map_location="cpu")
         self.xray_encoder.load_state_dict(ckpt["model"], strict=False)
         print('     finished loading the checkpoint for xray encoder')
-
-        # cxrclip_model = cxrclip_model.to(device)   
-        # if distributed:
-        #     cxrclip_model = DDP(cxrclip_model, device_ids=[device], find_unused_parameters=True) 
-

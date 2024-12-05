@@ -336,7 +336,7 @@ class CTClipInference(nn.Module):
         device = self.device
         with torch.no_grad():
             self.CTClip.eval()
-            for i in tqdm.tqdm(range(len(self.ds))): #len(self.ds)
+            for i in tqdm.tqdm(range(len(self.ds))):
                 valid_data, text, _, _, instance_name, _ = next(self.dl_iter)
 
                 # skip the forward pass if exists
@@ -344,13 +344,10 @@ class CTClipInference(nn.Module):
                 if key in self.image_features and key in self.text_features:
                     continue
 
-                text_tokens=self.tokenizer(
-                                text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+                text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
                 output = self.CTClip(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
                 text_feature, img_feature, _ = output
                 text_feature, img_feature = text_feature.cpu().numpy(), img_feature.cpu().numpy()
-                assert key not in self.image_features
-                assert key not in self.text_features
                 self.image_features[key] = img_feature
                 self.text_features[key] = text_feature
         

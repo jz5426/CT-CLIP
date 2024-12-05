@@ -189,6 +189,7 @@ class CTReportXRayDataset(CTReportDataset):
     def __init__(self, data_folder, xray_data_folder, cfg, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
         self.xray_data_folder = xray_data_folder
         self.xray_paths = []
+        self.parent_folder = os.path.basename(data_folder)
         super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames)
         self.cfg = cfg
 
@@ -232,8 +233,8 @@ class CTReportXRayDataset(CTReportDataset):
                     accession_number = path_dirs[-1]
                     accession_number = accession_number.replace(".pt", ".nii.gz")
 
-                    # corresponding xray file
-                    xray_file = os.sep.join(xray_path_dirs + path_dirs[path_dirs.index('valid_preprocessed_ct')+1:])
+                    # corresponding xray file => xray parent directory + the remaining path that reach the instance
+                    xray_file = os.sep.join(xray_path_dirs + path_dirs[path_dirs.index(self.parent_folder)+1:])
                     xray_file = xray_file.replace('.pt', '.mha')
                     if accession_number not in self.accession_to_text:
                         continue
