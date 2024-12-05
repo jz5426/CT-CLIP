@@ -13,9 +13,8 @@ from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIP
 # from zero_shot import CTClipInference
 import accelerate
+import preprocess_utils
 from zero_shot import CTClipInference
-
-from data_preprocess.utils import convert_ct_to_xray
 
 if __name__ == '__main__':
 
@@ -50,38 +49,36 @@ if __name__ == '__main__':
 
     clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt")
 
+    split = 'train'
 
     # perform feature extraction after download 100 of them
     feature_extraction_frequency = 1000
 
     repo_id = "ibrahimhamamci/CT-RATE"
-
-    # folder_path = "dataset/valid"
-    folder_path = "dataset/train"
+    folder_path = "dataset/{}".format(split)
 
     # List all files in the repository
     all_files = list_repo_files(repo_id, repo_type="dataset")
 
-    # Filter files in the 'valid' folder
+    # Filter files in the folder
     files = [f for f in all_files if f.startswith(folder_path)]
 
-    # print(f"Files in the 'valid' folder: {valid_files}")
-    print(f"Files in the 'train' folder: {files}")
+    print(f"Files in the '{split}' folder: {files}")
+    total_files = len(files)
 
-    destination_folder = 'F:\\Chris\\CT-RATE'
+    destination_folder = os.path.normpath('/mnt/f/Chris/CT-RATE-temp')
     os.makedirs(destination_folder, exist_ok=True)
 
+    counter = 1
+    with tqdm(total=total_files) as pbar:
+        while counter < total_files and counter % feature_extraction_frequency != 0:
+            file = files[counter]
 
-    tracking = 1
-    for file in tqdm(files): # only download 1000 files (500MB x 1000) otherwise too large
-
-        while tracking <= feature_extraction_frequency:
             # Extract the filename from the path
             filename = os.path.basename(file)
             dir_path = os.path.dirname(file)
             
             # Normalize each component to use consistent separators
-            destination_folder = os.path.normpath(destination_folder)
             dir_path = os.path.normpath(dir_path)
             
             # Ensure the destination directory exists
@@ -91,7 +88,7 @@ if __name__ == '__main__':
             # Move the downloaded file to the destination folder
             file_dir = os.path.join(destination_dir, filename)
 
-            #NOTE prevent repeated download.
+            #NOTE: prevent repeated download.
             if os.path.exists(file_dir):
                 continue
 
@@ -104,25 +101,33 @@ if __name__ == '__main__':
                 token='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' # Ensure your token is set in the huggingface
             )
             shutil.move(file_path, file_dir)
-            tracking += 1
-        
-        # TODO: preprocess the downloaded files and save the corresponding xray
+            counter += 1
 
-        # TODO: remove the raw CT files and keep the xray files
+        # NOTE: preprocess the downloaded files and save the corresponding xray
+        raw_ct_path = os.path.join(destination_folder, 'dataset', f'{split}') # load the data for processing from here
+        processed_ct_dest = os.path.join(destination_folder, 'processed_dataset') # destination folder to hold the processed ct and xray files
+        preprocess_utils.process(nii_path=raw_ct_path, shared_dest=processed_ct_dest, split=split, num_workers=4)
 
-        # start to do feature extraction TODO: change the paths
+        # NOTE: remove the raw CT files and keep the xray files
+        shutil.rmtree(raw_ct_path)
+
+        # start to do feature extraction
+        processed_ct_directory = os.path.join(processed_ct_dest, f"{split}_preprocessed_ct")
         inference = CTClipInference(
             clip,
-            data_folder = "/mnt/f/Chris/dataset/train_preprocessed_ct",
-            reports_file= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv",
-            labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv",
+            data_folder = processed_ct_directory,
+            reports_file = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv",
+            labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
             batch_size = 1,
             results_folder="inference_zeroshot/",
             num_train_steps = 1,
             feature_extraction_mode = True # extract only the text and ct features only
         )
 
-        # feature extraction save the features to the phe object TODO: change the paths
-        inference.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'train')
+        # feature extraction save the features to the phe object
+        inference.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', f'{split}')
 
+        #NOTE: remove the preprocessed ct files ONLY
+        shutil.rmtree(processed_ct_directory)
+        
     print("Finished")
