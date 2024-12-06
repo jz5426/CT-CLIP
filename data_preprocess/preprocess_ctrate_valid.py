@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     df = pd.read_csv("dataset_metadata_validation_metadata.csv") #select the metadata
 
-    num_workers = 18  # Number of worker processes
+    num_workers = 8  # Number of worker processes
 
     # Process files using multiprocessing with tqdm progress bar
     with Pool(num_workers) as pool:

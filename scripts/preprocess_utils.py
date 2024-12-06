@@ -10,6 +10,7 @@ import SimpleITK as sitk
 from PIL import Image
 from functools import partial
 import shutil
+import math
 
 
 def read_nii_files(directory):
@@ -42,7 +43,7 @@ def read_nii_data(file_path):
     try:
         nii_img = nib.load(file_path)
         nii_data = nii_img.get_fdata()
-        return nii_data
+        return nii_data, nii_img
     except Exception as e:
         print(f"Error reading file {file_path}: {e}")
         return None
@@ -105,8 +106,7 @@ def convert_ct_to_xray(file_path, df, split='train', shared_dst_dir='F:\\Chris\\
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
 
     try:
-
-        img_data = read_nii_data(file_path)
+        img_data, _ = read_nii_data(file_path)
         if img_data is None:
             print(f"Read {file_path} unsuccessful. Passing")
             return
@@ -116,6 +116,8 @@ def convert_ct_to_xray(file_path, df, split='train', shared_dst_dir='F:\\Chris\\
         intercept = float(row["RescaleIntercept"].iloc[0])
         xy_spacing = float(row["XYSpacing"].iloc[0][1:][:-2].split(",")[0])
         z_spacing = float(row["ZSpacing"].iloc[0])
+        if math.isnan(z_spacing):
+            z_spacing = xy_spacing
 
         # Define the target spacing values
         target_x_spacing = 0.75
