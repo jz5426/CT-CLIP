@@ -9,7 +9,6 @@ from tqdm import tqdm
 import SimpleITK as sitk
 from PIL import Image
 from functools import partial
-import shutil
 import math
 
 
@@ -73,7 +72,7 @@ def resize_array(array, current_spacing, target_spacing):
     return resized_array
 
 
-def convert_ct_to_xray(file_path, df, split='train', shared_dst_dir='F:\\Chris\\dataset_temp'):
+def convert_ct_to_xray(file_path, split='train', shared_dst_dir='F:\\Chris\\dataset_temp'):
     """
     Process a single NIfTI file.
 
@@ -83,6 +82,8 @@ def convert_ct_to_xray(file_path, df, split='train', shared_dst_dir='F:\\Chris\\
     Returns:
     None
     """
+    df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv') if split == 'valid' \
+        else pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
     original_file_name = os.path.basename(file_path)
     file_name = os.path.basename(file_path)
@@ -220,7 +221,7 @@ def convert_ct_to_xray(file_path, df, split='train', shared_dst_dir='F:\\Chris\\
 
         # save the xray image as .png image
         rgb_image.save(xray_rgb_save_path)
-
+        
         return
     except:
         with open('./defect_ct.txt', 'a') as file:
@@ -231,17 +232,8 @@ def process(nii_path, shared_dest, split, num_workers=8):
     assert split in ['train', 'valid']
     nii_files = read_nii_files(nii_path)
 
-    # get the df
-    df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv') if split == 'valid' \
-        else pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
-
-    size = len(nii_files)
-    for k, file in enumerate(nii_files):
-        if k % 2 == 0:
-            print(f'    processing raw CT {k}/{size}')
-        convert_ct_to_xray(file, df, split, shared_dest)
-
     # # Process files using multiprocessing with tqdm progress bar
-    # with Pool(num_workers) as pool:
-    #     func_with_arg = partial(convert_ct_to_xray, df=df, split=split, shared_dst_dir=shared_dest)
-    #     list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
+    with Pool(num_workers) as pool:
+        func_with_arg = partial(convert_ct_to_xray, split=split, shared_dst_dir=shared_dest)
+        list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
+        pool.close()

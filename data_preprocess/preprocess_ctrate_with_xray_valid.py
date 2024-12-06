@@ -8,6 +8,7 @@ from multiprocessing import Pool
 from tqdm import tqdm
 import SimpleITK as sitk
 from PIL import Image
+import math
 
 # "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
 df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv') #select the metadata
@@ -119,7 +120,8 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     intercept = float(row["RescaleIntercept"].iloc[0])
     xy_spacing = float(row["XYSpacing"].iloc[0][1:][:-2].split(",")[0])
     z_spacing = float(row["ZSpacing"].iloc[0])
-
+    if math.isnan(z_spacing):
+        z_spacing = xy_spacing
     # Define the target spacing values
     target_x_spacing = 0.75
     target_y_spacing = 0.75

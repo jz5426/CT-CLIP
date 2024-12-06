@@ -11,13 +11,12 @@ import torch
 from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIP
-# from zero_shot import CTClipInference
-import accelerate
 import preprocess_utils
 from zero_shot import CTClipInference
 from pathlib import Path
 from functools import partial
 from multiprocessing import Pool
+import multiprocessing
 
 def download_and_move(file, destination_folder, repo_id):
     # Extract the filename from the path
@@ -51,15 +50,46 @@ def parallel_download(batch, destination_folder, repo_id, num_workers=8):
     with Pool(num_workers) as pool:
         # Prepare the partial function with fixed arguments
         func_with_args = partial(download_and_move, destination_folder=destination_folder, repo_id=repo_id)
-
         # Process the files in parallel with a progress bar
         list(tqdm(pool.imap_unordered(func_with_args, batch), total=len(batch)))
+        pool.close()
 
 if __name__ == '__main__':
+    multiprocessing.set_start_method('spawn')
+    split = 'train'
+
+    # perform feature extraction after download 100 of them
+    feature_extraction_frequency = 4
+
+    repo_id = "ibrahimhamamci/CT-RATE"
+    folder_path = "dataset/{}".format(split)
+
+    # List all files in the repository
+    all_files = list_repo_files(repo_id, repo_type="dataset")
+
+    # Filter files in the folder
+    files = [f for f in all_files if f.startswith(folder_path)]
+
+    # Filter out the files that are already processed previously
+    saving_path = os.path.join('/mnt/f/Chris/dataset/features_embeddings', split)
+    img_feature_path = os.path.join(saving_path, 'image_features.pth')
+    text_feature_path = os.path.join(saving_path, 'text_features.pth')
+    if os.path.exists(img_feature_path):
+        image_features = torch.load(img_feature_path)
+    if os.path.exists(text_feature_path):
+        text_features = torch.load(text_feature_path)
+    assert text_features.keys() == image_features.keys()
+    keys = set(text_features.keys())
+    files = [f for f in files if Path(Path(f).stem).stem not in keys] # nested path.stem due to .nii.gz, each remove one extension
+
+    print(f"Files in the '{split}' folder: {len(files)}")
+    total_files = 8 #len(files)
+
+    destination_folder = os.path.normpath('/mnt/f/Chris/CT-RATE-temp')
+    os.makedirs(destination_folder, exist_ok=True)
 
     tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
     text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
-
     text_encoder.resize_token_embeddings(len(tokenizer))
 
     image_encoder = CTViT(
@@ -88,38 +118,6 @@ if __name__ == '__main__':
 
     clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt")
 
-    split = 'train'
-
-    # perform feature extraction after download 100 of them
-    feature_extraction_frequency = 10
-
-    repo_id = "ibrahimhamamci/CT-RATE"
-    folder_path = "dataset/{}".format(split)
-
-    # List all files in the repository
-    all_files = list_repo_files(repo_id, repo_type="dataset")
-
-    # Filter files in the folder
-    files = [f for f in all_files if f.startswith(folder_path)]
-
-    # Filter out the files that are already processed previously
-    saving_path = os.path.join('/mnt/f/Chris/dataset/features_embeddings', split)
-    img_feature_path = os.path.join(saving_path, 'image_features.pth')
-    text_feature_path = os.path.join(saving_path, 'text_features.pth')
-    if os.path.exists(img_feature_path):
-        image_features = torch.load(img_feature_path)
-    if os.path.exists(text_feature_path):
-        text_features = torch.load(text_feature_path)
-    assert text_features.keys() == image_features.keys()
-    keys = set(text_features.keys())
-    files = [f for f in files if Path(Path(f).stem).stem not in keys] # nested path.stem due to .nii.gz, each remove one extension
-
-    print(f"Files in the '{split}' folder: {len(files)}")
-    total_files = 20 #len(files)
-
-    destination_folder = os.path.normpath('/mnt/f/Chris/CT-RATE-temp')
-    os.makedirs(destination_folder, exist_ok=True)
-
     for i in tqdm(range(0, total_files, feature_extraction_frequency)):
         batch = files[i:i + feature_extraction_frequency]
         print('    downloading files\n')
@@ -142,7 +140,7 @@ if __name__ == '__main__':
             data_folder = processed_ct_directory,
             reports_file = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv",
             labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
-            batch_size = 1,
+            batch_size = 4,
             results_folder="inference_zeroshot/",
             num_train_steps = 1,
             feature_extraction_mode = True # extract only the text and ct features only
@@ -150,10 +148,11 @@ if __name__ == '__main__':
 
         # feature extraction save the features to the phe object
         print('    performing feature extraction\n')
-        inference.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', f'{split}')
+        inference.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', f'{split}', append=False)
 
-        #NOTE: remove the preprocessed ct files ONLY
+        # #NOTE: remove the preprocessed ct files ONLY
         print('    removing processed ct files\n')
         shutil.rmtree(processed_ct_directory)
         
     print("Finished")
+    # process(nii_path='/mnt/f/Chris/CT-RATE-temp/dataset/train', shared_dest='/mnt/f/Chris/CT-RATE-temp/processed_dataset', split='train', num_workers=1)

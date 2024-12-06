@@ -8,9 +8,12 @@ from multiprocessing import Pool
 from tqdm import tqdm
 import SimpleITK as sitk
 from PIL import Image
+import math
+from functools import partial
 
 # "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
-df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\train_metadata.csv') #select the metadata
+# df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\train_metadata.csv') #select the metadata
+# df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
 
 def read_nii_files(directory):
@@ -72,7 +75,7 @@ def resize_array(array, current_spacing, target_spacing):
     resized_array = F.interpolate(array, size=new_shape, mode='trilinear', align_corners=False).cpu().numpy()
     return resized_array
 
-def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
+def process_file(file_path, shared_dst_dir): #'F:\\Chris\\dataset'
     """
     Process a single NIfTI file.
 
@@ -120,7 +123,8 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     intercept = float(row["RescaleIntercept"].iloc[0])
     xy_spacing = float(row["XYSpacing"].iloc[0][1:][:-2].split(",")[0])
     z_spacing = float(row["ZSpacing"].iloc[0])
-
+    if math.isnan(z_spacing):
+        z_spacing = xy_spacing
     # Define the target spacing values
     target_x_spacing = 0.75
     target_y_spacing = 0.75
@@ -223,11 +227,15 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
 # Example usage:
 if __name__ == "__main__":
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
-    split_to_preprocess = "F:\\Chris\\CT-RATE\\dataset\\train" #select the validation or test split
-    
+    # split_to_preprocess = "F:\\Chris\\CT-RATE\\dataset\\train" #select the validation or test split
+    split_to_preprocess = '/mnt/f/Chris/CT-RATE-temp/dataset/train' #select the validation or test split
+
     nii_files = read_nii_files(split_to_preprocess)
-    num_workers = 8  # Number of worker processes
+    num_workers = 1  # Number of worker processes
+
+    df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
     # Process files using multiprocessing with tqdm progress bar
     with Pool(num_workers) as pool:
-        list(tqdm(pool.imap(process_file, nii_files), total=len(nii_files)))
+        func_with_arg = partial(process_file, shared_dst_dir='/mnt/f/Chris/CT-RATE-temp/processed_dataset')
+        list(tqdm(pool.imap(func_with_arg, nii_files), total=len(nii_files)))
