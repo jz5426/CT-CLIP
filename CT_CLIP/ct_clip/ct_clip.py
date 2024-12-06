@@ -736,7 +736,7 @@ class CTCLIP(nn.Module):
         #print(enc_image.shape, flush=True)
         #enc_image = enc_image[:,0,:]
         #print(enc_image.shape, flush=True)
-        print("test all pooling")
+        # print("test all pooling")
     
         # make the feature of the ct image in vector form batch x (h w z c)
         enc_image = enc_image.view(enc_image.shape[0], -1) # global view for one image and we have batch number of images

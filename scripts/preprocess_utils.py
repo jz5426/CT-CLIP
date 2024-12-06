@@ -106,6 +106,7 @@ def convert_ct_to_xray(file_path, df, split='train', shared_dst_dir='F:\\Chris\\
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
 
     try:
+
         img_data, _ = read_nii_data(file_path)
         if img_data is None:
             print(f"Read {file_path} unsuccessful. Passing")
@@ -211,7 +212,8 @@ def convert_ct_to_xray(file_path, df, split='train', shared_dst_dir='F:\\Chris\\
 
         # save the ct image as a pt tensor
         torch.save(tensor, ct_save_path) # save as .pt file # np.savez(save_path, resized_array)
-        shutil.rmtree(file_path) #NOTE: remove the raw file after preprocessed the ct img
+        if os.path.exists(file_path):
+            os.remove(file_path)  # Remove the file
 
         # save the xray as a .mha image
         sitk.WriteImage(xray_image, xray_save_path)
@@ -219,9 +221,11 @@ def convert_ct_to_xray(file_path, df, split='train', shared_dst_dir='F:\\Chris\\
         # save the xray image as .png image
         rgb_image.save(xray_rgb_save_path)
 
+        return
     except:
         with open('./defect_ct.txt', 'a') as file:
             file.write(f'{original_file_name}\n')
+        return
 
 def process(nii_path, shared_dest, split, num_workers=8):
     assert split in ['train', 'valid']
@@ -231,13 +235,13 @@ def process(nii_path, shared_dest, split, num_workers=8):
     df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv') if split == 'valid' \
         else pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
-    # size = len(nii_files)
-    # for k, file in enumerate(nii_files):
-    #     if k % 10 == 0:
-    #         print(f'    processing raw CT {k}/{size}')
-    #     convert_ct_to_xray(file, df, split, shared_dest)
+    size = len(nii_files)
+    for k, file in enumerate(nii_files):
+        if k % 2 == 0:
+            print(f'    processing raw CT {k}/{size}')
+        convert_ct_to_xray(file, df, split, shared_dest)
 
-    # Process files using multiprocessing with tqdm progress bar
-    with Pool(num_workers) as pool:
-        func_with_arg = partial(convert_ct_to_xray, df=df, split=split, shared_dst_dir=shared_dest)
-        list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
+    # # Process files using multiprocessing with tqdm progress bar
+    # with Pool(num_workers) as pool:
+    #     func_with_arg = partial(convert_ct_to_xray, df=df, split=split, shared_dst_dir=shared_dest)
+    #     list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))

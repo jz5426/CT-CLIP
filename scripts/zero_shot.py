@@ -189,7 +189,7 @@ class CTClipInference(nn.Module):
         self.dl = DataLoader(
             self.ds,
             num_workers=1,
-            batch_size=1,
+            batch_size=batch_size,
             shuffle = True,
         )
         # prepare with accelerator
@@ -340,16 +340,20 @@ class CTClipInference(nn.Module):
                 valid_data, text, _, _, instance_name, _ = next(self.dl_iter)
 
                 # skip the forward pass if exists
-                key = instance_name[0]
-                if key in self.image_features and key in self.text_features:
+                instance_name = [key for key in instance_name if key not in self.image_features and key not in self.text_features]
+                if len(instance_name) == 0:
                     continue
 
+                # batch processing
                 text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
                 output = self.CTClip(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
                 text_feature, img_feature, _ = output
                 text_feature, img_feature = text_feature.cpu().numpy(), img_feature.cpu().numpy()
-                self.image_features[key] = img_feature
-                self.text_features[key] = text_feature
+
+                # assign the features inside the batch in the dict
+                for i, key in enumerate(instance_name):
+                    self.image_features[key] = img_feature[i, :]
+                    self.text_features[key] = text_feature[i, :]
         
         # save the feature embeddings
         os.makedirs(saving_path, exist_ok=True)
