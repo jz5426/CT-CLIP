@@ -55,7 +55,7 @@ def parallel_download(batch, destination_folder, repo_id, num_workers=8):
         pool.close()
 
 if __name__ == '__main__':
-    multiprocessing.set_start_method('spawn')
+    multiprocessing.set_start_method('spawn', force=True)
     split = 'train'
 
     # perform feature extraction after download 100 of them
@@ -121,13 +121,13 @@ if __name__ == '__main__':
     for i in tqdm(range(0, total_files, feature_extraction_frequency)):
         batch = files[i:i + feature_extraction_frequency]
         print('    downloading files\n')
-        parallel_download(batch, destination_folder, repo_id, num_workers=8)
+        # parallel_download(batch, destination_folder, repo_id, num_workers=8)
 
         print('    processing raw ct files\n')
         # NOTE: preprocess the downloaded files and save the corresponding xray
         raw_ct_path = os.path.join(destination_folder, 'dataset', f'{split}') # load the data for processing from here
         processed_ct_dest = os.path.join(destination_folder, 'processed_dataset') # destination folder to hold the processed ct and xray files
-        preprocess_utils.process(nii_path=raw_ct_path, shared_dest=processed_ct_dest, split=split, num_workers=8)
+        preprocess_utils.process(nii_path=raw_ct_path, shared_dest=processed_ct_dest, split=split, num_workers=4)
 
         # NOTE: remove the raw CT files and keep the xray files
         print('    removing raw ct files\n')
@@ -153,6 +153,7 @@ if __name__ == '__main__':
         # #NOTE: remove the preprocessed ct files ONLY
         print('    removing processed ct files\n')
         shutil.rmtree(processed_ct_directory)
+        break
         
     print("Finished")
     # process(nii_path='/mnt/f/Chris/CT-RATE-temp/dataset/train', shared_dest='/mnt/f/Chris/CT-RATE-temp/processed_dataset', split='train', num_workers=1)
