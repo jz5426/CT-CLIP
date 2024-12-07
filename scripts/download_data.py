@@ -96,7 +96,7 @@ if __name__ == '__main__':
     split = 'train'
 
     # perform feature extraction after download 100 of them
-    feature_extraction_frequency = 5000
+    feature_extraction_frequency = 500
 
     repo_id = "ibrahimhamamci/CT-RATE"
     folder_path = "dataset/{}".format(split)
