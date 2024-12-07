@@ -237,6 +237,7 @@ if __name__ == "__main__":
     # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
     # Process files using multiprocessing with tqdm progress bar
+    # F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset
     with Pool(num_workers) as pool:
         func_with_arg = partial(process_file, shared_dst_dir='/mnt/f/Chris/CT-RATE-temp/processed_dataset')
         list(tqdm(pool.imap(func_with_arg, nii_files), total=len(nii_files)))
