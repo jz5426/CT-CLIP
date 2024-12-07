@@ -383,9 +383,9 @@ if __name__ == "__main__":
     # Process files using multiprocessing with tqdm progress bar
     # F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset
     # '/mnt/f/Chris/CT-RATE-temp/processed_dataset'
-    # with Pool(num_workers) as pool:
-    #     func_with_arg = partial(process_file, split=split, shared_dst_dir='F:\\Chris\\CT-RATE-temp\\processed_dataset')
-    #     list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
+    with Pool(num_workers) as pool:
+        func_with_arg = partial(process_file, split=split, shared_dst_dir='F:\\Chris\\CT-RATE-temp\\processed_dataset')
+        list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
 
     print('    removing raw ct files\n')
     shutil.rmtree(raw_ct_dir)
