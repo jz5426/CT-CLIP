@@ -121,7 +121,7 @@ if __name__ == '__main__':
     for i in tqdm(range(0, total_files, feature_extraction_frequency)):
         batch = files[i:i + feature_extraction_frequency]
         print('    downloading files\n')
-        # parallel_download(batch, destination_folder, repo_id, num_workers=8)
+        parallel_download(batch, destination_folder, repo_id, num_workers=8)
 
         print('    processing raw ct files\n')
         # NOTE: preprocess the downloaded files and save the corresponding xray
