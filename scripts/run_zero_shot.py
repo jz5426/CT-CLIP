@@ -80,6 +80,7 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 # # inference_valid.infer()
 # inference_valid.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'valid')
 
+#NOTE: run it from WSL instead of windows
 processed_ct_dir = "/mnt/f/Chris/CT-RATE-temp/processed_dataset/train_preprocessed_ct"
 inference_train = CTClipInference(
     clip,
