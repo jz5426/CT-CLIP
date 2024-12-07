@@ -4,6 +4,7 @@ from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIP
 from zero_shot import CTClipInference
 import accelerate
+import shutil
 
 tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
 text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
@@ -79,9 +80,10 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 # # inference_valid.infer()
 # inference_valid.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'valid')
 
+ct_dir = "/mnt/f/Chris/CT-RATE-temp/processed_dataset/train_preprocessed_ct"
 inference_train = CTClipInference(
     clip,
-    data_folder = "/mnt/f/Chris/CT-RATE-temp/processed_dataset/train_preprocessed_ct", # "/mnt/f/Chris/dataset/train_preprocessed_ct",
+    data_folder = ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
     reports_file= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv",
     labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv",
     batch_size = 4,
@@ -93,6 +95,8 @@ inference_train = CTClipInference(
 # inference_train.infer()
 inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'train')
 
+print('    removing processed ct files\n')
+shutil.rmtree(ct_dir)
 """
 TODO: update the .ph object if exists (DONE)
 TODO: train in epochs instead of iterations (DONE)
