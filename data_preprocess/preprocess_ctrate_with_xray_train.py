@@ -108,8 +108,7 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
 
     try:
-
-        img_data, _ = read_nii_data(file_path)
+        img_data = read_nii_data(file_path)
         if img_data is None:
             print(f"Read {file_path} unsuccessful. Passing")
             return
@@ -377,16 +376,16 @@ if __name__ == "__main__":
     # split_to_preprocess = '/mnt/f/Chris/CT-RATE-temp/dataset/train' #select the validation or test split
 
     nii_files = read_nii_files(raw_ct_dir)
-    num_workers = 16  # Number of worker processes
+    num_workers = 8  # Number of worker processes
 
     # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
     # Process files using multiprocessing with tqdm progress bar
     # F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset
     # '/mnt/f/Chris/CT-RATE-temp/processed_dataset'
-    with Pool(num_workers) as pool:
-        func_with_arg = partial(process_file, split=split, shared_dst_dir='F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset')
-        list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
+    # with Pool(num_workers) as pool:
+    #     func_with_arg = partial(process_file, split=split, shared_dst_dir='F:\\Chris\\CT-RATE-temp\\processed_dataset')
+    #     list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
 
     print('    removing raw ct files\n')
     shutil.rmtree(raw_ct_dir)

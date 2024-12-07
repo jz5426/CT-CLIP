@@ -55,11 +55,11 @@ def parallel_download(batch, destination_folder, repo_id, num_workers=8):
         pool.close()
 
 if __name__ == '__main__':
-    multiprocessing.set_start_method('spawn', force=True)
+    # multiprocessing.set_start_method('spawn', force=True)
     split = 'train'
 
     # perform feature extraction after download 100 of them
-    feature_extraction_frequency = 2000
+    feature_extraction_frequency = 100
 
     repo_id = "ibrahimhamamci/CT-RATE"
     folder_path = "dataset/{}".format(split)
@@ -83,46 +83,46 @@ if __name__ == '__main__':
     files = [f for f in files if Path(Path(f).stem).stem not in keys] # nested path.stem due to .nii.gz, each remove one extension
 
     print(f"Files in the '{split}' folder: {len(files)}")
-    total_files = len(files)
+    total_files = feature_extraction_frequency# len(files)
 
     destination_folder = os.path.normpath('/mnt/f/Chris/CT-RATE-temp')
     os.makedirs(destination_folder, exist_ok=True)
 
-    tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
-    text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
-    text_encoder.resize_token_embeddings(len(tokenizer))
+    # tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
+    # text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
+    # text_encoder.resize_token_embeddings(len(tokenizer))
 
-    image_encoder = CTViT(
-        dim = 512,
-        codebook_size = 8192,
-        image_size = 480,
-        patch_size = 20,
-        temporal_patch_size = 10,
-        spatial_depth = 4,
-        temporal_depth = 4,
-        dim_head = 32,
-        heads = 8
-    )
+    # image_encoder = CTViT(
+    #     dim = 512,
+    #     codebook_size = 8192,
+    #     image_size = 480,
+    #     patch_size = 20,
+    #     temporal_patch_size = 10,
+    #     spatial_depth = 4,
+    #     temporal_depth = 4,
+    #     dim_head = 32,
+    #     heads = 8
+    # )
 
-    clip = CTCLIP(
-        image_encoder = image_encoder,
-        text_encoder = text_encoder,
-        dim_image = 294912,
-        dim_text = 768,
-        dim_latent = 512,
-        extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
-        use_mlm=False,
-        downsample_image_embeds = False,
-        use_all_token_embeds = False
-    )
+    # clip = CTCLIP(
+    #     image_encoder = image_encoder,
+    #     text_encoder = text_encoder,
+    #     dim_image = 294912,
+    #     dim_text = 768,
+    #     dim_latent = 512,
+    #     extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+    #     use_mlm=False,
+    #     downsample_image_embeds = False,
+    #     use_all_token_embeds = False
+    # )
 
-    clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt")
+    # clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt")
 
     for i in tqdm(range(0, total_files, feature_extraction_frequency)):
         batch = files[i:i + feature_extraction_frequency]
         print('    downloading files\n')
-        parallel_download(batch, destination_folder, repo_id, num_workers=8)
-
+        parallel_download(batch, destination_folder, repo_id, num_workers=16)
+        break
         # print('    processing raw ct files\n')
         # # NOTE: preprocess the downloaded files and save the corresponding xray
         # raw_ct_path = os.path.join(destination_folder, 'dataset', f'{split}') # load the data for processing from here
