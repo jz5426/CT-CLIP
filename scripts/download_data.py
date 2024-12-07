@@ -127,4 +127,4 @@ if __name__ == '__main__':
 
     print('    downloading files\n')
     batch = files[:feature_extraction_frequency]
-    parallel_download(batch, destination_folder, repo_id, num_workers=8)
+    parallel_download(batch, destination_folder, repo_id, num_workers=16)
