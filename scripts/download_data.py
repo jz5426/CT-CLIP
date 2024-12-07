@@ -96,7 +96,7 @@ if __name__ == '__main__':
     split = 'train'
 
     # perform feature extraction after download 100 of them
-    feature_extraction_frequency = 2000
+    feature_extraction_frequency = 5000
 
     repo_id = "ibrahimhamamci/CT-RATE"
     folder_path = "dataset/{}".format(split)
@@ -124,3 +124,7 @@ if __name__ == '__main__':
 
     destination_folder = os.path.normpath('F:\\Chris\\CT-RATE-temp') # F:\\Chris\\CT-RATE-temp\\dataset\\train /mnt/f/Chris/CT-RATE-temp
     os.makedirs(destination_folder, exist_ok=True)
+
+    print('    downloading files\n')
+    batch = files[:feature_extraction_frequency]
+    parallel_download(batch, destination_folder, repo_id, num_workers=8)
