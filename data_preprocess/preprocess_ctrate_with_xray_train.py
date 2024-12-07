@@ -370,7 +370,7 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
 if __name__ == "__main__":
     #TODO: TRY IT ON WINNDOWS
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
-    split_to_preprocess = "F:\\Chris\\CT-RATE\\dataset\\train" #select the validation or test split
+    split_to_preprocess = "F:\\Chris\\CT-RATE-temp\\dataset\\train" #select the validation or test split
     # split_to_preprocess = '/mnt/f/Chris/CT-RATE-temp/dataset/train' #select the validation or test split
 
     nii_files = read_nii_files(split_to_preprocess)
