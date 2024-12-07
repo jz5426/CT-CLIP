@@ -370,8 +370,10 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
 # Example usage:
 if __name__ == "__main__":
     #TODO: TRY IT ON WINNDOWS
+    split = 'train'
+
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
-    raw_ct_dir = "F:\\Chris\\CT-RATE-temp\\dataset\\train" #select the validation or test split
+    raw_ct_dir = f"F:\\Chris\\CT-RATE-temp\\dataset\\{split}" #select the validation or test split
     # split_to_preprocess = '/mnt/f/Chris/CT-RATE-temp/dataset/train' #select the validation or test split
 
     nii_files = read_nii_files(raw_ct_dir)
@@ -383,7 +385,7 @@ if __name__ == "__main__":
     # F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset
     # '/mnt/f/Chris/CT-RATE-temp/processed_dataset'
     with Pool(num_workers) as pool:
-        func_with_arg = partial(process_file, split='train', shared_dst_dir='F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset')
+        func_with_arg = partial(process_file, split=split, shared_dst_dir='F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset')
         list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
 
     print('    removing raw ct files\n')
