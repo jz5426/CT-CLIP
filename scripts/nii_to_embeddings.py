@@ -123,37 +123,36 @@ if __name__ == '__main__':
         print('    downloading files\n')
         parallel_download(batch, destination_folder, repo_id, num_workers=8)
 
-        print('    processing raw ct files\n')
-        # NOTE: preprocess the downloaded files and save the corresponding xray
-        raw_ct_path = os.path.join(destination_folder, 'dataset', f'{split}') # load the data for processing from here
-        processed_ct_dest = os.path.join(destination_folder, 'processed_dataset') # destination folder to hold the processed ct and xray files
-        preprocess_utils.process(nii_path=raw_ct_path, shared_dest=processed_ct_dest, split=split, num_workers=4)
+        # print('    processing raw ct files\n')
+        # # NOTE: preprocess the downloaded files and save the corresponding xray
+        # raw_ct_path = os.path.join(destination_folder, 'dataset', f'{split}') # load the data for processing from here
+        # processed_ct_dest = os.path.join(destination_folder, 'processed_dataset') # destination folder to hold the processed ct and xray files
+        # preprocess_utils.process(nii_path=raw_ct_path, shared_dest=processed_ct_dest, split=split, num_workers=4)
 
-        # NOTE: remove the raw CT files and keep the xray files
-        print('    removing raw ct files\n')
-        shutil.rmtree(raw_ct_path)
+        # # NOTE: remove the raw CT files and keep the xray files
+        # print('    removing raw ct files\n')
+        # shutil.rmtree(raw_ct_path)
 
-        # start to do feature extraction
-        processed_ct_directory = os.path.join(processed_ct_dest, f"{split}_preprocessed_ct")
-        inference = CTClipInference(
-            clip,
-            data_folder = processed_ct_directory,
-            reports_file = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv",
-            labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
-            batch_size = 4,
-            results_folder="inference_zeroshot/",
-            num_train_steps = 1,
-            feature_extraction_mode = True # extract only the text and ct features only
-        )
+        # # start to do feature extraction
+        # processed_ct_directory = os.path.join(processed_ct_dest, f"{split}_preprocessed_ct")
+        # inference = CTClipInference(
+        #     clip,
+        #     data_folder = processed_ct_directory,
+        #     reports_file = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv",
+        #     labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
+        #     batch_size = 4,
+        #     results_folder="inference_zeroshot/",
+        #     num_train_steps = 1,
+        #     feature_extraction_mode = True # extract only the text and ct features only
+        # )
 
-        # feature extraction save the features to the phe object
-        print('    performing feature extraction\n')
-        inference.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', f'{split}', append=True)
+        # # feature extraction save the features to the phe object
+        # print('    performing feature extraction\n')
+        # inference.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', f'{split}', append=True)
 
-        # #NOTE: remove the preprocessed ct files ONLY
-        print('    removing processed ct files\n')
-        shutil.rmtree(processed_ct_directory)
-        break
+        # # #NOTE: remove the preprocessed ct files ONLY
+        # print('    removing processed ct files\n')
+        # shutil.rmtree(processed_ct_directory)
         
     print("Finished")
     # process(nii_path='/mnt/f/Chris/CT-RATE-temp/dataset/train', shared_dest='/mnt/f/Chris/CT-RATE-temp/processed_dataset', split='train', num_workers=1)
