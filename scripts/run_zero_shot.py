@@ -80,10 +80,10 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 # # inference_valid.infer()
 # inference_valid.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'valid')
 
-ct_dir = "/mnt/f/Chris/CT-RATE-temp/processed_dataset/train_preprocessed_ct"
+processed_ct_dir = "/mnt/f/Chris/CT-RATE-temp/processed_dataset/train_preprocessed_ct"
 inference_train = CTClipInference(
     clip,
-    data_folder = ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
+    data_folder = processed_ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
     reports_file= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv",
     labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv",
     batch_size = 4,
@@ -96,7 +96,7 @@ inference_train = CTClipInference(
 inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'train')
 
 print('    removing processed ct files\n')
-shutil.rmtree(ct_dir)
+shutil.rmtree(processed_ct_dir)
 """
 TODO: update the .ph object if exists (DONE)
 TODO: train in epochs instead of iterations (DONE)
