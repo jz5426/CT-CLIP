@@ -10,6 +10,7 @@ import SimpleITK as sitk
 from PIL import Image
 import math
 from functools import partial
+import shutil
 
 # "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
 df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\train_metadata.csv') #select the metadata
@@ -383,4 +384,8 @@ if __name__ == "__main__":
     # '/mnt/f/Chris/CT-RATE-temp/processed_dataset'
     with Pool(num_workers) as pool:
         func_with_arg = partial(process_file, split='train', shared_dst_dir='F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset')
-        list(tqdm(pool.imap(func_with_arg, nii_files), total=len(nii_files)))
+        list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
+
+    # print('    removing raw ct files\n')
+    # raw_ct_path = os.path.join('F:\\Chris\\dataset\\CT-RATE-temp', 'dataset', 'train') # load the data for processing from here
+    # shutil.rmtree(raw_ct_path)
