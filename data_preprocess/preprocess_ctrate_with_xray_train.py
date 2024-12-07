@@ -371,10 +371,10 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
 if __name__ == "__main__":
     #TODO: TRY IT ON WINNDOWS
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
-    split_to_preprocess = "F:\\Chris\\CT-RATE-temp\\dataset\\train" #select the validation or test split
+    raw_ct_dir = "F:\\Chris\\CT-RATE-temp\\dataset\\train" #select the validation or test split
     # split_to_preprocess = '/mnt/f/Chris/CT-RATE-temp/dataset/train' #select the validation or test split
 
-    nii_files = read_nii_files(split_to_preprocess)
+    nii_files = read_nii_files(raw_ct_dir)
     num_workers = 8  # Number of worker processes
 
     # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
@@ -386,6 +386,5 @@ if __name__ == "__main__":
         func_with_arg = partial(process_file, split='train', shared_dst_dir='F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset')
         list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
 
-    # print('    removing raw ct files\n')
-    # raw_ct_path = os.path.join('F:\\Chris\\dataset\\CT-RATE-temp', 'dataset', 'train') # load the data for processing from here
-    # shutil.rmtree(raw_ct_path)
+    print('    removing raw ct files\n')
+    shutil.rmtree(raw_ct_dir)
