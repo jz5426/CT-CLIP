@@ -75,7 +75,7 @@ def download_and_move(file, destination_folder, repo_id):
     file_path = hf_hub_download(
         repo_id=repo_id,
         filename=filename,
-        subfolder=dir_path,
+        subfolder=dir_path.replace('\\', '/'), # for problems in windows machine
         repo_type="dataset",
         cache_dir='F:\\cache', #'/mnt/f/cache', # must be placed in the same external hard drive for wsl to work for shutil.move operations
         token='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' # Ensure your token is set in the huggingface
