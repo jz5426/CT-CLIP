@@ -377,7 +377,7 @@ if __name__ == "__main__":
     # split_to_preprocess = '/mnt/f/Chris/CT-RATE-temp/dataset/train' #select the validation or test split
 
     nii_files = read_nii_files(raw_ct_dir)
-    num_workers = 8  # Number of worker processes
+    num_workers = 16  # Number of worker processes
 
     # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
