@@ -302,10 +302,12 @@ class CTReportXRayDataset(CTReportDataset):
         return rgb_image
 
     def __getitem__(self, index):
+        #TODO: replace the input_text and nii_file
         nii_file, input_text, xray_file = self.samples[index]
         video_tensor = self.nii_to_tensor(nii_file)
 
         xray_image = self.xray_to_rgb(xray_file)
+        # transformation borrowed from cxr_clip
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
 
         input_text = str(input_text)
@@ -315,4 +317,3 @@ class CTReportXRayDataset(CTReportDataset):
         input_text = input_text.replace(')', '')
 
         return video_tensor, input_text, xray_image
-    
