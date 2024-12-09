@@ -158,11 +158,13 @@ class CTClipTrainer(nn.Module):
         lr = 0.001, # 1.25e-6, suggested by ULIP
         wd = 0.,
         max_grad_norm = 0.5,
-        save_results_every = 1000, # TODO: should be 250 epochs
+        iteration_evaluate_frequency = 1000,
+        iteration_progress_frequency = 10,
+        save_results_every = 1000,
         save_model_every = 1000 ,
         results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
         num_workers = 8,
-        train_from_scratch = True,
+        train_from_scratch = True, # TODO: double check this!
         accelerate_kwargs: dict = dict()
     ):
         super().__init__()
@@ -238,6 +240,8 @@ class CTClipTrainer(nn.Module):
 
         self.save_model_every = save_model_every
         self.save_results_every = save_results_every
+        self.iteration_evaluate_frequency = iteration_evaluate_frequency
+        self.iteration_progress_frequency = iteration_progress_frequency
 
         self.results_folder = Path(results_folder)
 
@@ -450,7 +454,6 @@ class CTClipTrainer(nn.Module):
                     xray=xray.to(device)
                 else:
                     video, text = data
-                # print(video.shape)
                 
                 video=video.to(device)
                 text = list(text)
@@ -468,8 +471,13 @@ class CTClipTrainer(nn.Module):
                 self.optim.step()
 
                 # Print loss for every N batches (optional)
-                if (batch_idx + 1) % 10 == 0:
-                    print(f"Epoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}], Training Loss: {loss.item():.4f}")
+                if batch_idx % self.iteration_progress_frequency == 0:
+                    print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}], Training Loss: {loss.item():.4f}")
+                
+                # TODO: evaluate model based on iteration and save
+                if self.is_main and not (batch_idx % self.iteration_evaluate_frequency):
+                    print('Evaluate based on iterations')
+                    self.eval_on_validation_split(epoch, val_size, iteration=batch_idx)
 
                 # Accumulate loss
                 running_loss += loss.item()
@@ -478,114 +486,132 @@ class CTClipTrainer(nn.Module):
             epoch_loss = running_loss / train_size
             print(f"Epoch [{epoch+1}/{epochs}] completed with average training loss: {epoch_loss:.4f}")
 
-            # after training each epoch, test the model in the validation split
-            if self.is_main:
-                with torch.no_grad():
-                    model.eval()
-                    predictedall=[]
-                    realall=[]
-                    running_val_loss = 0
-                    for i in range(val_size): #NOTE: might need to change this to evaluate on the whole validation set.
-                        val_data = next(self.valid_dl_iter)
+            # run per-epoch validation and automatically save the model
+            self.eval_on_validation_split(epoch, val_size)
 
-                        if self.triplet_training:
-                            valid_data, text, onehotlabels, xray_image, _, _ = val_data
-                            xray_image = xray_image.to(device)
-                        else:
-                            valid_data, text, onehotlabels, _, _ = val_data
-
-                        valid_data = valid_data.to(device)
-
-                        report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-                        val_cl_loss, _ = model(report_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
-                        # Accumulate validation loss for this epochs
-                        running_val_loss += val_cl_loss.item()
-
-                        if "module" in model.__dict__:
-                            model = model.module
-
-                        pathologies = ['Medical material',
-                                        'Arterial wall calcification', 
-                                        'Cardiomegaly', 
-                                        'Pericardial effusion',
-                                        'Coronary artery wall calcification', 
-                                        'Hiatal hernia',
-                                        'Lymphadenopathy', 
-                                        'Emphysema', 
-                                        'Atelectasis', 
-                                        'Lung nodule',
-                                        'Lung opacity', 
-                                        'Pulmonary fibrotic sequela', 
-                                        'Pleural effusion', 
-                                        'Mosaic attenuation pattern',
-                                        'Peribronchial thickening', 
-                                        'Consolidation', 
-                                        'Bronchiectasis',
-                                        'Interlobular septal thickening']
-                        plotdir = str(self.results_folder / f'CTClip_{epoch}' )
-                        plotdir = plotdir + os.sep
-
-                        Path(plotdir).mkdir(parents=True, exist_ok=True)
-
-                        predictedlabels=[]
-                        for pathology in pathologies:
-                            text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
-                            text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-                            
-                            # this should be the logit score between the text and xray
-                            _, logits = model(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
-                            output = apply_softmax(logits)
-
-                            if output[0]>output[1]:
-                                predictedlabels.append(1) # 1 indicates has pathology in the one-hot label
-                            else:
-                                predictedlabels.append(0) # 0 indicates no pathnology in the one-hot label
-                        
-                        # append the pathology classifications for one validation image
-                        predictedall.append(predictedlabels)
-                        realall.append(onehotlabels.detach().cpu().numpy()[0])
-
-                    # Print and save classification report
-                    realall=np.array(realall)
-                    predictedall=np.array(predictedall)
-
-                    dfs=evaluate_internal(predictedall,realall,pathologies, plotdir)
-                    realall = np.rint(realall).astype(int)
-                    predictedall = np.rint(predictedall).astype(int)
-                    
-                    f1 = f1_score(realall, predictedall,average='micro')
-                    flat_acc = accuracy_score(realall.flatten(), predictedall.flatten())
-                    print('    Validation F1 Accuracy: {}; Validation Flat Accuracy: {}'.format(f1, flat_acc))
-                    # NOTE: high flat accuracy but low f1 accuracy indicates poor minority class performance
-                    writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
-
-                    dfs.to_excel(writer, sheet_name='Sheet1', index=False)
-                    writer.close()
-                    del output
-
-                    # save a model for each epoch
-                    self._save_ckpt(f'CTClip.{epoch}.pt', '')
-
-                    # save model based on contrastive loss on validation split
-                    epoch_val_loss = running_val_loss / val_size
-                    if self.best_val_loss > epoch_val_loss:
-                        self.best_val_loss = epoch_val_loss
-                        self._save_ckpt(epoch, 'CTClip.lowest_val_cl_loss.pt', 'best contrastive loss on validation split!!')
-
-                    # save model based on f1 metric
-                    if self.best_f1_val_acc < f1:
-                        self.best_f1_val_acc = f1
-                        self._save_ckpt(epoch, 'CTClip_best_f1_val.pt', 'best f1 accuracy achieved!!')
-                    
-                    # save model based on flat acc
-                    if self.best_flat_val_acc < flat_acc:
-                        self.best_flat_val_acc = flat_acc
-                        self._save_ckpt(epoch, 'CTClip_best_flat_acc_val.pt', 'best flat accuracy achieved!!')
-                
         print('Training by epochs complete\n')
 
-    def _save_ckpt(self, epoch, file_name, print_annotation):
+    def eval_on_validation_split(self, epoch, val_size, iteration=-1):
+        device = self.device
+        # after training each epoch, test the model in the validation split
+        if self.is_main:
+            with torch.no_grad():
+                model.eval()
+                predictedall=[]
+                realall=[]
+                running_val_loss = 0
+                for i in range(val_size): #NOTE: might need to change this to evaluate on the whole validation set.
+                    val_data = next(self.valid_dl_iter)
+
+                    if self.triplet_training:
+                        valid_data, text, onehotlabels, xray_image, _, _ = val_data
+                        xray_image = xray_image.to(device)
+                    else:
+                        valid_data, text, onehotlabels, _, _ = val_data
+
+                    valid_data = valid_data.to(device)
+
+                    report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+                    val_cl_loss, _ = model(report_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+                    # Accumulate validation loss for this epochs
+                    running_val_loss += val_cl_loss.item()
+
+                    if "module" in model.__dict__:
+                        model = model.module
+
+                    pathologies = ['Medical material',
+                                    'Arterial wall calcification', 
+                                    'Cardiomegaly', 
+                                    'Pericardial effusion',
+                                    'Coronary artery wall calcification', 
+                                    'Hiatal hernia',
+                                    'Lymphadenopathy', 
+                                    'Emphysema', 
+                                    'Atelectasis', 
+                                    'Lung nodule',
+                                    'Lung opacity', 
+                                    'Pulmonary fibrotic sequela', 
+                                    'Pleural effusion', 
+                                    'Mosaic attenuation pattern',
+                                    'Peribronchial thickening', 
+                                    'Consolidation', 
+                                    'Bronchiectasis',
+                                    'Interlobular septal thickening']
+                    plotdir = str(self.results_folder / f'CTClip_{epoch}' )
+                    plotdir = plotdir + os.sep
+
+                    Path(plotdir).mkdir(parents=True, exist_ok=True)
+
+                    predictedlabels=[]
+                    for pathology in pathologies:
+                        text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
+                        text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+                        
+                        # this should be the logit score between the text and xray
+                        _, logits = model(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+                        output = apply_softmax(logits)
+
+                        if output[0]>output[1]:
+                            predictedlabels.append(1) # 1 indicates has pathology in the one-hot label
+                        else:
+                            predictedlabels.append(0) # 0 indicates no pathnology in the one-hot label
+                    
+                    # append the pathology classifications for one validation image
+                    predictedall.append(predictedlabels)
+                    realall.append(onehotlabels.detach().cpu().numpy()[0])
+
+                # Print and save classification report
+                realall=np.array(realall)
+                predictedall=np.array(predictedall)
+
+                dfs=evaluate_internal(predictedall,realall,pathologies, plotdir)
+                realall = np.rint(realall).astype(int)
+                predictedall = np.rint(predictedall).astype(int)
+                
+                f1 = f1_score(realall, predictedall,average='micro')
+                flat_acc = accuracy_score(realall.flatten(), predictedall.flatten())
+                print('    Validation F1 Accuracy: {}; Validation Flat Accuracy: {}'.format(f1, flat_acc))
+                # NOTE: high flat accuracy but low f1 accuracy indicates poor minority class performance
+                writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
+
+                dfs.to_excel(writer, sheet_name='Sheet1', index=False)
+                writer.close()
+                del output
+
+                # save a model for each epoch
+                self._save_ckpt(f'CTClip.{epoch}.pt', '', iteration)
+
+                # save model based on contrastive loss on validation split
+                epoch_val_loss = running_val_loss / val_size
+                if self.best_val_loss > epoch_val_loss:
+                    self.best_val_loss = epoch_val_loss
+                    self._save_ckpt(epoch, 
+                                    'CTClip.lowest_val_cl_loss.pt', 
+                                    'best contrastive loss on validation split!!', 
+                                    iteration)
+
+                # save model based on f1 metric
+                if self.best_f1_val_acc < f1:
+                    self.best_f1_val_acc = f1
+                    self._save_ckpt(epoch, 
+                                    'CTClip_best_f1_val.pt', 
+                                    'best f1 accuracy achieved!!', 
+                                    iteration)
+                
+                # save model based on flat acc
+                if self.best_flat_val_acc < flat_acc:
+                    self.best_flat_val_acc = flat_acc
+                    self._save_ckpt(epoch, 
+                                    'CTClip_best_flat_acc_val.pt', 
+                                    'best flat accuracy achieved!!', 
+                                    iteration)
+            
+
+    def _save_ckpt(self, epoch, file_name, print_annotation, iteration=-1):
         model_path = str(self.results_folder / file_name)
         state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
         self.accelerator.save(state_dict, model_path)
-        print(f'    {epoch}: saving model to {str(self.results_folder)} -- {print_annotation}')
+        if iteration == -1:
+            print(f'    Epoch:{epoch}: saving model to {str(self.results_folder)} -- {print_annotation}')
+            return
+        print(f'    Epoch:{epoch} - iteration:{iteration}: saving model to {str(self.results_folder)} -- {print_annotation}')
