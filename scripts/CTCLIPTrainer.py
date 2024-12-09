@@ -564,10 +564,7 @@ class CTClipTrainer(nn.Module):
                     del output
 
                     # save a model for each epoch
-                    model_path = str(self.results_folder / f'CTClip.{epoch}.pt')
-                    state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
-                    self.accelerator.save(state_dict, model_path)
-                    print(f'    {epoch}: saving model to {str(self.results_folder)}')
+                    self._save_ckpt(f'CTClip.{epoch}.pt', '')
 
                     # save model based on contrastive loss on validation split
                     epoch_val_loss = running_val_loss / val_size
