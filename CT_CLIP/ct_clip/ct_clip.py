@@ -1006,6 +1006,8 @@ class CTCLIPwithXray(nn.Module):
             image,
             xray,
             device,
+            text_cl_weight = 1.0,
+            ct_cl_weight = 1.0,
             return_logit_and_loss = False,
             return_loss = False,
             return_encodings = False,
@@ -1088,7 +1090,7 @@ class CTCLIPwithXray(nn.Module):
         """
         cl_text_to_xray = self.cl_loss(text_latents, xray_latents, temp)
         cl_img_to_xray = self.cl_loss(image_latents, xray_latents, temp)
-        loss = cl_text_to_xray + cl_img_to_xray
+        loss = text_cl_weight*cl_text_to_xray + ct_cl_weight*cl_img_to_xray
       
         if return_logit_and_loss:
             return loss, logits.squeeze()
