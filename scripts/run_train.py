@@ -107,21 +107,6 @@ def run(cfg):
     clip_xray.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt",
                 "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
 
-    """
-    TODO: load the checkpoint for ct-clip (DONE)
-    TODO: load the checkpoint for cxr-clip (DONE)
-    TODO: tranformation config for cxr-clip (DONE)
-    TODO: look for the dimension output from the image encoder of the xray clip (DONE)
-    TODO: custom dataloader for triplet (DONE)
-    TODO: transformation of the input to the xray encoders (DONE)
-    TODO: rotate the volume/image so that it matches the respective encoder input orientation (DONE)
-    TODO: double check the orientation of the xray and the ct after processing. (DONE)
-    TODO: ULIP-style loss function integration for cxr-clip and ct-clip (DONE)
-    TODO: double check the number of trainable parameters before and after freeze the ctclip model (DONE)
-    TODO: check the performance when the xray encoder is initialized from scratch.
-    TODO: brainstorm different approachs for the contrastive learning function.
-    """
-
     # trainer = CTClipTrainer(
     #     clip_xray,
     #     cfg=cfg,
@@ -157,6 +142,11 @@ def run(cfg):
 
     # trainer.train() # train by iterations
     trainer.train_by_epoch(250)
+
+    """
+    TODO: check the performance when the xray encoder is initialized from scratch.
+    TODO: brainstorm different approachs for the contrastive learning function.
+    """
 
 if __name__ == '__main__':
     main()

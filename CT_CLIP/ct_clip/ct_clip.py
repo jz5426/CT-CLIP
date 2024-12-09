@@ -908,7 +908,7 @@ class CTCLIPwithXray(nn.Module):
             xray_model_type = 'swin', # any vit based
             dim_text = 512,
             dim_image = 512,
-            dim_xray = 512, #TODO: modifiy this
+            dim_xray = 512,
             dim_latent = 512,
             num_text_tokens = 28897,
             text_enc_depth = 6,
@@ -1019,9 +1019,6 @@ class CTCLIPwithXray(nn.Module):
             aug_image = None                # augmented image (for multiview)
     ):
         
-        #TODO: define a loss function that distill the knowledge from the CT to the xray
-            # check the losses.py in the ULIP paper of the sample implementation
-
         """
         NOTE: the following implementation mostly adapted from the parent class without 
                 multiview,

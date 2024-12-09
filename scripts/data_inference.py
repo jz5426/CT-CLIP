@@ -156,7 +156,6 @@ class CTReportDatasetinfer(Dataset):
     #     mean_projection_filter.SetProjectionDimension(1)
     #     xray_image = mean_projection_filter.Execute(ct_image)
     #     xray_array = sitk.GetArrayFromImage(xray_image)
-    #     #TODO: not sure why we need manual flipping here to match nii image for the frontal view
     #     xray_array = np.flip(np.squeeze(xray_array), axis=0)
         
     #     xray_image = sitk.GetImageFromArray(xray_array)
@@ -322,7 +321,7 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         # # Step 4: Ensure the tensor has the correct dtype
         # tensor_image = tensor_image.to(torch.float32)
         
-        # # Step 5: Normalize TODO: should be according to the cxr_clip, the inference version
+        # # Step 5: Normalize NOTE: should be according to the cxr_clip, the inference version
         # # tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
         
         # # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)

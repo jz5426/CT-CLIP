@@ -162,7 +162,7 @@ def convert_ct_to_xray(file_path, split='train', shared_dst_dir='F:\\Chris\\data
         mean_projection_filter.SetProjectionDimension(1)
         xray_image = mean_projection_filter.Execute(xray_image) # execute projection
 
-        #TODO: not sure why we need manual flipping here to match nii image for the frontal view
+        #NOTE: not sure why we need manual flipping here to match nii image for the frontal view
         xray_array = sitk.GetArrayFromImage(xray_image)
         # xray_array = np.flip(np.squeeze(xray_array), axis=0)
         xray_array = np.rot90(np.squeeze(xray_array)) # make the image upright but NOTE that it is flipped with respect to the y-axis

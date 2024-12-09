@@ -52,7 +52,6 @@ class HuggingfaceTextEncoder(nn.Module):
             if type(model_config).__name__ == "BertConfig":
                 self.text_encoder = BertModel(model_config)
             else:
-                # TODO: add text models if needed
                 raise NotImplementedError(f"Not support training from scratch : {type(model_config).__name__}")
 
         if gradient_checkpointing and self.text_encoder.supports_gradient_checkpointing:
@@ -90,7 +89,6 @@ class HuggingfaceImageEncoder(nn.Module):
             if type(model_config).__name__ == "ViTConfig":
                 self.image_encoder = ViTModel(model_config, add_pooling_layer=False)
             else:
-                # TODO: add vision models if needed
                 raise NotImplementedError(f"Not support training from scratch : {type(model_config).__name__}")
 
         if gradient_checkpointing and self.image_encoder.supports_gradient_checkpointing:
@@ -112,7 +110,6 @@ class ResNet50(nn.Module):
         if pretrained:
             self.resnet = resnet50(pretrained=True)
         else:
-            # TODO: add vision models if needed
             raise NotImplementedError(f"Not support training from scratch : {name}")
 
         self.out_dim = 2048

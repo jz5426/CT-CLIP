@@ -99,11 +99,6 @@ inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', '
 print('    removing processed ct files\n')
 shutil.rmtree(processed_ct_dir)
 """
-TODO: update the .ph object if exists (DONE)
-TODO: train in epochs instead of iterations (DONE)
-TODO: change the download script such that it is in the unit of patient instead of number of volumes
-        - which also should take into account the cases where the the volumes (via a path) already exists
-        - more efficiently, just write a a script that download the data and process it, and then save only the embeddings and the corresponding x-rays (TODO:)
 TODO: hyperparameters for the xray encoder with temperature 0.07
 TODO: batch based on patient/experiment/instance.
 """

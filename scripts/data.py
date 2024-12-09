@@ -224,6 +224,8 @@ class CTReportXRayDataset(CTReportDataset):
         assume the files inside the path are preprocessed and saved in as .pt object from torch.save
         check the file: preprocess_ctrate_with_xray_valid
         """
+
+        #TODO: load the embeddings based on the dictionary here: samples should contains (image embeddings, text embeddings, xray_file)
         samples = []
         xray_path_dirs = self.xray_data_folder.split(os.sep)
         for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
@@ -288,7 +290,7 @@ class CTReportXRayDataset(CTReportDataset):
         # # Step 4: Ensure the tensor has the correct dtype
         # tensor_image = tensor_image.to(torch.float32)
         
-        # # Step 5: Normalize TODO: should be according to the cxr_clip
+        # # Step 5: Normalize NOTE: should be according to the cxr_clip
         # # tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
         
         # # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)
