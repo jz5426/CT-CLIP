@@ -187,10 +187,12 @@ class CTReportDataset(Dataset):
 
 class CTReportXRayDataset(CTReportDataset):
 
-    def __init__(self, data_folder, xray_data_folder, cfg, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
+    def __init__(self, data_folder, xray_data_folder, cfg, csv_file, batch_style='patient', min_slices=20, resize_dim=500, force_num_frames=True):
         self.xray_data_folder = xray_data_folder
         self.xray_paths = []
         self.parent_folder = os.path.basename(data_folder)
+        assert(batch_style in ['patient', 'experiment'])
+        self.batch_style = batch_style
         super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames)
         self.cfg = cfg
 
@@ -225,7 +227,8 @@ class CTReportXRayDataset(CTReportDataset):
         check the file: preprocess_ctrate_with_xray_valid
         """
 
-        #TODO: load the embeddings based on the dictionary here: samples should contains (image embeddings, text embeddings, xray_file)
+        #TODO: load the embeddings based on the dictionary here: samples should contains (imsage embeddings, text embeddings, xray_file)
+            # the batching style should based on self.batch_style
         samples = []
         xray_path_dirs = self.xray_data_folder.split(os.sep)
         for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
