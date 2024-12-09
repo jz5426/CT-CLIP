@@ -19,11 +19,13 @@ from data import resize_array
 
 
 class CTReportDatasetinfer(Dataset):
-    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False):
+    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False, load_assession=True):
         self.data_folder = data_folder
         self.min_slices = min_slices
         self.labels = labels
-        self.accession_to_text = self.load_accession_text(csv_file)
+        self.accession_to_text = None
+        if load_assession:
+            self.accession_to_text = self.load_accession_text(csv_file)
         self.paths=[]
         self.samples = self.prepare_samples()
         self.transform = transforms.Compose([
@@ -269,10 +271,9 @@ class CTReportDatasetinfer(Dataset):
 
 class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
-    def __init__(self, data_folder, xray_data_folder, cfg, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels="labels.csv", probing_mode=False):
-        self.xray_data_folder = xray_data_folder
+    def __init__(self, data_folder, cfg, min_slices=20, resize_dim=500, force_num_frames=True, labels="labels.csv", probing_mode=False):
         self.xray_paths = []
-        super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames, labels, probing_mode)
+        super().__init__(data_folder, '', min_slices, resize_dim, force_num_frames, labels, probing_mode, load_assession=True)
         self.cfg = cfg
 
         # from trainer.py in cxr_clip

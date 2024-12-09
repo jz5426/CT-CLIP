@@ -40,10 +40,12 @@ def resize_array(array, current_spacing, target_spacing):
     return resized_array
 
 class CTReportDataset(Dataset):
-    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
+    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, load_accession=True):
         self.data_folder = data_folder
         self.min_slices = min_slices
-        self.accession_to_text = self.load_accession_text(csv_file)
+        self.accession_to_text = None
+        if load_accession:
+            self.accession_to_text = self.load_accession_text(csv_file)
         self.paths=[]
         self.samples = self.prepare_samples()
         # percent = 80
@@ -186,8 +188,7 @@ class CTReportDataset(Dataset):
 
 class CTReportXRayDataset(CTReportDataset):
 
-    def __init__(self, data_folder, xray_data_folder, cfg, csv_file, batch_style='experiment', min_slices=20, resize_dim=500, force_num_frames=True):
-        self.xray_data_folder = xray_data_folder
+    def __init__(self, data_folder, cfg, batch_style='patient', min_slices=20, resize_dim=500, force_num_frames=True):
         self.xray_paths = []
         self.parent_folder = os.path.basename(data_folder)
         assert(batch_style in ['patient', 'experiment', 'instance'])
@@ -196,8 +197,10 @@ class CTReportXRayDataset(CTReportDataset):
         self.text_embeddings = torch.load('F:\\Chris\\dataset\\features_embeddings\\train\\text_features.pth')
         self.ct_embeddings = self._preprocess_embeddings(self.ct_embeddings, level=batch_style)
         self.text_embeddings = self._preprocess_embeddings(self.text_embeddings, level=batch_style)
+        assert(self.ct_embeddings.keys() == self.text_embeddings.keys())
+        self.key_ids = list(self.ct_embeddings.keys())
 
-        super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames)
+        super().__init__(data_folder, '', min_slices, resize_dim, force_num_frames, load_accession=False)
         self.cfg = cfg
 
         # from trainer.py in cxr_clip
@@ -243,11 +246,30 @@ class CTReportXRayDataset(CTReportDataset):
 
         return processed_embeddings
 
-    def prepare_samples(self):
-        # based on the xray files and retrieve the corresponding embeddings
-
-        return
     # def prepare_samples(self):
+    #     # based on the xray files and retrieve the corresponding embeddings
+    #     samples = []
+    #     extension = 'mha'
+    #     for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
+    #         for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
+    #             mha_files = glob.glob(os.path.join(accession_folder, f'*.{extension}'))
+    #             for xray_file in mha_files:
+    #                 # get the filename without extension
+    #                 instance_name = os.path.basename(xray_file)[:-len(f'.{extension}')]
+    #                 key_parts = instance_name.split('_')
+
+    #                 if self.batch_style == 'patient':
+    #                     patient = '_'.join(key_parts[:2]) # patient level
+    #                 elif self.batch_style == 'experiment':
+    #                     patient = '_'.join(key_parts[:3]) # patient experiment level
+    #                 elif self.batch_style == 'instance':
+    #                     patient = instance_name # instance level (the original implementation)
+
+    #                 # get ct and text embeddings
+    #                 samples.append((self.ct_embeddings[patient], self.text_embeddings[patient], xray_file))
+    #     return samples
+
+    # def prepare_samples_backup(self):
     #     """
     #     override the parent method
 

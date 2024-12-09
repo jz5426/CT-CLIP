@@ -11,7 +11,7 @@ from sklearn.metrics import classification_report, confusion_matrix, multilabel_
 
 import torch
 from torch import nn
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader, random_split, Sampler
 from torch.utils.data.distributed import DistributedSampler
 
 from data import CTReportDataset, CTReportXRayDataset
@@ -30,6 +30,7 @@ import math
 import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP
 import os
+import random
 
 
 # helpers
@@ -139,6 +140,25 @@ class CosineAnnealingWarmUpRestarts(lr_scheduler._LRScheduler):
             self.T_0 *= self.T_mult
             self.eta_max *= self.gamma
 
+class UniqueLevelSampler(Sampler):
+    def __init__(self, key_ids, batch_size):
+        """
+        Args:
+            patient_ids (list): List of patient IDs.
+            batch_size (int): Number of unique patients per batch.
+        """
+        self.key_ids = key_ids
+        self.batch_size = batch_size
+    
+    def __iter__(self):
+        shuffled_ids = random.sample(self.key_ids, len(self.key_ids))
+        for i in range(0, len(shuffled_ids), self.batch_size):
+            yield shuffled_ids[i:i + self.batch_size]
+    
+    def __len__(self):
+        return len(self.key_ids) // self.batch_size
+
+
 class CTClipTrainer(nn.Module):
     def __init__(
         self,
@@ -148,8 +168,6 @@ class CTClipTrainer(nn.Module):
         batch_size,
         data_train = "train",
         data_valid = "valid",
-        data_xray_train = None,
-        data_xray_valid = None,
         cfg=None,
         reports_file_train = "data_reports.xslx",
         reports_file_valid = "data_reports.xslx",
@@ -178,7 +196,6 @@ class CTClipTrainer(nn.Module):
         self.triplet_training = False
         if hasattr(self.CTClip, 'xray_encoder'):
             self.triplet_training = True
-            assert(data_xray_train is not None and data_xray_valid is not None and cfg is not None)
 
         if tokenizer != None:
             self.tokenizer=tokenizer
@@ -200,26 +217,44 @@ class CTClipTrainer(nn.Module):
         
         # Load the pre-trained weights
         if self.triplet_training:
-            self.train_ds = CTReportXRayDataset(data_folder=data_train, xray_data_folder=data_xray_train, cfg=cfg, csv_file=reports_file_train)
-            self.valid_ds = CTReportXRayDatasetinfer(data_folder=data_valid, xray_data_folder=data_xray_valid, cfg=cfg, csv_file=reports_file_valid, labels = labels)
+            self.train_ds = CTReportXRayDataset(data_folder=data_train, cfg=cfg)
+            self.valid_ds = CTReportXRayDatasetinfer(data_folder=data_valid, cfg=cfg, labels=labels)
+
+            # custom sampler
+            custom_train_sampler = UniqueLevelSampler(self.train_ds.key_ids, self.batch_size)
+            custom_val_sampler = UniqueLevelSampler(self.valid_ds.key_ids, self.batch_size)
+
+            self.dl = DataLoader(
+                self.train_ds,
+                num_workers=num_workers,
+                shuffle = True,
+                batch_sampler=custom_train_sampler
+            )
+
+            self.valid_dl = DataLoader(
+                self.valid_ds,
+                num_workers=num_workers,
+                shuffle = False,
+                batch_sampler=custom_val_sampler
+            )
+
         else:
             self.train_ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train)
-            self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels = labels)
+            self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels=labels)
 
+            self.dl = DataLoader(
+                self.train_ds,
+                num_workers=num_workers,
+                batch_size=self.batch_size,
+                shuffle = True,
+            )
 
-        self.dl = DataLoader(
-            self.train_ds,
-            num_workers=num_workers,
-            batch_size=self.batch_size,
-            shuffle = True,
-        )
-
-        self.valid_dl = DataLoader(
-            self.valid_ds,
-            num_workers=num_workers,
-            batch_size=1,
-            shuffle = False,
-        )
+            self.valid_dl = DataLoader(
+                self.valid_ds,
+                num_workers=num_workers,
+                batch_size=1,
+                shuffle = False,
+            )
 
         # prepare with accelerator
         self.dl_iter=cycle(self.dl)
