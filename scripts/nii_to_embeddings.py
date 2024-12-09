@@ -83,7 +83,7 @@ if __name__ == '__main__':
     files = [f for f in files if Path(Path(f).stem).stem not in keys] # nested path.stem due to .nii.gz, each remove one extension
 
     print(f"Files in the '{split}' folder: {len(files)}")
-    total_files = feature_extraction_frequency# len(files)
+    total_files = len(files)
 
     destination_folder = os.path.normpath('/mnt/f/Chris/CT-RATE-temp')
     os.makedirs(destination_folder, exist_ok=True)

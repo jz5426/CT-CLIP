@@ -93,7 +93,7 @@ def parallel_download(batch, destination_folder, repo_id, num_workers=8):
 
 if __name__ == '__main__':
 
-    split = 'train'
+    split = 'valid'
     # NOTE: automatically download in the split folder without manually create one
 
     # perform feature extraction after download 100 of them
@@ -127,5 +127,5 @@ if __name__ == '__main__':
     os.makedirs(destination_folder, exist_ok=True)
 
     print('    downloading files\n')
-    batch = files[:feature_extraction_frequency]
+    batch = files[:min(feature_extraction_frequency, total_files)]
     parallel_download(batch, destination_folder, repo_id, num_workers=16)
