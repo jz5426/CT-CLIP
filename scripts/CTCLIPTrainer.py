@@ -158,8 +158,9 @@ class CTClipTrainer(nn.Module):
         lr = 0.001, # 1.25e-6, suggested by ULIP
         wd = 0.,
         max_grad_norm = 0.5,
-        iteration_evaluate_frequency = 1000,
+        iteration_evaluate_frequency = 500,
         iteration_progress_frequency = 10,
+        epoch_based_patience = 10,
         save_results_every = 1000,
         save_model_every = 1000 ,
         results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
@@ -242,7 +243,8 @@ class CTClipTrainer(nn.Module):
         self.save_results_every = save_results_every
         self.iteration_evaluate_frequency = iteration_evaluate_frequency
         self.iteration_progress_frequency = iteration_progress_frequency
-
+        self.epoch_based_patience = epoch_based_patience
+        self.early_stop_counter = 0
         self.results_folder = Path(results_folder)
 
         if len([*self.results_folder.glob('**/*')]) > 0 and train_from_scratch:
@@ -252,7 +254,7 @@ class CTClipTrainer(nn.Module):
 
         self.best_flat_val_acc = 0
         self.best_f1_val_acc = 0
-        self.best_val_loss = float('inf')
+        self.best_val_cl_loss = float('inf')
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
@@ -474,10 +476,10 @@ class CTClipTrainer(nn.Module):
                 if batch_idx % self.iteration_progress_frequency == 0:
                     print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}], Training Loss: {loss.item():.4f}")
                 
-                # TODO: evaluate model based on iteration and save
+                # evaluate model based on iteration instead of epochs
                 if self.is_main and not (batch_idx % self.iteration_evaluate_frequency):
                     print('Evaluate based on iterations')
-                    self.eval_on_validation_split(epoch, val_size, iteration=batch_idx)
+                    self.eval_on_validation_split(epoch, val_size, iteration=batch_idx, track_early_stopping=False)
 
                 # Accumulate loss
                 running_loss += loss.item()
@@ -487,11 +489,19 @@ class CTClipTrainer(nn.Module):
             print(f"Epoch [{epoch+1}/{epochs}] completed with average training loss: {epoch_loss:.4f}")
 
             # run per-epoch validation and automatically save the model
-            self.eval_on_validation_split(epoch, val_size)
+            print(f'Validation after epoch {epoch}')
+            exit_training = self.eval_on_validation_split(epoch, val_size, track_early_stopping=True)
+
+            if exit_training:
+                print('Training by epochs complete\n')
+                return
 
         print('Training by epochs complete\n')
 
-    def eval_on_validation_split(self, epoch, val_size, iteration=-1):
+    def eval_on_validation_split(self, epoch, val_size, iteration=-1, track_early_stopping=False):
+        """
+        return: boolean -> whether should stop training or nort.
+        """
         device = self.device
         # after training each epoch, test the model in the validation split
         if self.is_main:
@@ -581,15 +591,6 @@ class CTClipTrainer(nn.Module):
                 # save a model for each epoch
                 self._save_ckpt(f'CTClip.{epoch}.pt', '', iteration)
 
-                # save model based on contrastive loss on validation split
-                epoch_val_loss = running_val_loss / val_size
-                if self.best_val_loss > epoch_val_loss:
-                    self.best_val_loss = epoch_val_loss
-                    self._save_ckpt(epoch, 
-                                    'CTClip.lowest_val_cl_loss.pt', 
-                                    'best contrastive loss on validation split!!', 
-                                    iteration)
-
                 # save model based on f1 metric
                 if self.best_f1_val_acc < f1:
                     self.best_f1_val_acc = f1
@@ -605,7 +606,24 @@ class CTClipTrainer(nn.Module):
                                     'CTClip_best_flat_acc_val.pt', 
                                     'best flat accuracy achieved!!', 
                                     iteration)
-            
+
+                # save model based on contrastive loss on validation split
+                epoch_val_cl_loss = running_val_loss / val_size
+                if self.best_val_cl_loss > epoch_val_cl_loss:
+                    self.best_val_cl_loss = epoch_val_cl_loss
+                    self._save_ckpt(epoch, 
+                                    'CTClip.lowest_val_cl_loss.pt', 
+                                    'best contrastive loss on validation split!!', 
+                                    iteration)
+                elif track_early_stopping:
+                    # early stopping based on val cl loss
+                    self.early_stop_counter += 1
+                    print(f"No improvement in validation loss for {self.early_stop_counter} epochs.")
+                    if self.early_stop_counter >= self.epoch_based_patience:
+                        print("Early stopping triggered. Stopping training.")
+                        return True # Exit training loop
+
+        return False
 
     def _save_ckpt(self, epoch, file_name, print_annotation, iteration=-1):
         model_path = str(self.results_folder / file_name)
