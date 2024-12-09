@@ -187,12 +187,17 @@ class CTReportDataset(Dataset):
 
 class CTReportXRayDataset(CTReportDataset):
 
-    def __init__(self, data_folder, xray_data_folder, cfg, csv_file, batch_style='patient', min_slices=20, resize_dim=500, force_num_frames=True):
+    def __init__(self, data_folder, xray_data_folder, cfg, csv_file, batch_style='experiment', min_slices=20, resize_dim=500, force_num_frames=True):
         self.xray_data_folder = xray_data_folder
         self.xray_paths = []
         self.parent_folder = os.path.basename(data_folder)
-        assert(batch_style in ['patient', 'experiment'])
+        assert(batch_style in ['patient', 'experiment', 'instance'])
         self.batch_style = batch_style
+        self.ct_embeddings = torch.load('F:\\Chris\\dataset\\features_embeddings\\train\\image_features.pth')
+        self.text_embeddings = torch.load('F:\\Chris\\dataset\\features_embeddings\\train\\text_features.pth')
+        self.ct_embeddings = self._preprocess_embeddings(self.ct_embeddings, level=batch_style)
+        self.text_embeddings = self._preprocess_embeddings(self.text_embeddings, level=batch_style)
+
         super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames)
         self.cfg = cfg
 
@@ -218,47 +223,70 @@ class CTReportXRayDataset(CTReportDataset):
             # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
             # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
         self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
+    
+    def _preprocess_embeddings(self, embedding_dict, level='patient'):
+        keys = list(embedding_dict.keys())
+        processed_embeddings = {}
+
+        for key in keys:
+            key_parts = key.split('_')
+
+            if level == 'patient':
+                patient = '_'.join(key_parts[:2])
+            elif level == 'experiment':
+                patient = '_'.join(key_parts[:3])
+            elif level == 'instance':
+                patient = key
+
+            if patient not in processed_embeddings:
+                processed_embeddings[patient] = []
+            processed_embeddings[patient].append(embedding_dict[key])
+
+        return processed_embeddings
 
     def prepare_samples(self):
-        """
-        override the parent method
 
-        assume the files inside the path are preprocessed and saved in as .pt object from torch.save
-        check the file: preprocess_ctrate_with_xray_valid
-        """
+        return
+    # def prepare_samples(self):
+    #     """
+    #     override the parent method
 
-        #TODO: load the embeddings based on the dictionary here: samples should contains (imsage embeddings, text embeddings, xray_file)
-            # the batching style should based on self.batch_style
-        samples = []
-        xray_path_dirs = self.xray_data_folder.split(os.sep)
-        for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
-            for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
-                pt_files = glob.glob(os.path.join(accession_folder, '*.pt'))
-                for nii_file in pt_files:
-                    path_dirs = nii_file.split(os.sep)
-                    accession_number = path_dirs[-1]
-                    accession_number = accession_number.replace(".pt", ".nii.gz")
+    #     assume the files inside the path are preprocessed and saved in as .pt object from torch.save
+    #     check the file: preprocess_ctrate_with_xray_valid
+    #     """
 
-                    # corresponding xray file => xray parent directory + the remaining path that reach the instance
-                    xray_file = os.sep.join(xray_path_dirs + path_dirs[path_dirs.index(self.parent_folder)+1:])
-                    xray_file = xray_file.replace('.pt', '.mha')
-                    if accession_number not in self.accession_to_text:
-                        continue
+    #     #TODO: load the embeddings based on the dictionary here: samples should contains (imsage embeddings, text embeddings, xray_file)
+    #         # the batching style should based on self.batch_style
+    #     samples = []
+    #     xray_path_dirs = self.xray_data_folder.split(os.sep)
+    #     for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
+    #         for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
+    #             pt_files = glob.glob(os.path.join(accession_folder, '*.pt'))
+    #             for nii_file in pt_files:
+    #                 path_dirs = nii_file.split(os.sep)
+    #                 accession_number = path_dirs[-1]
+    #                 accession_number = accession_number.replace(".pt", ".nii.gz")
 
-                    impression_text = self.accession_to_text[accession_number]
+    #                 # corresponding xray file => xray parent directory + the remaining path that reach the instance
+    #                 xray_file = os.sep.join(xray_path_dirs + path_dirs[path_dirs.index(self.parent_folder)+1:])
+    #                 xray_file = xray_file.replace('.pt', '.mha')
+    #                 if accession_number not in self.accession_to_text:
+    #                     continue
 
-                    if impression_text == "Not given.":
-                        impression_text=""
+    #                 impression_text = self.accession_to_text[accession_number]
 
-                    input_text_concat = ""
-                    for text in impression_text:
-                        input_text_concat = input_text_concat + str(text)
-                    input_text_concat = impression_text[0]
-                    # input_text = f'{impression_text}'
-                    samples.append((nii_file, input_text_concat, xray_file))
-                    self.paths.append(nii_file)
-                    self.xray_paths.append(xray_file)
-        return samples
+    #                 if impression_text == "Not given.":
+    #                     impression_text=""
+
+    #                 input_text_concat = ""
+    #                 for text in impression_text:
+    #                     input_text_concat = input_text_concat + str(text)
+    #                 input_text_concat = impression_text[0]
+    #                 # input_text = f'{impression_text}'
+    #                 samples.append((nii_file, input_text_concat, xray_file))
+    #                 self.paths.append(nii_file)
+    #                 self.xray_paths.append(xray_file)
+    #     return samples
 
 
     def nii_img_to_tensor(self, path, transform):

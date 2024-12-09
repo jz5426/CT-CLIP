@@ -12,10 +12,10 @@ import math
 from functools import partial
 import shutil
 
-split = 'valid' # change the split to valid to process the validation data instead.
 
-df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv') if split == 'valid' \
-        else pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\train_metadata.csv')
+df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv')
+# if split == 'valid' \
+#         else pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\train_metadata.csv')
 # "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
 # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
@@ -372,6 +372,7 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
 # Example usage:
 if __name__ == "__main__":
     #NOTE: TRY IT ON WINNDOWS
+    split = 'valid' # change the split to valid to process the validation data instead.
 
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
     raw_ct_dir = f"F:\\Chris\\CT-RATE-temp\\dataset\\{split}" #select the validation or test split
