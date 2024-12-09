@@ -6,7 +6,7 @@ import torch
 import pandas as pd
 import numpy as np
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Sampler
 import torchvision.transforms as transforms
 from functools import partial
 import torch.nn.functional as F
@@ -46,13 +46,12 @@ class CTReportDataset(Dataset):
         self.accession_to_text = self.load_accession_text(csv_file)
         self.paths=[]
         self.samples = self.prepare_samples()
-        percent = 80
-        num_files = int((len(self.samples) * percent) / 100)
+        # percent = 80
+        # num_files = int((len(self.samples) * percent) / 100)
         #num_files = 2286
-        self.samples = self.samples[:num_files]
-        print(len(self.samples))
+        # self.samples = self.samples[:num_files]
+        print('number of files ', len(self.samples))
         self.count = 0
-
 
         #self.resize_dim = resize_dim
         #self.resize_transform = transforms.Resize((resize_dim, resize_dim))
@@ -245,6 +244,7 @@ class CTReportXRayDataset(CTReportDataset):
         return processed_embeddings
 
     def prepare_samples(self):
+        # based on the xray files and retrieve the corresponding embeddings
 
         return
     # def prepare_samples(self):
