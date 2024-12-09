@@ -94,6 +94,7 @@ def parallel_download(batch, destination_folder, repo_id, num_workers=8):
 if __name__ == '__main__':
 
     split = 'train'
+    # NOTE: automatically download in the split folder without manually create one
 
     # perform feature extraction after download 100 of them
     feature_extraction_frequency = 15000
