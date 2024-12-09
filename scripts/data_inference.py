@@ -24,10 +24,11 @@ class CTReportDatasetinfer(Dataset):
         self.min_slices = min_slices
         self.labels = labels
         self.accession_to_text = None
+        self.paths=[]
+        self.samples = []
         if load_assession:
             self.accession_to_text = self.load_accession_text(csv_file)
-        self.paths=[]
-        self.samples = self.prepare_samples()
+            self.samples = self.prepare_samples()
         self.transform = transforms.Compose([
             transforms.Resize((resize_dim,resize_dim)),
             transforms.ToTensor()
@@ -271,8 +272,17 @@ class CTReportDatasetinfer(Dataset):
 
 class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
-    def __init__(self, data_folder, cfg, min_slices=20, resize_dim=500, force_num_frames=True, labels="labels.csv", probing_mode=False):
+    def __init__(self, data_folder, cfg, img_embedding_path='F:\\Chris\\dataset\\features_embeddings\\valid\\image_features.pth', text_embedding_path='F:\\Chris\\dataset\\features_embeddings\\valid\\text_features.pth', batch_style='patient', min_slices=20, resize_dim=500, force_num_frames=True, labels="labels.csv", probing_mode=False):
         self.xray_paths = []
+        assert(batch_style in ['patient', 'experiment', 'instance'])
+        self.batch_style = batch_style
+        self.ct_embeddings = torch.load(img_embedding_path)
+        self.text_embeddings = torch.load(text_embedding_path)
+        self.ct_embeddings = self._preprocess_embeddings(self.ct_embeddings, level=batch_style)
+        self.text_embeddings = self._preprocess_embeddings(self.text_embeddings, level=batch_style)
+        assert(self.ct_embeddings.keys() == self.text_embeddings.keys())
+        self.key_ids = list(self.ct_embeddings.keys())
+
         super().__init__(data_folder, '', min_slices, resize_dim, force_num_frames, labels, probing_mode, load_assession=True)
         self.cfg = cfg
 
