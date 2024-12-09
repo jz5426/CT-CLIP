@@ -248,6 +248,7 @@ class CTClipTrainer(nn.Module):
 
         self.best_flat_val_acc = 0
         self.best_f1_val_acc = 0
+        self.best_val_loss = float('inf')
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
@@ -368,7 +369,7 @@ class CTClipTrainer(nn.Module):
                         text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
                         
                         # this should be the logit score between the text and xray
-                        logits = model(text_tokens, valid_data, xray_image, device=device, eval_mode=True)
+                        val_loss, logits = model(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
                         output = apply_softmax(logits)
 
                         if output[0]>output[1]:
@@ -483,7 +484,7 @@ class CTClipTrainer(nn.Module):
                     model.eval()
                     predictedall=[]
                     realall=[]
-
+                    running_val_loss = 0
                     for i in range(val_size): #NOTE: might need to change this to evaluate on the whole validation set.
                         val_data = next(self.valid_dl_iter)
 
@@ -494,6 +495,11 @@ class CTClipTrainer(nn.Module):
                             valid_data, text, onehotlabels, _, _ = val_data
 
                         valid_data = valid_data.to(device)
+
+                        report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+                        val_cl_loss, _ = model(report_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+                        # Accumulate validation loss for this epochs
+                        running_val_loss += val_cl_loss.item()
 
                         if "module" in model.__dict__:
                             model = model.module
@@ -527,7 +533,7 @@ class CTClipTrainer(nn.Module):
                             text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
                             
                             # this should be the logit score between the text and xray
-                            logits = model(text_tokens, valid_data, xray_image, device=device, eval_mode=True)
+                            _, logits = model(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
                             output = apply_softmax(logits)
 
                             if output[0]>output[1]:
@@ -557,12 +563,21 @@ class CTClipTrainer(nn.Module):
                     writer.close()
                     del output
 
-                    # save model every so often (NOTE: should be based on epochs or iterations)
+                    # save a model for each epoch
                     model_path = str(self.results_folder / f'CTClip.{epoch}.pt')
                     state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
                     self.accelerator.save(state_dict, model_path)
                     print(f'    {epoch}: saving model to {str(self.results_folder)}')
-                    
+
+                    # save model based on contrastive loss on validation split
+                    epoch_val_loss = running_val_loss / val_size
+                    if self.best_val_loss > epoch_val_loss:
+                        self.best_val_loss = epoch_val_loss
+                        model_path = str(self.results_folder / f'CTClip.lowest_val_cl_loss.pt')
+                        self.accelerator.save(state_dict, model_path)
+                        print(f'    {epoch}: saving model to {str(self.results_folder)} -- best contrastive loss on validation split')
+
+                    # save model based on f1 metric
                     if self.best_f1_val_acc < f1:
                         self.best_f1_val_acc = f1
                         model_path = str(self.results_folder / 'CTClip_best_f1_val.pt')
@@ -570,6 +585,7 @@ class CTClipTrainer(nn.Module):
                         self.accelerator.save(state_dict, model_path)
                         print(f'    {epoch}: saving model to {str(self.results_folder)} -- best f1 accuracy achieved!!')
                     
+                    # save model based on flat acc
                     if self.best_flat_val_acc < flat_acc:
                         self.best_flat_val_acc = flat_acc
                         model_path = str(self.results_folder / 'CTClip_best_flat_acc_val.pt')

@@ -1006,7 +1006,7 @@ class CTCLIPwithXray(nn.Module):
             image,
             xray,
             device,
-            eval_mode = False,
+            return_logit_and_loss = False,
             return_loss = False,
             return_encodings = False,
             return_latents = False,
@@ -1079,9 +1079,9 @@ class CTCLIPwithXray(nn.Module):
         image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
         xray_latents = rearrange(xray_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 
-        if eval_mode:
-            logits = einsum('m t d, n i d -> m n t i', text_latents, xray_latents) * temp # compute similarity matrix
-            return logits.squeeze()
+        # if return_logit_and_loss:
+        logits = einsum('m t d, n i d -> m n t i', text_latents, xray_latents) * temp # compute similarity matrix
+        # return logits.squeeze()
 
         """
         NOTE: CL between image and xray and CL between text and xray
@@ -1090,6 +1090,8 @@ class CTCLIPwithXray(nn.Module):
         cl_img_to_xray = self.cl_loss(image_latents, xray_latents, temp)
         loss = cl_text_to_xray + cl_img_to_xray
       
+        if return_logit_and_loss:
+            return loss, logits.squeeze()
         return loss
 
     def cl_loss(self, m1_latent, m2_latent, temp):
