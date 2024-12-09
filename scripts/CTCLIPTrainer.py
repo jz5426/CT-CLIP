@@ -573,24 +573,22 @@ class CTClipTrainer(nn.Module):
                     epoch_val_loss = running_val_loss / val_size
                     if self.best_val_loss > epoch_val_loss:
                         self.best_val_loss = epoch_val_loss
-                        model_path = str(self.results_folder / f'CTClip.lowest_val_cl_loss.pt')
-                        self.accelerator.save(state_dict, model_path)
-                        print(f'    {epoch}: saving model to {str(self.results_folder)} -- best contrastive loss on validation split')
+                        self._save_ckpt(epoch, 'CTClip.lowest_val_cl_loss.pt', 'best contrastive loss on validation split!!')
 
                     # save model based on f1 metric
                     if self.best_f1_val_acc < f1:
                         self.best_f1_val_acc = f1
-                        model_path = str(self.results_folder / 'CTClip_best_f1_val.pt')
-                        state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
-                        self.accelerator.save(state_dict, model_path)
-                        print(f'    {epoch}: saving model to {str(self.results_folder)} -- best f1 accuracy achieved!!')
+                        self._save_ckpt(epoch, 'CTClip_best_f1_val.pt', 'best f1 accuracy achieved!!')
                     
                     # save model based on flat acc
                     if self.best_flat_val_acc < flat_acc:
                         self.best_flat_val_acc = flat_acc
-                        model_path = str(self.results_folder / 'CTClip_best_flat_acc_val.pt')
-                        state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
-                        self.accelerator.save(state_dict, model_path)
-                        print(f'    {epoch}: saving model to {str(self.results_folder)} -- best flat accuracy achieved!!')
+                        self._save_ckpt(epoch, 'CTClip_best_flat_acc_val.pt', 'best flat accuracy achieved!!')
                 
         print('Training by epochs complete\n')
+
+    def _save_ckpt(self, epoch, file_name, print_annotation):
+        model_path = str(self.results_folder / file_name)
+        state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
+        self.accelerator.save(state_dict, model_path)
+        print(f'    {epoch}: saving model to {str(self.results_folder)} -- {print_annotation}')
