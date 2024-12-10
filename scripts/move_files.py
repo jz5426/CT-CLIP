@@ -27,8 +27,8 @@ def move_files_preserve_structure(src_dir, dest_dir):
             
             # Move the file only if it doesn't already exist in the destination
             if not os.path.exists(dest_file):
-                shutil.move(src_file, dest_file)
-                print(f"Moved: {src_file} -> {dest_file}")
+                shutil.copy2(src_file, dest_file)
+                print(f"Copied: {src_file} -> {dest_file}")
             else:
                 print(f"Skipped (already exists): {dest_file}")
 
@@ -48,19 +48,22 @@ def count_mha_files(directory):
 
 
 # Example usage
-src_directory = "F:\\Chris\\dataset\\valid_preprocessed_xray_mha"  # Replace with the path to your source directory
-dest_directory = "F:\\Chris\\CT-RATE-FINAL\\processed_dataset\\valid_preprocessed_xray_mha"  # Replace with the path to your destination directory
+# src_directory = "F:\\Chris\\dataset\\valid_preprocessed_xray_mha"  # Replace with the path to your source directory
+# dest_directory = "F:\\Chris\\CT-RATE-FINAL\\processed_dataset\\valid_preprocessed_xray_mha"  # Replace with the path to your destination directory
 
-# move_files_preserve_structure(src_directory, dest_directory)
-files = count_mha_files(dest_directory)
+src_directory = "F:\\Chris\\CT-RATE-FINAL\\processed_dataset\\"  # Replace with the path to your destination directory
+dest_directory = "G:\\Chris\\CT-RATE-FINAL-BACKUP\\processed_dataset\\"  # Replace with the path to your source directory
 
-#NOTE: make sure the file and the embedding have one-to-one correspondence.
-saving_path = "F:\\Chris\\CT-RATE-FINAL\\processed_dataset\\features_embeddings\\valid\\image_features.pth"
-img_feature_path = os.path.join("F:\\Chris\\CT-RATE-FINAL\\processed_dataset\\features_embeddings\\valid\\image_features.pth")
-text_feature_path = os.path.join("F:\\Chris\\CT-RATE-FINAL\\processed_dataset\\features_embeddings\\valid\\text_features.pth")
-if os.path.exists(img_feature_path):
-    image_features = torch.load(img_feature_path)
-# if os.path.exists(text_feature_path):
-#     text_features = torch.load(text_feature_path)
-print('total files, ',files)
-print('number of keys ',len(image_features.keys()))
+move_files_preserve_structure(src_directory, dest_directory)
+# files = count_mha_files(dest_directory)
+
+# #NOTE: make sure the file and the embedding have one-to-one correspondence.
+# saving_path = "F:\\Chris\\CT-RATE-FINAL\\processed_dataset\\features_embeddings\\valid\\image_features.pth"
+# img_feature_path = os.path.join("F:\\Chris\\CT-RATE-FINAL\\processed_dataset\\features_embeddings\\valid\\image_features.pth")
+# text_feature_path = os.path.join("F:\\Chris\\CT-RATE-FINAL\\processed_dataset\\features_embeddings\\valid\\text_features.pth")
+# if os.path.exists(img_feature_path):
+#     image_features = torch.load(img_feature_path)
+# # if os.path.exists(text_feature_path):
+# #     text_features = torch.load(text_feature_path)
+# print('total files, ',files)
+# print('number of keys ',len(image_features.keys()))

@@ -439,7 +439,7 @@ class CTClipTrainer(nn.Module):
                         text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
                         
                         # this should be the logit score between the text and xray
-                        val_loss, logits = model(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+                        logits = model(text_tokens, valid_data, xray_image, device=device, return_logits_only=True)
                         output = apply_softmax(logits)
 
                         if output[0]>output[1]:
@@ -595,16 +595,15 @@ class CTClipTrainer(nn.Module):
 
                     # mainly for the validation contrastive loss
                     if self.triplet_training:
-                        val_cl_loss, _ = self.CTClip(text, 
-                                                    valid_data, 
-                                                    xray_image, 
-                                                    device=device, 
-                                                    is_text_latent_input=True, 
-                                                    is_image_latent_input=True,
-                                                    return_logit_and_loss=True)
+                        val_cl_loss = self.CTClip(text, 
+                                                valid_data, 
+                                                xray_image, 
+                                                device=device, 
+                                                is_text_latent_input=True, 
+                                                is_image_latent_input=True)
                     else:
                         report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-                        val_cl_loss, _ = self.CTClip(report_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+                        val_cl_loss = self.CTClip(report_tokens, valid_data, xray_image, device=device)
 
                     # Accumulate validation contrastive loss for this epochs
                     running_val_loss += val_cl_loss.item()
@@ -642,22 +641,23 @@ class CTClipTrainer(nn.Module):
 
                         # this should be the logit score between the text and xray
                         if self.triplet_training:
-                            _, logits = self.CTClip(text_tokens, 
-                                                    valid_data, 
-                                                    xray_image, 
-                                                    device=device, 
-                                                    is_text_latent_input=False, 
-                                                    is_image_latent_input=True,
-                                                    return_logit_and_loss=True) # need this to return logits
+                            logits = self.CTClip(text_tokens, 
+                                                valid_data, 
+                                                xray_image, 
+                                                device=device, 
+                                                is_text_latent_input=False, 
+                                                is_image_latent_input=True,
+                                                return_logits_only=True) # need this to return logits
                         else:
-                            _, logits = self.CTClip(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+                            logits = self.CTClip(text_tokens, valid_data, xray_image, device=device, return_logits_only=True)
 
-                        output = apply_softmax(logits)
+                        outputs = apply_softmax(logits)
 
-                        if output[0]>output[1]:
-                            predictedlabels.append(1) # 1 indicates has pathology in the one-hot label
-                        else:
-                            predictedlabels.append(0) # 0 indicates no pathnology in the one-hot label
+                        for output in outputs:
+                            if output[0]>output[1]:
+                                predictedlabels.append(1) # 1 indicates has pathology in the one-hot label
+                            else:
+                                predictedlabels.append(0) # 0 indicates no pathnology in the one-hot label
                     
                     # append the pathology classifications for one validation image
                     predictedall.append(predictedlabels)

@@ -354,9 +354,8 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         return video_tensor, input_text, onehotlabels, xray_image, name_acc, nii_file # add the nii_file for xray projections
 
 
-    def __getitem__(self, index):
+    def __getitem__(self, key_id):
 
-        key_id = self.key_ids[index]
         # Randomly select an random instance for this id (patient, experiment, instance)
         selected_sample = random.choice(self.samples[key_id])
         img_embedding, text_embedding, onehotlabels, xray_file = selected_sample
