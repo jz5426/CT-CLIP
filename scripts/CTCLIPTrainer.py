@@ -653,7 +653,8 @@ class CTClipTrainer(nn.Module):
 
                         outputs = apply_softmax(logits)
 
-                        for output in outputs:
+                        for idx in range(outputs.shape[-1]):
+                            output = outputs[:,idx]
                             if output[0]>output[1]:
                                 predictedlabels.append(1) # 1 indicates has pathology in the one-hot label
                             else:
