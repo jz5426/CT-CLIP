@@ -11,8 +11,8 @@ from CTCLIPTrainer import CTClipTrainer
 
 @hydra.main(
         version_base=None,
-        config_path="C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\configs",
-        # config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/configs",
+        # config_path="C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\configs",
+        config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/configs",
         config_name="train")
 def main(cfg: DictConfig):
 
@@ -92,20 +92,19 @@ def run(cfg):
         cfg=cfg
     )
 
-    # check the trainable parameters
-    xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
-    ct_clip_trainable = sum(p.numel() for p in clip_xray.CTCLIP.parameters() if p.requires_grad)
-    assert(xray_encoder_trainable > 0)
-    assert(ct_clip_trainable == 0)
-
-
     # NOTE: load the pretrained backbones
     ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar'
     # clip_xray.load("C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\CT-CLIP_v2.pt",
     #             "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\cxr_clip\\{}".format(ckpt_name))
 
-    # clip_xray.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt",
-    #             "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
+    clip_xray.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt",
+                "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
+
+    # check the trainable parameters
+    xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
+    ct_clip_trainable = sum(p.numel() for p in clip_xray.CTCLIP.parameters() if p.requires_grad)
+    assert(xray_encoder_trainable > 0)
+    assert(ct_clip_trainable == 0)
 
     # trainer = CTClipTrainer(
     #     clip_xray,
@@ -122,8 +121,8 @@ def run(cfg):
     trainer = CTClipTrainer(
         clip_xray,
         cfg=cfg,
-        data_train= "/mnt/f/Chris/dataset/train_preprocessed_ct",
-        data_valid = "/mnt/f/Chris/dataset/valid_preprocessed_ct",
+        data_train= "/mnt/f/Chris/dataset/train_preprocessed_xray_mha",
+        data_valid = "/mnt/f/Chris/dataset/valid_preprocessed_xray_mha",
         labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
         batch_size = 2,
         results_folder="./checkpoints",

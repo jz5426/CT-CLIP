@@ -995,11 +995,6 @@ class CTCLIPwithXray(nn.Module):
         self.xray_model_type = xray_model_type
         self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
-        #NOTE: freeze the image and text backbones
-        print("    freezing weights in CTCLIP")
-        for param in self.CTCLIP.parameters():
-            param.requires_grad = False
-
     def forward(
             self,
             text,
@@ -1130,6 +1125,11 @@ class CTCLIPwithXray(nn.Module):
         # load the pretrained model for the ctclip
         self.CTCLIP.load(ctclip_path)
         print('    finished loading the checkpoint for ct clip encoders')
+
+        #NOTE: freeze the image and text backbones
+        print("    freezing weights in CTCLIP")
+        for param in self.CTCLIP.parameters():
+            param.requires_grad = False
 
         # load the pretrained model for cxrclip
         ckpt = torch.load(cxr_path, map_location="cpu")
