@@ -166,6 +166,7 @@ class CTClipTrainer(nn.Module):
         *,
         num_train_steps,
         batch_size,
+        batch_style='patient',
         data_train = "train",
         data_valid = "valid",
         cfg=None,
@@ -224,15 +225,18 @@ class CTClipTrainer(nn.Module):
             self.train_ds = CTReportXRayDataset(
                 data_folder=data_train, 
                 cfg=cfg, 
+                csv_file=reports_file_train,
                 img_embedding_path=img_embedding_paths['train'], 
-                text_embedding_path=text_embedding_paths['train']
+                text_embedding_path=text_embedding_paths['train'],
+                batch_style=batch_style
             )
             self.valid_ds = CTReportXRayDatasetinfer(
                 data_folder=data_valid, 
-                csv_file=reports_file_valid,
                 cfg=cfg, 
+                csv_file=reports_file_valid,
                 img_embedding_path=img_embedding_paths['valid'],
                 text_embedding_path=text_embedding_paths['valid'],
+                batch_style=batch_style,
                 labels=labels
             )
 
@@ -243,14 +247,14 @@ class CTClipTrainer(nn.Module):
             self.dl = DataLoader(
                 self.train_ds,
                 num_workers=num_workers,
-                shuffle = True,
+                # shuffle = True,
                 batch_sampler=custom_train_sampler
             )
 
             self.valid_dl = DataLoader(
                 self.valid_ds,
                 num_workers=num_workers,
-                shuffle = False,
+                # shuffle = False,
                 batch_sampler=custom_val_sampler
             )
 

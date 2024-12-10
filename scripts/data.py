@@ -41,16 +41,15 @@ def resize_array(array, current_spacing, target_spacing):
     return resized_array
 
 class CTReportDataset(Dataset):
-    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, load_accession=True):
+    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True):
         self.data_folder = data_folder
         self.min_slices = min_slices
         self.accession_to_text = None
         self.paths=[]
-        if load_accession:
-            self.accession_to_text = self.load_accession_text(csv_file)    
-            self.samples = self.prepare_samples()
-            print('number of files ', len(self.samples))
+        self.accession_to_text = self.load_accession_text(csv_file)            
         self.samples = self.prepare_samples()
+        print('number of files ', len(self.samples))
+
         self.count = 0
         #self.resize_dim = resize_dim
         #self.resize_transform = transforms.Resize((resize_dim, resize_dim))
@@ -185,7 +184,16 @@ class CTReportDataset(Dataset):
 
 class CTReportXRayDataset(CTReportDataset):
 
-    def __init__(self, data_folder, cfg, img_embedding_path='F:\\Chris\\dataset\\features_embeddings\\train\\image_features.pth', text_embedding_path='F:\\Chris\\dataset\\features_embeddings\\train\\text_features.pth', batch_style='patient', min_slices=20, resize_dim=500, force_num_frames=True):
+    def __init__(self,
+                 data_folder, 
+                 cfg, 
+                 csv_file='',
+                 img_embedding_path='F:\\Chris\\dataset\\features_embeddings\\train\\image_features.pth', 
+                 text_embedding_path='F:\\Chris\\dataset\\features_embeddings\\train\\text_features.pth', 
+                 batch_style='patient', 
+                 min_slices=20, 
+                 resize_dim=500, 
+                 force_num_frames=True):
         self.xray_paths = []
         self.parent_folder = os.path.basename(data_folder)
         assert(batch_style in ['patient', 'experiment', 'instance'])
@@ -195,10 +203,11 @@ class CTReportXRayDataset(CTReportDataset):
         self.ct_embeddings = self._preprocess_embeddings(self.ct_embeddings, level=batch_style)
         self.text_embeddings = self._preprocess_embeddings(self.text_embeddings, level=batch_style)
         assert(self.ct_embeddings.keys() == self.text_embeddings.keys())
-        self.key_ids = list(self.ct_embeddings.keys())
+        self.file_extension = 'mha'
 
-        super().__init__(data_folder, '', min_slices, resize_dim, force_num_frames, load_accession=False)
+        super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames)
         self.cfg = cfg
+        self.key_ids = list(self.samples.keys())
 
         # from trainer.py in cxr_clip
         # the following is not needed for now as we use the synthic paired xray
@@ -231,15 +240,18 @@ class CTReportXRayDataset(CTReportDataset):
             key_parts = key.split('_')
 
             if level == 'patient':
-                patient = '_'.join(key_parts[:2])
+                identifier = '_'.join(key_parts[:2])
             elif level == 'experiment':
-                patient = '_'.join(key_parts[:3])
+                identifier = '_'.join(key_parts[:3])
             elif level == 'instance':
-                patient = key
+                identifier = key
 
-            if patient not in processed_embeddings:
-                processed_embeddings[patient] = []
-            processed_embeddings[patient].append(embedding_dict[key])
+            # group the latent embedding belong to the common identifier
+            # example: if at the patient level: all reconstruction of all experiment for this patient are grouped.
+            # example: if at the experiment level: all reconstruction for this experiment are grouped.
+            if identifier not in processed_embeddings:
+                processed_embeddings[identifier] = []
+            processed_embeddings[identifier].append((embedding_dict[key], key))
 
         return processed_embeddings
     
@@ -284,9 +296,8 @@ class CTReportXRayDataset(CTReportDataset):
         
         return rgb_image
 
-    def __getitem__(self, index):
+    def __getitem__(self, key_id):
 
-        key_id = self.key_ids[index]
         # Randomly select an image for this patient
         selected_sample = random.choice(self.samples[key_id])
         img_embedding, text_embedding, xray_file = selected_sample
@@ -303,13 +314,12 @@ class CTReportXRayDataset(CTReportDataset):
         """
         # based on the xray files and retrieve the corresponding embeddings
         samples = {}
-        extension = 'mha'
         for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
             for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
-                mha_files = glob.glob(os.path.join(accession_folder, f'*.{extension}'))
+                mha_files = glob.glob(os.path.join(accession_folder, f'*.{self.file_extension}'))
                 for xray_file in mha_files:
                     # get the filename without extension
-                    instance_name = os.path.basename(xray_file)[:-len(f'.{extension}')]
+                    instance_name = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
                     key_parts = instance_name.split('_')
 
                     if self.batch_style == 'patient':
@@ -322,7 +332,9 @@ class CTReportXRayDataset(CTReportDataset):
                     # get ct and text embeddings
                     if patient not in samples:
                         samples[patient] = []
-                    samples[patient].append((self.ct_embeddings[patient], self.text_embeddings[patient], xray_file))
+                    ct_embedding = next(filter(lambda x: x[1] == instance_name, self.ct_embeddings[patient]), None)[0]
+                    text_embedding = next(filter(lambda x: x[1] == instance_name, self.text_embeddings[patient]), None)[0]
+                    samples[patient].append((ct_embedding, text_embedding, xray_file))
 
         return samples
 

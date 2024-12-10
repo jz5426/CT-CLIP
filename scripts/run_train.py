@@ -121,6 +121,7 @@ def run(cfg):
     trainer = CTClipTrainer(
         clip_xray,
         cfg=cfg,
+        batch_style='patient',
         data_train= "/mnt/f/Chris/dataset/train_preprocessed_xray_mha",
         data_valid = "/mnt/f/Chris/dataset/valid_preprocessed_xray_mha",
         img_embedding_paths = {
@@ -131,7 +132,8 @@ def run(cfg):
             'train': '/mnt/f/Chris/dataset/features_embeddings/train/text_features.pth',
             'valid': '/mnt/f/Chris/dataset/features_embeddings/valid/text_features.pth'
         },
-        reports_file_valid= '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
+        reports_file_train = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+        reports_file_valid = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
         batch_size = 2,
         results_folder="./checkpoints",

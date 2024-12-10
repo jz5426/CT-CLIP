@@ -271,8 +271,8 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
     def __init__(self,
                  data_folder, 
-                 csv_file,
                  cfg, 
+                 csv_file='',
                  img_embedding_path='F:\\Chris\\dataset\\features_embeddings\\valid\\image_features.pth', 
                  text_embedding_path='F:\\Chris\\dataset\\features_embeddings\\valid\\text_features.pth', 
                  batch_style='patient', 
@@ -289,11 +289,11 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         self.ct_embeddings = self._preprocess_embeddings(self.ct_embeddings, level=batch_style)
         self.text_embeddings = self._preprocess_embeddings(self.text_embeddings, level=batch_style)
         assert(self.ct_embeddings.keys() == self.text_embeddings.keys())
-        self.key_ids = list(self.ct_embeddings.keys())
+        self.file_extension = 'mha' # file extension for the xray files
 
         super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames, labels, probing_mode)
         self.cfg = cfg
-
+        self.key_ids = list(self.samples.keys())
         # from trainer.py in cxr_clip
         # the following is not needed for now as we use the synthic paired xray
         # data_config = {}
@@ -327,15 +327,15 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
             key_parts = key.split('_')
 
             if level == 'patient':
-                patient = '_'.join(key_parts[:2])
+                identifier = '_'.join(key_parts[:2])
             elif level == 'experiment':
-                patient = '_'.join(key_parts[:3])
+                identifier = '_'.join(key_parts[:3])
             elif level == 'instance':
-                patient = key
+                identifier = key
 
-            if patient not in processed_embeddings:
-                processed_embeddings[patient] = []
-            processed_embeddings[patient].append(embedding_dict[key])
+            if identifier not in processed_embeddings:
+                processed_embeddings[identifier] = []
+            processed_embeddings[identifier].append((embedding_dict[key], key))
 
         return processed_embeddings
 
@@ -365,7 +365,8 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         # transformation borrowed from cxr_clip
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
 
-        name_acc = xray_file.split(os.sep)[-2] #TODO: double check this, this is being used in feature_extraction function in run_zero_shot.py
+        # name_acc = xray_file.split(os.sep)[-2] #TODO: double check this, this is being used in feature_extraction function in run_zero_shot.py
+        name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
         return  img_embedding, text_embedding, onehotlabels, xray_image, name_acc, xray_file
 
     
@@ -411,13 +412,12 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
 
         samples = {}
-        extension = 'mha'
         for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
             for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
-                mha_files = glob.glob(os.path.join(accession_folder, f'*.{extension}'))
+                mha_files = glob.glob(os.path.join(accession_folder, f'*.{self.file_extension}'))
                 for xray_file in mha_files:
                     # get the filename without extension
-                    instance_name = os.path.basename(xray_file)[:-len(f'.{extension}')]
+                    instance_name = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
                     key_parts = instance_name.split('_')
 
                     if self.batch_style == 'patient':
@@ -430,7 +430,7 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
                     #TODO: double check this.
                     path_dirs = xray_file.split(os.sep)
                     accession_number = path_dirs[-1]
-                    accession_number = accession_number.replace(f".{extension}", ".nii.gz")
+                    accession_number = accession_number.replace(f".{self.file_extension}", ".nii.gz")
                     if accession_number not in self.accession_to_text:
                         continue
                     # ignore the current .mha file if no label exists
@@ -441,8 +441,10 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
                     # get ct and text embeddings
                     if patient not in samples:
                         samples[patient] = []
+                    ct_embedding = next(filter(lambda x: x[1] == instance_name, self.ct_embeddings[patient]), None)[0]
+                    text_embedding = next(filter(lambda x: x[1] == instance_name, self.text_embeddings[patient]), None)[0]
                     samples[patient].append(
-                        (self.ct_embeddings[patient], self.text_embeddings[patient], onehotlabels[0], xray_file)
+                        (ct_embedding, text_embedding, onehotlabels[0], xray_file)
                     )
 
         return samples
