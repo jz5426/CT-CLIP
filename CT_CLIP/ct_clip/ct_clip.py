@@ -1003,12 +1003,12 @@ class CTCLIPwithXray(nn.Module):
             device,
             text_cl_weight = 1.0,
             ct_cl_weight = 1.0,
-            input_are_feature_latents = True, # for triplet modal training, by default it is 
+            is_text_latent_input = True, # for triplet modal training, by default it is 
+            is_image_latent_input = True, # for triplet modal training, by default it is 
             return_logit_and_loss = False,
-            return_encodings = False
     ):
         num_batch_texts = num_batch_images = 1
-        if not input_are_feature_latents:
+        if not is_text_latent_input:
             """
             NOTE: the following implementation mostly adapted from the parent class without 
                     multiview,
@@ -1022,8 +1022,21 @@ class CTCLIPwithXray(nn.Module):
             text_embeddings = self.CTCLIP.text_transformer(text.input_ids, attention_mask = text.attention_mask )
             enc_text = text_embeddings[0] # [0] are the tokens feature, [1] is the pooled features
 
-            enc_image= self.CTCLIP.visual_transformer(image, return_encoded_tokens=True)
+            # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
+            text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
+            
+            # project to latents for the text modality
+            text_embeds = text_embeds[:,0,:]  # NOTE: Take the `[CLS]` token from the seq dimension
+            text_latents = self.CTCLIP.to_text_latent(text_embeds) #NOTE bxd
 
+            # normalize the features for both text and image
+            text_latents = map(l2norm, text_latents)
+        else:
+            # inputs are embedding itself
+            text_latents = text
+        
+        if not is_image_latent_input:
+            enc_image= self.CTCLIP.visual_transformer(image, return_encoded_tokens=True)
             global h_r, w_r, z_r
             h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
 
@@ -1031,25 +1044,16 @@ class CTCLIPwithXray(nn.Module):
             enc_image = torch.mean(enc_image, dim=1) # pool the patch features
             enc_image = enc_image.view(enc_image.shape[0], -1) # global view for each vol in a batch
 
-            if return_encodings:
-                return enc_text, enc_image
-
-            # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
-            text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
+            # project to latents for the ct image
             image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
-            
-            ## project to latents for both the ct image and the text modality
-            text_embeds = text_embeds[:,0,:]  # NOTE: Take the `[CLS]` token from the seq dimension
-            text_latents = self.CTCLIP.to_text_latent(text_embeds) #NOTE bxd
             image_latents = self.CTCLIP.to_visual_latent(image_embeds) #NOTE bxd
 
-            # normalize the features for both text and image
-            text_latents, image_latents = map(l2norm, (text_latents, image_latents))
+            # normalize the features for the image
+            image_latents = map(l2norm, image_latents)
         else:
-            # inputs are embedding itself
-            text_latents, image_latents = text, image
+            image_latents = image
 
-        # extract xray feature representation
+        # always extract xray feature representation
         enc_xray = self.xray_encoder(xray)
         #TODO: also experiment with the 1st token.
         enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features

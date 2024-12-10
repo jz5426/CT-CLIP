@@ -580,13 +580,20 @@ class CTClipTrainer(nn.Module):
 
                     valid_data = valid_data.to(device)
 
+                    # mainly for the validation contrastive loss
                     if self.triplet_training:
-                        val_cl_loss, _ = model(text, valid_data, xray_image, device=device, input_are_feature_latents=True, return_logit_and_loss=True)
+                        val_cl_loss, _ = model(text, 
+                                               valid_data, 
+                                               xray_image, 
+                                               device=device, 
+                                               is_text_latent_input=True, 
+                                               is_image_latent_input=True,
+                                               return_logit_and_loss=True)
                     else:
                         report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
                         val_cl_loss, _ = model(report_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
 
-                    # Accumulate validation loss for this epochs
+                    # Accumulate validation contrastive loss for this epochs
                     running_val_loss += val_cl_loss.item()
 
                     if "module" in model.__dict__:
@@ -619,9 +626,19 @@ class CTClipTrainer(nn.Module):
                     for pathology in pathologies:
                         text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
                         text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-                        
+
                         # this should be the logit score between the text and xray
-                        _, logits = model(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+                        if self.triplet_training:
+                            _, logits = model(text_tokens, 
+                                              valid_data, 
+                                              xray_image, 
+                                              device=device, 
+                                              is_text_latent_input=False, 
+                                              is_image_latent_input=True,
+                                              return_logit_and_loss=True) # need this to return logits
+                        else:
+                            _, logits = model(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+
                         output = apply_softmax(logits)
 
                         if output[0]>output[1]:
