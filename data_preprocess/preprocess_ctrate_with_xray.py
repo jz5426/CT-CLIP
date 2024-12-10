@@ -380,8 +380,8 @@ if __name__ == "__main__":
     split = 'valid' # change the split to valid to process the validation data instead.
 
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
-    raw_ct_dir = f"F:\\Chris\\CT-RATE-temp\\dataset\\{split}" #select the validation or test split
-    # split_to_preprocess = '/mnt/f/Chris/CT-RATE-temp/dataset/train' #select the validation or test split
+    raw_ct_dir = f"F:\\Chris\\CT-RATE-FINAL\\dataset\\{split}" #select the validation or test split
+    # split_to_preprocess = '/mnt/f/Chris/CT-RATE-FINAL/dataset/train' #select the validation or test split
 
     nii_files = read_nii_files(raw_ct_dir)
     num_workers = 8  # Number of worker processes
@@ -389,10 +389,10 @@ if __name__ == "__main__":
     # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
     # Process files using multiprocessing with tqdm progress bar
-    # F:\\Chris\\dataset\\CT-RATE-temp\\processed_dataset
-    # '/mnt/f/Chris/CT-RATE-temp/processed_dataset'
+    # F:\\Chris\\dataset\\CT-RATE-FINAL\\processed_dataset
+    # '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset'
     with Pool(num_workers) as pool:
-        func_with_arg = partial(process_file, split=split, shared_dst_dir='F:\\Chris\\CT-RATE-temp\\processed_dataset')
+        func_with_arg = partial(process_file, split=split, shared_dst_dir='F:\\Chris\\CT-RATE-FINAL\\processed_dataset')
         list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
 
     print('    removing raw ct files\n')

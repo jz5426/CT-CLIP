@@ -85,7 +85,7 @@ if __name__ == '__main__':
     print(f"Files in the '{split}' folder: {len(files)}")
     total_files = len(files)
 
-    destination_folder = os.path.normpath('/mnt/f/Chris/CT-RATE-temp')
+    destination_folder = os.path.normpath('/mnt/f/Chris/CT-RATE-FINAL')
     os.makedirs(destination_folder, exist_ok=True)
 
     # tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
@@ -155,4 +155,4 @@ if __name__ == '__main__':
         # shutil.rmtree(processed_ct_directory)
         
     print("Finished")
-    # process(nii_path='/mnt/f/Chris/CT-RATE-temp/dataset/train', shared_dest='/mnt/f/Chris/CT-RATE-temp/processed_dataset', split='train', num_workers=1)
+    # process(nii_path='/mnt/f/Chris/CT-RATE-FINAL/dataset/train', shared_dest='/mnt/f/Chris/CT-RATE-FINAL/processed_dataset', split='train', num_workers=1)

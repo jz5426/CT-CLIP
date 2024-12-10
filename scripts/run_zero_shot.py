@@ -83,7 +83,7 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 split = 'valid'
 
 # #NOTE: run it from WSL instead of windows
-processed_ct_dir = f"/mnt/f/Chris/CT-RATE-temp/processed_dataset/{split}_preprocessed_ct"
+processed_ct_dir = f"/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/{split}_preprocessed_ct"
 inference_train = CTClipInference(
     clip,
     data_folder = processed_ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",

@@ -84,14 +84,14 @@ if __name__ == '__main__':
     files = [f for f in files if Path(Path(f).stem).stem not in keys] # nested path.stem due to .nii.gz, each remove one extension
 
     # list preprocessed xray files
-    tmp_path_files = list(Path(f'/mnt/f/Chris/CT-RATE-temp/processed_dataset/{split}_preprocessed_xray_mha').rglob('*.*'))  # Find all files (excluding directories)
+    tmp_path_files = list(Path(f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/{split}_preprocessed_xray_mha').rglob('*.*'))  # Find all files (excluding directories)
     base_path_files = list(Path(f'/mnt/f/Chris/dataset/{split}_preprocessed_xray_mha').rglob('*.*'))  # Find all files (excluding directories)
 
     # files = list(Path(f'/mnt/f/Chris/dataset/{split}_preprocessed_xray_mha').rglob('*.*'))  # Find all files (excluding directories)
     filenames = set([os.path.basename(file)[:-len('.mha')] for file in tmp_path_files] + [os.path.basename(file)[:-len('.mha')] for file in base_path_files])
     print(f"files in the embedding dictionary {len(keys)}. files that are preprocessed {len(filenames)}")
 
-    tmp_path_files_rgb = list(Path(f'/mnt/f/Chris/CT-RATE-temp/processed_dataset/{split}_preprocessed_xray_rgb').rglob('*.*'))  # Find all files (excluding directories)
+    tmp_path_files_rgb = list(Path(f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/{split}_preprocessed_xray_rgb').rglob('*.*'))  # Find all files (excluding directories)
     base_path_files_rgb = list(Path(f'/mnt/f/Chris/dataset/{split}_preprocessed_xray_rgb').rglob('*.*'))
     filenames_rgb = set([os.path.basename(file)[:-len('.png')] for file in tmp_path_files_rgb] + [os.path.basename(file)[:-len('.png')] for file in base_path_files_rgb])
 
@@ -106,4 +106,4 @@ if __name__ == '__main__':
     # torch.save(text_features, text_feature_path)
     
     print("Finished")
-    # process(nii_path='/mnt/f/Chris/CT-RATE-temp/dataset/train', shared_dest='/mnt/f/Chris/CT-RATE-temp/processed_dataset', split='train', num_workers=1)
+    # process(nii_path='/mnt/f/Chris/CT-RATE-FINAL/dataset/train', shared_dest='/mnt/f/Chris/CT-RATE-FINAL/processed_dataset', split='train', num_workers=1)

@@ -125,7 +125,7 @@ if __name__ == '__main__':
     print(f"Files in the '{split}' folder: {len(files)}")
     total_files = len(files)
 
-    destination_folder = os.path.normpath('F:\\Chris\\CT-RATE-temp') # F:\\Chris\\CT-RATE-temp\\dataset\\train /mnt/f/Chris/CT-RATE-temp
+    destination_folder = os.path.normpath('F:\\Chris\\CT-RATE-FINAL') # F:\\Chris\\CT-RATE-FINAL\\dataset\\train /mnt/f/Chris/CT-RATE-FINAL
     os.makedirs(destination_folder, exist_ok=True)
 
     print('    downloading files\n')
