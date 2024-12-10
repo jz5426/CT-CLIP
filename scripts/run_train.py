@@ -107,37 +107,33 @@ def run(cfg):
     # clip_xray.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt",
     #             "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
 
-    trainer = CTClipTrainer(
-        clip_xray,
-        cfg=cfg,
-        data_train= "G:\\Chris\\processed_data\\train_preprocessed_xray_mha",
-        data_valid = "G:\\Chris\\processed_data\\train_preprocessed_xray_mha",
-        labels = "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\multi_abnormality_labels\\dataset_multi_abnormality_labels_valid_predicted_labels.csv",
-        batch_size = 2,
-        results_folder=".\\test",
-        num_train_steps = 100001,
-        num_workers = 1,
-    )
-
     # trainer = CTClipTrainer(
     #     clip_xray,
     #     cfg=cfg,
-    #     reports_file_train= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv",
-    #     reports_file_valid= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv",
-    #     data_train= "/mnt/f/Chris/dataset/train_preprocessed_ct",
-    #     data_valid = "/mnt/f/Chris/dataset/valid_preprocessed_ct",
-    #     data_xray_train="/mnt/f/Chris/dataset/train_preprocessed_xray_mha",
-    #     data_xray_valid="/mnt/f/Chris/dataset/valid_preprocessed_xray_mha",
-    #     labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
+    #     data_train= "G:\\Chris\\processed_data\\train_preprocessed_xray_mha",
+    #     data_valid = "G:\\Chris\\processed_data\\train_preprocessed_xray_mha",
+    #     labels = "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\multi_abnormality_labels\\dataset_multi_abnormality_labels_valid_predicted_labels.csv",
     #     batch_size = 2,
-    #     results_folder="./checkpoints",
+    #     results_folder=".\\test",
     #     num_train_steps = 100001,
-    #     num_workers = 1, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-    #     train_from_scratch = True
+    #     num_workers = 1,
     # )
 
-    # trainer.train() # train by iterations
-    # trainer.train_by_epoch(250)
+    trainer = CTClipTrainer(
+        clip_xray,
+        cfg=cfg,
+        data_train= "/mnt/f/Chris/dataset/train_preprocessed_ct",
+        data_valid = "/mnt/f/Chris/dataset/valid_preprocessed_ct",
+        labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
+        batch_size = 2,
+        results_folder="./checkpoints",
+        num_train_steps = 100001,
+        num_workers = 1, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        train_from_scratch = True
+    )
+
+    ##trainer.train() # train by iterations
+    trainer.train_by_epoch(250)
 
     """
     TODO: check the performance when the xray encoder is initialized from scratch.
