@@ -367,6 +367,8 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
         # name_acc = xray_file.split(os.sep)[-2] #TODO: double check this, this is being used in feature_extraction function in run_zero_shot.py
         name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
+        img_embedding = np.squeeze(img_embedding)
+        text_embedding = np.squeeze(text_embedding)
         return  img_embedding, text_embedding, onehotlabels, xray_image, name_acc, xray_file
 
     

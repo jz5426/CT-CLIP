@@ -513,9 +513,9 @@ class CTClipTrainer(nn.Module):
                     video, text = data
                 
                 video=video.to(device)
+                # TODO: change the following so that it only uses the embedding without forward pass
                 text = list(text)
                 text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device) # automatically prepend the [CLS] token with id 2, 511 actual content maximum.
-    
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.
                     if self.triplet_training:
                         loss = self.CTClip(text_tokens, video, xray, return_loss=True, device=device)
@@ -576,6 +576,7 @@ class CTClipTrainer(nn.Module):
 
                     valid_data = valid_data.to(device)
 
+                    # TODO: change the following so that it only uses the embedding without forward pass
                     report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
                     val_cl_loss, _ = model(report_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
                     # Accumulate validation loss for this epochs
