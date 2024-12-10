@@ -155,21 +155,21 @@ def run(cfg):
         clip_xray,
         cfg=cfg,
         batch_style='patient',
-        data_train= '',
-        data_valid = '',
+        data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+        data_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
         img_embedding_paths = {
-            'train': '', 
-            'valid': ''
+            'train': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/train/image_features.pth', 
+            'valid': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/valid/image_features.pth'
         },
         text_embedding_paths = {
-            'train': '',
-            'valid': ''
+            'train': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/train/text_features.pth',
+            'valid': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/valid/text_features.pth'
         },
         reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        batch_size = 3,
-        results_folder='',
+        batch_size = 64,
+        results_folder='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS',
         num_train_steps = 100001,
         num_workers = 1, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         train_from_scratch = True
