@@ -1003,7 +1003,7 @@ class CTCLIPwithXray(nn.Module):
             device,
             text_cl_weight = 1.0,
             ct_cl_weight = 1.0,
-            input_are_feature_latents = True, # for triplet modal training, by default it is True
+            input_are_feature_latents = True, # for triplet modal training, by default it is 
             return_logit_and_loss = False,
             return_encodings = False
     ):
@@ -1066,9 +1066,7 @@ class CTCLIPwithXray(nn.Module):
         image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
         xray_latents = rearrange(xray_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 
-        # if return_logit_and_loss:
         logits = einsum('m t d, n i d -> m n t i', text_latents, xray_latents) * temp # compute similarity matrix
-        # return logits.squeeze()
 
         """
         NOTE: CL between image and xray and CL between text and xray
