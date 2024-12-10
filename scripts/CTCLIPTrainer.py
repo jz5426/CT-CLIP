@@ -199,6 +199,9 @@ class CTClipTrainer(nn.Module):
         self.triplet_training = False
         if hasattr(self.CTClip, 'xray_encoder'):
             self.triplet_training = True
+            # max_grad_norm = None # TODO: might need to experiment if need this.
+
+        self.max_grad_norm = max_grad_norm
 
         if tokenizer != None:
             self.tokenizer=tokenizer
@@ -213,9 +216,15 @@ class CTClipTrainer(nn.Module):
         all_parameters = set(CTClip.parameters())
 
         #TODO: might need to check if group_wd_params is needed when train the whole triplet instead of the xray encoder.
-        self.optim = get_optimizer(all_parameters, lr=lr, wd=wd, group_wd_params=False)
+        if cfg and cfg['optimizer']['name'] == 'adamw':
+            wd = cfg['optimizer']['config']['weight_decay']
+            lr = cfg['optimizer']['config']['lr']
+        else:
+            # default parameters in original CTCLIPTrainer
+            wd = 0
+            lr = 1.25e-6
 
-        self.max_grad_norm = max_grad_norm
+        self.optim = get_optimizer(all_parameters, lr=lr, wd=wd, group_wd_params=False)
         self.lr=lr
         
         # Load the pre-trained weights
