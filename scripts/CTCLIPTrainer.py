@@ -515,6 +515,7 @@ class CTClipTrainer(nn.Module):
                 video=video.to(device)
                 text=text.to(device)
                 # TODO: change the following so that it only uses the embedding without forward pass
+                # TODO: make sure whether the embedding should have gradient off.
                 text = list(text)
                 text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device) # automatically prepend the [CLS] token with id 2, 511 actual content maximum.
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.
