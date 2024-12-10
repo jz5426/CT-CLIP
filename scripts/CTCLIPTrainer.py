@@ -661,6 +661,10 @@ class CTClipTrainer(nn.Module):
         return False
 
     def _save_ckpt(self, epoch, file_name, print_annotation, iteration=-1):
+        """
+        iteration = -1 indicates this is epoch based training/evaluation
+        iteration != -1 indicates this is interation based training/evaluation 
+        """
         model_path = str(self.results_folder / file_name)
         state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
         self.accelerator.save(state_dict, model_path)
