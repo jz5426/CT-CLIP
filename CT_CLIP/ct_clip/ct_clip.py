@@ -1070,7 +1070,6 @@ class CTCLIPwithXray(nn.Module):
         image_latents = rearrange(image_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
         xray_latents = rearrange(xray_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 
-        logits = einsum('m t d, n i d -> m n t i', text_latents, xray_latents) * temp # compute similarity matrix
 
         """
         NOTE: CL between image and xray and CL between text and xray
@@ -1080,6 +1079,7 @@ class CTCLIPwithXray(nn.Module):
         loss = text_cl_weight*cl_text_to_xray + ct_cl_weight*cl_img_to_xray
       
         if return_logit_and_loss:
+            logits = einsum('m t d, n i d -> m n t i', text_latents, xray_latents) * temp # compute similarity matrix
             return loss, logits.squeeze()
         return loss
 
