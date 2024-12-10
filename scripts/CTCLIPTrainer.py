@@ -176,8 +176,8 @@ class CTClipTrainer(nn.Module):
         reports_file_valid = "data_reports.xslx",
         labels = "labels.csv",
         tokenizer = None,
-        lr = 0.001, # 1.25e-6, suggested by ULIP
-        wd = 0.,
+        lr = 5e-5, # 1.25e-6, suggested by ULIP, 5e-5 from cxr-clip
+        wd = 1e-4, # NOTE: from cxr-clip
         max_grad_norm = 0.5,
         iteration_evaluate_frequency = 500,
         iteration_progress_frequency = 10,
@@ -212,8 +212,8 @@ class CTClipTrainer(nn.Module):
 
         all_parameters = set(CTClip.parameters())
 
-        #TODO: might add a option to use the adamw optimizer
-        self.optim = get_optimizer(all_parameters, lr=lr, wd=wd)
+        #TODO: might need to check if group_wd_params is needed when train the whole triplet instead of the xray encoder.
+        self.optim = get_optimizer(all_parameters, lr=lr, wd=wd, group_wd_params=False)
 
         self.max_grad_norm = max_grad_norm
         self.lr=lr
