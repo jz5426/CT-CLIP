@@ -337,7 +337,8 @@ class CTClipInference(nn.Module):
         with torch.no_grad():
             self.CTClip.eval()
             # bar = tqdm.tqdm(self.dl, desc="Feature Extration", leave=False)
-            for idx, batch_data in tqdm.tqdm(enumerate(self.dl), desc="Feature Extration", leave=False):
+            idx = 0
+            for batch_data in tqdm.tqdm(self.dl, desc="Feature Extration", leave=False):
                 valid_data, text, _, _, instance_name, _ = batch_data
                 # skip the forward pass if exists
                 instance_name = [key for key in instance_name if key not in self.image_features and key not in self.text_features]
@@ -362,6 +363,14 @@ class CTClipInference(nn.Module):
                     torch.save(self.text_features, text_feature_path)
                 else:
                     print('NOT SAVING IT THE EMBEDDINGS!!!')
+                idx += 1
+
+        if append:
+            os.makedirs(saving_path, exist_ok=True)
+            torch.save(self.image_features, img_feature_path)
+            torch.save(self.text_features, text_feature_path)
+        else:
+            print('NOT SAVING IT THE EMBEDDINGS!!!')
 
         #test
         # loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
