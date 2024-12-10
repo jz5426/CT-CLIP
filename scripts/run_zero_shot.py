@@ -82,7 +82,7 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 
 split = 'valid'
 
-#NOTE: run it from WSL instead of windows
+# #NOTE: run it from WSL instead of windows
 processed_ct_dir = f"/mnt/f/Chris/CT-RATE-temp/processed_dataset/{split}_preprocessed_ct"
 inference_train = CTClipInference(
     clip,
@@ -99,7 +99,7 @@ inference_train = CTClipInference(
 inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', split, True)
 
 print('    removing processed ct files\n')
-# shutil.rmtree(processed_ct_dir)
+shutil.rmtree(processed_ct_dir)
 """
 TODO: hyperparameters for the xray encoder with temperature 0.07
 TODO: batch based on patient/experiment/instance.
