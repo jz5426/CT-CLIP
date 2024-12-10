@@ -346,7 +346,7 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
     def __getitem__(self, index):
 
         key_id = self.key_ids[index]
-        # Randomly select an image for this patient
+        # Randomly select an random instance for this id (patient, experiment, instance)
         selected_sample = random.choice(self.samples[key_id])
         img_embedding, text_embedding, onehotlabels, xray_file = selected_sample
 
@@ -354,7 +354,8 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         # transformation borrowed from cxr_clip
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
 
-        return  img_embedding, text_embedding, onehotlabels, xray_image
+        name_acc = xray_file.split(os.sep)[-2] #TODO: double check this, this is being used in feature_extraction function in run_zero_shot.py
+        return  img_embedding, text_embedding, onehotlabels, xray_image, name_acc, xray_file
 
     
     def xray_mha_to_rgb(self, path, transform):
@@ -414,7 +415,10 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
                         patient = '_'.join(key_parts[:3]) # patient experiment level
                     elif self.batch_style == 'instance':
                         patient = instance_name # instance level (the original implementation)
-
+                    
+                    #TODO: double check this.
+                    path_dirs = xray_file.split(os.sep)
+                    accession_number = path_dirs[-1]
                     accession_number = accession_number.replace(f".{extension}", ".nii.gz")
                     if accession_number not in self.accession_to_text:
                         continue
