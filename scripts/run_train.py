@@ -122,15 +122,15 @@ def run(cfg):
         clip_xray,
         cfg=cfg,
         batch_style='patient',
-        data_train= "/mnt/f/Chris/dataset/train_preprocessed_xray_mha",
-        data_valid = "/mnt/f/Chris/dataset/valid_preprocessed_xray_mha",
+        data_train= "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha",
+        data_valid = "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha",
         img_embedding_paths = {
-            'train': '/mnt/f/Chris/dataset/features_embeddings/train/image_features.pth',
-            'valid': '/mnt/f/Chris/dataset/features_embeddings/valid/image_features.pth'
+            'train': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/train/image_features.pth', 
+            'valid': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/valid/image_features.pth'
         },
         text_embedding_paths = {
-            'train': '/mnt/f/Chris/dataset/features_embeddings/train/text_features.pth',
-            'valid': '/mnt/f/Chris/dataset/features_embeddings/valid/text_features.pth'
+            'train': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/train/text_features.pth',
+            'valid': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/valid/text_features.pth'
         },
         reports_file_train = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         reports_file_valid = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
