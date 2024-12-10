@@ -269,7 +269,18 @@ class CTReportDatasetinfer(Dataset):
 
 class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
-    def __init__(self, data_folder, cfg, img_embedding_path='F:\\Chris\\dataset\\features_embeddings\\valid\\image_features.pth', text_embedding_path='F:\\Chris\\dataset\\features_embeddings\\valid\\text_features.pth', batch_style='patient', min_slices=20, resize_dim=500, force_num_frames=True, labels="labels.csv", probing_mode=False):
+    def __init__(self,
+                 data_folder, 
+                 csv_file,
+                 cfg, 
+                 img_embedding_path='F:\\Chris\\dataset\\features_embeddings\\valid\\image_features.pth', 
+                 text_embedding_path='F:\\Chris\\dataset\\features_embeddings\\valid\\text_features.pth', 
+                 batch_style='patient', 
+                 min_slices=20, 
+                 resize_dim=500, 
+                 force_num_frames=True, 
+                 labels="labels.csv", 
+                 probing_mode=False):
         self.xray_paths = []
         assert(batch_style in ['patient', 'experiment', 'instance'])
         self.batch_style = batch_style
@@ -280,7 +291,7 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         assert(self.ct_embeddings.keys() == self.text_embeddings.keys())
         self.key_ids = list(self.ct_embeddings.keys())
 
-        super().__init__(data_folder, '', min_slices, resize_dim, force_num_frames, labels, probing_mode, load_assession=True)
+        super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames, labels, probing_mode)
         self.cfg = cfg
 
         # from trainer.py in cxr_clip
@@ -484,18 +495,3 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
                         self.paths.append(nii_file)
                         self.xray_paths.append(xray_file)
         return samples
-
-
-    def __getitem__(self, index):
-        nii_file, input_text, onehotlabels, xray_file = self.samples[index]
-        video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
-
-        xray_image = self.xray_to_rgb(xray_file)
-        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
-
-        input_text = input_text.replace('"', '')  
-        input_text = input_text.replace('\'', '')  
-        input_text = input_text.replace('(', '')  
-        input_text = input_text.replace(')', '')  
-        name_acc = nii_file.split(os.sep)[-2]
-        return video_tensor, input_text, onehotlabels, xray_image, name_acc, nii_file # add the nii_file for xray projections

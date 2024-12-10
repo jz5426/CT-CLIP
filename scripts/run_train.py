@@ -131,6 +131,7 @@ def run(cfg):
             'train': '/mnt/f/Chris/dataset/features_embeddings/train/text_features.pth',
             'valid': '/mnt/f/Chris/dataset/features_embeddings/valid/text_features.pth'
         },
+        reports_file_valid= '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
         batch_size = 2,
         results_folder="./checkpoints",

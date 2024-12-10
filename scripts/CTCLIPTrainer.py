@@ -219,6 +219,8 @@ class CTClipTrainer(nn.Module):
         
         # Load the pre-trained weights
         if self.triplet_training:
+
+            # train does not need csv file as it does not requires report
             self.train_ds = CTReportXRayDataset(
                 data_folder=data_train, 
                 cfg=cfg, 
@@ -227,6 +229,7 @@ class CTClipTrainer(nn.Module):
             )
             self.valid_ds = CTReportXRayDatasetinfer(
                 data_folder=data_valid, 
+                csv_file=reports_file_valid,
                 cfg=cfg, 
                 img_embedding_path=img_embedding_paths['valid'],
                 text_embedding_path=text_embedding_paths['valid'],
