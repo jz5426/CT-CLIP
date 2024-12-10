@@ -6,6 +6,7 @@ image_encoder:
   name: 'microsoft/swin-tiny-patch4-window7-224'
   pretrained: true
   model_type: 'swin'
+  cache_dir: '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/swin_cxr_img_encoder/'
 
 text_encoder:
   source: "huggingface" # one of { "huggingface"}

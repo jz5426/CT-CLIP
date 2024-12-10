@@ -41,8 +41,8 @@ def main(cfg: DictConfig):
 
 def run(cfg):
         
-    tokenizer = BertTokenizer.from_pretrained('/cluster/home/t135419uhn/CT-CLIP/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',do_lower_case=True)
-    text_encoder = BertModel.from_pretrained('/cluster/home/t135419uhn/CT-CLIP/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc')
+    tokenizer = BertTokenizer.from_pretrained('/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',do_lower_case=True)
+    text_encoder = BertModel.from_pretrained('/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc')
 
     print("---------")
     print(tokenizer.pad_token_id)
