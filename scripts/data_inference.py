@@ -16,19 +16,16 @@ import SimpleITK as sitk
 import matplotlib.pyplot as plt
 import warnings
 from data import resize_array
-
+import random
 
 class CTReportDatasetinfer(Dataset):
-    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False, load_assession=True):
+    def __init__(self, data_folder, csv_file, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False):
         self.data_folder = data_folder
         self.min_slices = min_slices
         self.labels = labels
-        self.accession_to_text = None
+        self.accession_to_text = self.load_accession_text(csv_file)
         self.paths=[]
-        self.samples = []
-        if load_assession:
-            self.accession_to_text = self.load_accession_text(csv_file)
-            self.samples = self.prepare_samples()
+        self.samples = self.prepare_samples()
         self.transform = transforms.Compose([
             transforms.Resize((resize_dim,resize_dim)),
             transforms.ToTensor()
@@ -310,6 +307,56 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
             # NOTE: inference transformation would be different than that during training.
         self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
 
+
+    def _preprocess_embeddings(self, embedding_dict, level='patient'):
+        keys = list(embedding_dict.keys())
+        processed_embeddings = {}
+
+        for key in keys:
+            key_parts = key.split('_')
+
+            if level == 'patient':
+                patient = '_'.join(key_parts[:2])
+            elif level == 'experiment':
+                patient = '_'.join(key_parts[:3])
+            elif level == 'instance':
+                patient = key
+
+            if patient not in processed_embeddings:
+                processed_embeddings[patient] = []
+            processed_embeddings[patient].append(embedding_dict[key])
+
+        return processed_embeddings
+
+    def __getitem__backup(self, index):
+        nii_file, input_text, onehotlabels, xray_file = self.samples[index]
+        video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
+
+        xray_image = self.xray_to_rgb(xray_file)
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+
+        input_text = input_text.replace('"', '')  
+        input_text = input_text.replace('\'', '')  
+        input_text = input_text.replace('(', '')  
+        input_text = input_text.replace(')', '')  
+        name_acc = nii_file.split(os.sep)[-2]
+        return video_tensor, input_text, onehotlabels, xray_image, name_acc, nii_file # add the nii_file for xray projections
+
+
+    def __getitem__(self, index):
+
+        key_id = self.key_ids[index]
+        # Randomly select an image for this patient
+        selected_sample = random.choice(self.samples[key_id])
+        img_embedding, text_embedding, onehotlabels, xray_file = selected_sample
+
+        xray_image = self.xray_to_rgb(xray_file)
+        # transformation borrowed from cxr_clip
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+
+        return  img_embedding, text_embedding, onehotlabels, xray_image
+
+    
     def xray_mha_to_rgb(self, path, transform):
         """
         assume the path to the xray is mha format
@@ -340,8 +387,53 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         
         return rgb_image
 
-
     def prepare_samples(self):
+        """
+        this prepare the xray data in a dictionary format
+        """
+        # based on the xray files and retrieve the corresponding embeddings
+
+        # Read labels once outside the loop
+        test_df = pd.read_csv(self.labels)
+        test_label_cols = list(test_df.columns[1:])
+        test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
+
+        samples = {}
+        extension = 'mha'
+        for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
+            for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
+                mha_files = glob.glob(os.path.join(accession_folder, f'*.{extension}'))
+                for xray_file in mha_files:
+                    # get the filename without extension
+                    instance_name = os.path.basename(xray_file)[:-len(f'.{extension}')]
+                    key_parts = instance_name.split('_')
+
+                    if self.batch_style == 'patient':
+                        patient = '_'.join(key_parts[:2]) # patient level
+                    elif self.batch_style == 'experiment':
+                        patient = '_'.join(key_parts[:3]) # patient experiment level
+                    elif self.batch_style == 'instance':
+                        patient = instance_name # instance level (the original implementation)
+
+                    accession_number = accession_number.replace(f".{extension}", ".nii.gz")
+                    if accession_number not in self.accession_to_text:
+                        continue
+                    # ignore the current .mha file if no label exists
+                    onehotlabels = test_df[test_df["VolumeName"] == accession_number]["one_hot_labels"].values
+                    if len(onehotlabels) == 0:
+                        continue
+
+                    # get ct and text embeddings
+                    if patient not in samples:
+                        samples[patient] = []
+                    samples[patient].append(
+                        (self.ct_embeddings[patient], self.text_embeddings[patient], onehotlabels[0], xray_file)
+                    )
+
+        return samples
+
+
+    def prepare_samples_backup(self):
         samples = []
         xray_path_dirs = self.xray_data_folder.split(os.sep)
         patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
