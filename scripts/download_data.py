@@ -70,6 +70,8 @@ def download_and_move(file, destination_folder, repo_id):
     # Move the downloaded file to the destination folder
     file_dir = os.path.join(destination_dir, filename)
 
+    if os.path.exists(file_dir):
+        return
 
     # Download the file
     file_path = hf_hub_download(
@@ -77,7 +79,7 @@ def download_and_move(file, destination_folder, repo_id):
         filename=filename,
         subfolder=dir_path.replace('\\', '/'), # for problems in windows machine
         repo_type="dataset",
-        cache_dir='F:\\cache', #'/mnt/f/cache', # must be placed in the same external hard drive for wsl to work for shutil.move operations
+        # cache_dir='F:\\cache', #'/mnt/f/cache', # must be placed in the same external hard drive for wsl to work for shutil.move operations
         token='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' # Ensure your token is set in the huggingface
     )
 
@@ -93,11 +95,11 @@ def parallel_download(batch, destination_folder, repo_id, num_workers=8):
 
 if __name__ == '__main__':
 
-    split = 'valid'
+    split = 'train'
     # NOTE: automatically download in the split folder without manually create one
 
     # perform feature extraction after download 100 of them
-    feature_extraction_frequency = 15000
+    feature_extraction_frequency = 12000
 
     repo_id = "ibrahimhamamci/CT-RATE"
     folder_path = "dataset/{}".format(split)
