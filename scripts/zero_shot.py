@@ -361,8 +361,6 @@ class CTClipInference(nn.Module):
                     os.makedirs(saving_path, exist_ok=True)
                     torch.save(self.image_features, img_feature_path)
                     torch.save(self.text_features, text_feature_path)
-                else:
-                    print('NOT SAVING IT THE EMBEDDINGS!!!')
                 idx += 1
         
         # save the remaining.
