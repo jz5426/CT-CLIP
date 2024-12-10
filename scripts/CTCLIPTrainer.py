@@ -608,6 +608,9 @@ class CTClipTrainer(nn.Module):
                     # Accumulate validation contrastive loss for this epochs
                     running_val_loss += val_cl_loss.item()
 
+                    if not (i % (self.iteration_evaluate_frequency // 10)):
+                        print(f"Evaluating Batch {i}/{val_size}")
+
                     if "module" in self.CTClip.__dict__:
                         self.CTClip = self.CTClip.module
 
