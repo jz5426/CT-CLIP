@@ -112,6 +112,7 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
 
     # avoid duplicate processing.
     if os.path.exists(ct_save_path) and os.path.exists(xray_save_path) and os.path.exists(xray_rgb_save_path):
+        print(f"{file_name} already exists. Passing")
         return
 
     img_data = read_nii_data(file_path)
