@@ -502,14 +502,13 @@ class CTClipTrainer(nn.Module):
 
     def train_by_epoch(self, epochs):
         print('Epoch Training Starts\n')
-        model = self.CTClip
         device = self.device
 
         train_size = len(self.train_ds)
         val_size = len(self.valid_ds)
 
         for epoch in range(epochs):
-            model.train()
+            self.CTClip.train()
             running_loss = 0.0
             for batch_idx in range(train_size):
                 self.optim.zero_grad()
@@ -578,7 +577,7 @@ class CTClipTrainer(nn.Module):
         # after training each epoch, test the model in the validation split
         if self.is_main:
             with torch.no_grad():
-                model.eval()
+                self.CTClip.eval()
                 predictedall=[]
                 realall=[]
                 running_val_loss = 0
@@ -596,22 +595,22 @@ class CTClipTrainer(nn.Module):
 
                     # mainly for the validation contrastive loss
                     if self.triplet_training:
-                        val_cl_loss, _ = model(text, 
-                                               valid_data, 
-                                               xray_image, 
-                                               device=device, 
-                                               is_text_latent_input=True, 
-                                               is_image_latent_input=True,
-                                               return_logit_and_loss=True)
+                        val_cl_loss, _ = self.CTClip(text, 
+                                                    valid_data, 
+                                                    xray_image, 
+                                                    device=device, 
+                                                    is_text_latent_input=True, 
+                                                    is_image_latent_input=True,
+                                                    return_logit_and_loss=True)
                     else:
                         report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-                        val_cl_loss, _ = model(report_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+                        val_cl_loss, _ = self.CTClip(report_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
 
                     # Accumulate validation contrastive loss for this epochs
                     running_val_loss += val_cl_loss.item()
 
-                    if "module" in model.__dict__:
-                        model = model.module
+                    if "module" in self.CTClip.__dict__:
+                        self.CTClip = self.CTClip.module
 
                     pathologies = ['Medical material',
                                     'Arterial wall calcification', 
@@ -643,15 +642,15 @@ class CTClipTrainer(nn.Module):
 
                         # this should be the logit score between the text and xray
                         if self.triplet_training:
-                            _, logits = model(text_tokens, 
-                                              valid_data, 
-                                              xray_image, 
-                                              device=device, 
-                                              is_text_latent_input=False, 
-                                              is_image_latent_input=True,
-                                              return_logit_and_loss=True) # need this to return logits
+                            _, logits = self.CTClip(text_tokens, 
+                                                    valid_data, 
+                                                    xray_image, 
+                                                    device=device, 
+                                                    is_text_latent_input=False, 
+                                                    is_image_latent_input=True,
+                                                    return_logit_and_loss=True) # need this to return logits
                         else:
-                            _, logits = model(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
+                            _, logits = self.CTClip(text_tokens, valid_data, xray_image, device=device, return_logit_and_loss=True)
 
                         output = apply_softmax(logits)
 
