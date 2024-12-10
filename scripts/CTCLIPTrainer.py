@@ -169,6 +169,8 @@ class CTClipTrainer(nn.Module):
         data_train = "train",
         data_valid = "valid",
         cfg=None,
+        img_embedding_paths = {}, # contain both train and validation
+        text_embedding_paths = {}, # contian both train and validation
         reports_file_train = "data_reports.xslx",
         reports_file_valid = "data_reports.xslx",
         labels = "labels.csv",
@@ -217,8 +219,19 @@ class CTClipTrainer(nn.Module):
         
         # Load the pre-trained weights
         if self.triplet_training:
-            self.train_ds = CTReportXRayDataset(data_folder=data_train, cfg=cfg)
-            self.valid_ds = CTReportXRayDatasetinfer(data_folder=data_valid, cfg=cfg, labels=labels)
+            self.train_ds = CTReportXRayDataset(
+                data_folder=data_train, 
+                cfg=cfg, 
+                img_embedding_path=img_embedding_paths['train'], 
+                text_embedding_path=text_embedding_paths['train']
+            )
+            self.valid_ds = CTReportXRayDatasetinfer(
+                data_folder=data_valid, 
+                cfg=cfg, 
+                img_embedding_path=img_embedding_paths['valid'],
+                text_embedding_path=text_embedding_paths['valid'],
+                labels=labels
+            )
 
             # custom sampler
             custom_train_sampler = UniqueLevelSampler(self.train_ds.key_ids, self.batch_size)

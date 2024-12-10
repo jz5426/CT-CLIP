@@ -123,6 +123,14 @@ def run(cfg):
         cfg=cfg,
         data_train= "/mnt/f/Chris/dataset/train_preprocessed_xray_mha",
         data_valid = "/mnt/f/Chris/dataset/valid_preprocessed_xray_mha",
+        img_embedding_paths = {
+            'train': '/mnt/f/Chris/dataset/features_embeddings/train/image_features.pth',
+            'valid': '/mnt/f/Chris/dataset/features_embeddings/valid/image_features.pth'
+        },
+        text_embedding_paths = {
+            'train': '/mnt/f/Chris/dataset/features_embeddings/train/text_features.pth',
+            'valid': '/mnt/f/Chris/dataset/features_embeddings/valid/text_features.pth'
+        },
         labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
         batch_size = 2,
         results_folder="./checkpoints",
