@@ -411,6 +411,7 @@ class CTCLIP(nn.Module):
             *,
             image_encoder = None,
             text_encoder = None,
+            tokenizer = None,
             dim_text = 512,
             dim_image = 512,
             dim_latent = 512,
@@ -583,8 +584,7 @@ class CTCLIP(nn.Module):
 
         self.multiview_loss_weight = multiview_loss_weight
 
-        self.tokenizer= BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
-
+        self.tokenizer= tokenizer if tokenizer else BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
     def state_dict(self, *args, **kwargs):
         return super().state_dict(*args, **kwargs)
 
@@ -905,6 +905,7 @@ class CTCLIPwithXray(nn.Module):
             *,
             image_encoder = None,
             text_encoder = None,
+            tokenizer = None,
             xray_model_type = 'swin', # any vit based
             dim_text = 512,
             dim_image = 512,
@@ -950,6 +951,7 @@ class CTCLIPwithXray(nn.Module):
         self.CTCLIP = CTCLIP(
             image_encoder=image_encoder,
             text_encoder=text_encoder,
+            tokenizer = tokenizer,
             dim_text=dim_text,
             dim_image=dim_image,
             dim_latent=dim_latent,

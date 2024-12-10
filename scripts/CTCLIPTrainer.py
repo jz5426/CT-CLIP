@@ -184,7 +184,7 @@ class CTClipTrainer(nn.Module):
         epoch_based_patience = 10,
         save_results_every = 1000,
         save_model_every = 1000 ,
-        results_folder = '/shares/menze.dqbm.uzh/ihamam/ctclip/',
+        results_folder = '',
         num_workers = 8,
         train_from_scratch = True, # TODO: double check this!
         accelerate_kwargs: dict = dict()
@@ -504,8 +504,8 @@ class CTClipTrainer(nn.Module):
         print('Epoch Training Starts\n')
         device = self.device
 
-        train_size = len(self.train_ds)
-        val_size = len(self.valid_ds)
+        train_size = 10# len(self.train_ds)
+        val_size = 8 # len(self.valid_ds)
 
         for epoch in range(epochs):
             self.CTClip.train()
@@ -686,7 +686,7 @@ class CTClipTrainer(nn.Module):
                 del output
 
                 # save a model for each epoch
-                self._save_ckpt(f'CTClip.{epoch}.pt', '', iteration)
+                # self._save_ckpt(f'CTClip.{epoch}.pt', '', iteration)
 
                 # save model based on f1 metric
                 if self.best_f1_val_acc < f1:

@@ -41,9 +41,8 @@ def main(cfg: DictConfig):
 
 def run(cfg):
         
-    tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
-
-    text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
+    tokenizer = BertTokenizer.from_pretrained('/cluster/home/t135419uhn/CT-CLIP/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',do_lower_case=True)
+    text_encoder = BertModel.from_pretrained('/cluster/home/t135419uhn/CT-CLIP/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc')
 
     print("---------")
     print(tokenizer.pad_token_id)
@@ -81,6 +80,7 @@ def run(cfg):
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
+        tokenizer=tokenizer,
         dim_text = 768,
         dim_image = 294912,
         xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet',
@@ -101,10 +101,12 @@ def run(cfg):
     #             "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\cxr_clip\\{}".format(ckpt_name))
 
     # windows wsl
-    clip_xray.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt",
-                "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
+    # clip_xray.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt",
+    #             "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
 
     # uhn cluster
+    clip_xray.load("/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
+                "/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
@@ -168,15 +170,15 @@ def run(cfg):
         reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        batch_size = 64,
+        batch_size = 3,
         results_folder='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS',
         num_train_steps = 100001,
-        num_workers = 1, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         train_from_scratch = True
     )
 
     ##trainer.train() # train by iterations
-    trainer.train_by_epoch(250)
+    trainer.train_by_epoch(2)
 
     """
     TODO: check the performance when the xray encoder is initialized from scratch.
