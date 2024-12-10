@@ -364,7 +364,8 @@ class CTClipInference(nn.Module):
                 else:
                     print('NOT SAVING IT THE EMBEDDINGS!!!')
                 idx += 1
-
+        
+        # save the remaining.
         if append:
             os.makedirs(saving_path, exist_ok=True)
             torch.save(self.image_features, img_feature_path)
@@ -372,7 +373,7 @@ class CTClipInference(nn.Module):
         else:
             print('NOT SAVING IT THE EMBEDDINGS!!!')
 
-        #test
-        # loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
-        # loaded_txt_features = torch.load(os.path.join(saving_path, 'text_features.pth'))
-        # print('verify now')
+        #sanity check
+        loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
+        loaded_txt_features = torch.load(os.path.join(saving_path, 'text_features.pth'))
+        print(f'size of image features {len(loaded_img_features)}; size of text features {len(loaded_txt_features)}')
