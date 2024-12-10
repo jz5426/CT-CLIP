@@ -528,7 +528,12 @@ class CTClipTrainer(nn.Module):
 
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.
                     if self.triplet_training:
-                        loss = self.CTClip(text, video, xray, device=device, input_are_feature_latents=True)
+                        loss = self.CTClip(text,
+                                           video, 
+                                           xray, 
+                                           device=device,
+                                           is_text_latent_input=True, 
+                                           is_image_latent_input=True)
                     else:
                         text = list(text)
                         text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device) # automatically prepend the [CLS] token with id 2, 511 actual content maximum.

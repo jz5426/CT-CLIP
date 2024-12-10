@@ -21,6 +21,7 @@ def get_optimizer(
         params = list(filter(lambda t: t.requires_grad, params))
 
     if wd == 0:
+        print('Use Adam optimizer')
         return Adam(params, lr = lr, betas = betas, eps = eps)
 
     if group_wd_params:
@@ -30,5 +31,5 @@ def get_optimizer(
             {'params': wd_params},
             {'params': no_wd_params, 'weight_decay': 0},
         ]
-
+    print('Use AdamW optimizer')
     return AdamW(params, lr = lr, weight_decay = wd, betas = betas, eps = eps)

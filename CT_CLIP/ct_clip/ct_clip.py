@@ -1030,7 +1030,7 @@ class CTCLIPwithXray(nn.Module):
             text_latents = self.CTCLIP.to_text_latent(text_embeds) #NOTE bxd
 
             # normalize the features for both text and image
-            text_latents = map(l2norm, text_latents)
+            text_latents = next(map(l2norm, text_latents))
         else:
             # inputs are embedding itself
             text_latents = text
@@ -1049,7 +1049,7 @@ class CTCLIPwithXray(nn.Module):
             image_latents = self.CTCLIP.to_visual_latent(image_embeds) #NOTE bxd
 
             # normalize the features for the image
-            image_latents = map(l2norm, image_latents)
+            image_latents = next(map(l2norm, image_latents))
         else:
             image_latents = image
 
@@ -1060,7 +1060,7 @@ class CTCLIPwithXray(nn.Module):
         enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch
         xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
         xray_latents = self.to_xray_latent(xray_embeds)
-        xray_latents = map(l2norm, xray_latents)
+        xray_latents = next(map(l2norm, xray_latents))
 
         # get temperature
         temp = self.CTCLIP.temperature.exp()
