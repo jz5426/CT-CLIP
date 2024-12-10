@@ -110,6 +110,10 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
     file_name = file_name.split(".")[0]+".png"
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
 
+    # avoid duplicate processing.
+    if os.path.exists(ct_save_path) and os.path.exists(xray_save_path) and os.path.exists(xray_rgb_save_path):
+        return
+
     img_data = read_nii_data(file_path)
     if img_data is None:
         print(f"Read {file_path} unsuccessful. Passing")
