@@ -80,13 +80,15 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 # # inference_valid.infer()
 # inference_valid.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'valid')
 
+split = 'valid'
+
 #NOTE: run it from WSL instead of windows
-processed_ct_dir = "/mnt/f/Chris/CT-RATE-temp/processed_dataset/train_preprocessed_ct"
+processed_ct_dir = f"/mnt/f/Chris/CT-RATE-temp/processed_dataset/{split}_preprocessed_ct"
 inference_train = CTClipInference(
     clip,
     data_folder = processed_ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
-    reports_file= "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv",
-    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv",
+    reports_file= f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv",
+    labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
     batch_size = 4,
     results_folder="inference_zeroshot/",
     num_train_steps = 1,
@@ -94,10 +96,10 @@ inference_train = CTClipInference(
 )
 
 # inference_train.infer()
-inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'train')
+inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', split)
 
 print('    removing processed ct files\n')
-shutil.rmtree(processed_ct_dir)
+# shutil.rmtree(processed_ct_dir)
 """
 TODO: hyperparameters for the xray encoder with temperature 0.07
 TODO: batch based on patient/experiment/instance.
