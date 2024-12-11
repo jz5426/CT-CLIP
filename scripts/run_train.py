@@ -221,7 +221,7 @@ def run(cfg):
         num_train_steps = 100001,
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         train_from_scratch = True,
-        epoch_based_patience = 10,
+        epoch_based_patience = 100,
         iteration_evaluate_frequency = 4,
         text_cl_weight = 1.,
         ct_cl_weight = 1., 

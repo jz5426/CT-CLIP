@@ -715,6 +715,7 @@ class CTClipTrainer(nn.Module):
                 if track_early_stopping and self.best_epoch_based_val_cl_loss > epoch_val_cl_loss:
                     print(f'    After epoch evaluation: Previous validation contrastive loss {self.best_epoch_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
                     self.best_epoch_based_val_cl_loss = epoch_val_cl_loss
+                    self.early_stop_counter = 0 # reset if there are any improvement
                     self._save_ckpt(epoch, 
                                     'CTClip.lowest_val_cl_loss_after_per_epochs.pt', 
                                     'best contrastive loss on validation split!!', 
