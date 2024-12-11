@@ -539,7 +539,7 @@ class CTClipTrainer(nn.Module):
 
                 # evaluate model based on iteration instead of epochs
                 if self.is_main and not (batch_idx % self.iteration_evaluate_frequency):
-                    print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}], Training Loss: {loss.item():.4f}")
+                    print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}/{train_size}], Training Loss: {loss.item():.4f}")
                     print('Evaluate based on iterations')
                     self.eval_on_validation_split(epoch, val_size, iteration=batch_idx, track_early_stopping=False)
 
@@ -599,8 +599,7 @@ class CTClipTrainer(nn.Module):
                     # Accumulate validation contrastive loss for this epochs
                     running_val_loss += val_cl_loss.item()
 
-                    if not (i % 4):
-                        print(f"Evaluating Batch {i}/{val_size} in validation split")
+                    print(f"Evaluating Batch {i}/{val_size} in validation split")
 
                     if "module" in self.CTClip.__dict__:
                         self.CTClip = self.CTClip.module
