@@ -206,7 +206,7 @@ def run(cfg):
         reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        batch_size = 384,
+        batch_size = 360,
         results_folder='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS',
         num_train_steps = 100001,
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
@@ -215,6 +215,7 @@ def run(cfg):
         # cxr-clip parameters
         wd = 1e-4,
         lr = 5e-5
+        # TODO: interpolate the learing rate between ULIP and CXR-CLIP
     )
 
     trainer.train_by_epoch(3)
