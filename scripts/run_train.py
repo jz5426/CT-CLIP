@@ -232,7 +232,7 @@ def run(cfg):
         # TODO: interpolate the learing rate between ULIP and CXR-CLIP
     )
 
-    trainer.train_by_epoch(500)
+    trainer.train_by_epoch(1000)
     """
     TODO: check the performance when the xray encoder is initialized from scratch.
     TODO: brainstorm different approachs for the contrastive learning function.
