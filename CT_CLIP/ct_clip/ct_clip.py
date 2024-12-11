@@ -1010,7 +1010,7 @@ class CTCLIPwithXray(nn.Module):
             is_image_latent_input = True, # for triplet modal training, by default it is 
             return_logits_only = False,
     ):
-        print(f'text cl loss weight {text_cl_weight}, ct cl loss weight {ct_cl_weight}')
+        # print(f'text cl loss weight {text_cl_weight}, ct cl loss weight {ct_cl_weight}')
         num_batch_texts = num_batch_images = 1
         if not is_text_latent_input:
             """
