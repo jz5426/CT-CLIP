@@ -500,8 +500,9 @@ class CTClipTrainer(nn.Module):
         print('Epoch Training Starts\n')
         device = self.device
 
-        train_size = 10# len(self.train_ds)
-        val_size = 8 # len(self.valid_ds)
+        # in unit of batch size
+        train_size = len(self.dl)
+        val_size = len(self.valid_dl)
 
         for epoch in range(epochs):
             self.CTClip.train()
@@ -603,7 +604,7 @@ class CTClipTrainer(nn.Module):
                     # Accumulate validation contrastive loss for this epochs
                     running_val_loss += val_cl_loss.item()
 
-                    if not (i % (self.iteration_evaluate_frequency // 10)):
+                    if not (i % 4):
                         print(f"Evaluating Batch {i}/{val_size} in validation split")
 
                     if "module" in self.CTClip.__dict__:
