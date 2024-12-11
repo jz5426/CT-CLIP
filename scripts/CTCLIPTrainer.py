@@ -179,8 +179,7 @@ class CTClipTrainer(nn.Module):
         lr = 5e-5, # 1.25e-6, suggested by ULIP, 5e-5 from cxr-clip
         wd = 1e-4, # NOTE: from cxr-clip
         max_grad_norm = 0.5,
-        iteration_evaluate_frequency = 500,
-        iteration_progress_frequency = 10,
+        iteration_evaluate_frequency = 2,
         epoch_based_patience = 10,
         save_results_every = 1000,
         save_model_every = 1000 ,
@@ -302,7 +301,6 @@ class CTClipTrainer(nn.Module):
         self.save_model_every = save_model_every
         self.save_results_every = save_results_every
         self.iteration_evaluate_frequency = iteration_evaluate_frequency
-        self.iteration_progress_frequency = iteration_progress_frequency
         self.epoch_based_patience = epoch_based_patience
         self.early_stop_counter = 0
         self.results_folder = Path(results_folder)
@@ -539,12 +537,9 @@ class CTClipTrainer(nn.Module):
                     self.accelerator.clip_grad_norm_(self.CTClip.parameters(), self.max_grad_norm)
                 self.optim.step()
 
-                # Print loss for every N batches (optional)
-                if batch_idx % self.iteration_progress_frequency == 0:
-                    print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}], Training Loss: {loss.item():.4f}")
-                
                 # evaluate model based on iteration instead of epochs
                 if self.is_main and not (batch_idx % self.iteration_evaluate_frequency):
+                    print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}], Training Loss: {loss.item():.4f}")
                     print('Evaluate based on iterations')
                     self.eval_on_validation_split(epoch, val_size, iteration=batch_idx, track_early_stopping=False)
 

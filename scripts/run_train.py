@@ -8,6 +8,8 @@ from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIP, TextTransformer, CTCLIPwithXray
 from CTCLIPTrainer import CTClipTrainer
+import random
+import numpy as np
 
 @hydra.main(
         version_base=None,
@@ -35,6 +37,14 @@ def main(cfg: DictConfig):
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
 
     cfg = convert_dictconfig_to_dict(cfg)
+
+    # seed everything
+    seed = 1024
+    random.seed(seed)    
+    np.random.seed(seed)    
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # If using multiple GPUs
 
     run(cfg)
 
