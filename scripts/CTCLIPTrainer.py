@@ -685,6 +685,7 @@ class CTClipTrainer(nn.Module):
 
                 # save model based on f1 metric
                 if self.best_f1_val_acc < f1:
+                    print(f'    Previous f1 {self.best_f1_val_acc} --> New best f1 {f1}')
                     self.best_f1_val_acc = f1
                     self._save_ckpt(epoch, 
                                     'CTClip_best_f1_val.pt', 
@@ -693,6 +694,7 @@ class CTClipTrainer(nn.Module):
                 
                 # save model based on flat acc
                 if self.best_flat_val_acc < flat_acc:
+                    print(f'    Previous flat accuracy {self.best_flat_val_acc} --> New best accuracy {flat_acc}')
                     self.best_flat_val_acc = flat_acc
                     self._save_ckpt(epoch, 
                                     'CTClip_best_flat_acc_val.pt', 
@@ -702,6 +704,7 @@ class CTClipTrainer(nn.Module):
                 # save model based on contrastive loss on validation split
                 epoch_val_cl_loss = running_val_loss / val_size
                 if self.best_val_cl_loss > epoch_val_cl_loss:
+                    print(f'    Previous validation contrastive loss {self.best_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
                     self.best_val_cl_loss = epoch_val_cl_loss
                     self._save_ckpt(epoch, 
                                     'CTClip.lowest_val_cl_loss.pt', 

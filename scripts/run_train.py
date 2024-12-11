@@ -64,7 +64,10 @@ def run(cfg):
         local_files_only=True
         )
 
-    # uhn cluster from local files
+    # uhn cluster from local filesc
+    #TODO: 
+        # 1. copy the downloaded huggingface model in G:\Chris\CT-CLIP\predownloaded_models (shield external drive) to the CT-CLIP
+        # 2. for the image_encoder section of the yaml file (such as clip_Swin_clincial), replace the directory to the correct one
     # tokenizer = BertTokenizer.from_pretrained(
     #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
     #     do_lower_case=True,
@@ -210,7 +213,7 @@ def run(cfg):
     #     train_from_scratch = True
     # )
 
-    trainer.train_by_epoch(3)
+    trainer.train_by_epoch(500)
 
     """
     TODO: check the performance when the xray encoder is initialized from scratch.
