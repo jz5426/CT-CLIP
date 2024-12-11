@@ -223,9 +223,11 @@ def run(cfg):
         train_from_scratch = True,
         epoch_based_patience = 10,
         iteration_evaluate_frequency = 2,
-        # cxr-clip parameters
         wd = 1e-4,
-        lr = 5e-5
+        lr = 5e-3
+        # cxr-clip parameters
+        # wd = 1e-4,
+        # lr = 5e-5
         # TODO: interpolate the learing rate between ULIP and CXR-CLIP
     )
 

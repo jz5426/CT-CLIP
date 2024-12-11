@@ -539,7 +539,7 @@ class CTClipTrainer(nn.Module):
 
                 # evaluate model based on iteration instead of epochs
                 if self.is_main and not (batch_idx % self.iteration_evaluate_frequency):
-                    print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}/{train_size}], Training Loss: {loss.item():.4f}")
+                    print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
                     print('    Evaluate based on iterations')
                     self.eval_on_validation_split(epoch, val_size, iteration=batch_idx, track_early_stopping=False)
 
@@ -667,7 +667,7 @@ class CTClipTrainer(nn.Module):
                 
                 f1 = f1_score(realall, predictedall,average='micro')
                 flat_acc = accuracy_score(realall.flatten(), predictedall.flatten())
-                print('    Validation F1 Accuracy: {}; Validation Flat Accuracy: {}'.format(f1, flat_acc))
+                print('    Validation F1 Accuracy: {}; Validation Flat Accuracy: {}\n'.format(f1, flat_acc))
                 # NOTE: high flat accuracy but low f1 accuracy indicates poor minority class performance
                 writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
 
@@ -724,6 +724,6 @@ class CTClipTrainer(nn.Module):
         state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
         self.accelerator.save(state_dict, model_path)
         if iteration == -1:
-            print(f'    Epoch:{epoch}: saving model to {str(self.results_folder)} -- {print_annotation}')
+            print(f'    Epoch:{epoch}: saving model to {str(self.results_folder)} -- {print_annotation}\n')
             return
-        print(f'    Epoch:{epoch} - iteration:{iteration}: saving model to {str(self.results_folder)} -- {print_annotation}')
+        print(f'    Epoch:{epoch} - iteration:{iteration}: saving model to {str(self.results_folder)} -- {print_annotation}\n')
