@@ -202,7 +202,7 @@ def run(cfg):
         clip_xray,
         cfg=cfg,
         tokenizer=tokenizer,
-        batch_style='patient',
+        batch_style='experiment',
         data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         data_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
         img_embedding_paths = {
@@ -222,12 +222,11 @@ def run(cfg):
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         train_from_scratch = True,
         epoch_based_patience = 10,
-        iteration_evaluate_frequency = 2,
-        wd = 1e-4,
-        lr = 5e-3
+        iteration_evaluate_frequency = 5,
+        # lr = 5e-3
         # cxr-clip parameters
-        # wd = 1e-4,
-        # lr = 5e-5
+        wd = 1e-4,
+        lr = 5e-5
         # TODO: interpolate the learing rate between ULIP and CXR-CLIP
     )
 

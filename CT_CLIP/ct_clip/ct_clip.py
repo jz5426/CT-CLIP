@@ -567,7 +567,8 @@ class CTCLIP(nn.Module):
 
         # temperature
 
-        self.temperature = nn.Parameter(torch.tensor(1.))
+        self.temperature = nn.Parameter(torch.tensor(0.07))
+        print(f'logit temperature {self.temperature}')
 
         # from https://arxiv.org/abs/2111.07783 (FILIP paper)
         self.use_all_token_embeds = use_all_token_embeds

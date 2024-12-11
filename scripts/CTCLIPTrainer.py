@@ -515,9 +515,7 @@ class CTClipTrainer(nn.Module):
                     text=text.to(device)
                 else:
                     video, text = data
-                
                 video=video.to(device)
-                # TODO: change the following so that it only uses the embedding without forward pass
 
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.
                     if self.triplet_training:
@@ -674,9 +672,6 @@ class CTClipTrainer(nn.Module):
                 dfs.to_excel(writer, sheet_name='Sheet1', index=False)
                 writer.close()
                 del output
-
-                # save a model for each epoch
-                # self._save_ckpt(f'CTClip.{epoch}.pt', '', iteration)
 
                 # save model based on f1 metric
                 if self.best_f1_val_acc < f1:
