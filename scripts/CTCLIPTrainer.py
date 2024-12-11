@@ -551,13 +551,13 @@ class CTClipTrainer(nn.Module):
                 # Accumulate loss
                 running_loss += loss.item()
 
-            # Print average loss for the epoch
-            epoch_loss = running_loss / train_size
-            print(f"Epoch [{epoch+1}/{epochs}] completed with average training loss: {epoch_loss:.4f}")
-
             # run per-epoch validation and automatically save the model
             print(f'Validation after epoch {epoch}')
             exit_training = self.eval_on_validation_split(epoch, val_size, track_early_stopping=True)
+
+            # Print average loss for the epoch
+            epoch_loss = running_loss / train_size
+            print(f"Epoch [{epoch+1}/{epochs}] completed with average training loss: {epoch_loss:.4f}")
 
             if exit_training:
                 print('Training by epochs complete\n')
