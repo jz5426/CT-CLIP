@@ -222,7 +222,7 @@ def run(cfg):
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         train_from_scratch = True,
         epoch_based_patience = 10,
-        iteration_evaluate_frequency = 5,
+        iteration_evaluate_frequency = 4,
         # lr = 5e-3
         # cxr-clip parameters
         wd = 1e-4,
@@ -230,7 +230,7 @@ def run(cfg):
         # TODO: interpolate the learing rate between ULIP and CXR-CLIP
     )
 
-    trainer.train_by_epoch(3)
+    trainer.train_by_epoch(500)
     """
     TODO: check the performance when the xray encoder is initialized from scratch.
     TODO: brainstorm different approachs for the contrastive learning function.
