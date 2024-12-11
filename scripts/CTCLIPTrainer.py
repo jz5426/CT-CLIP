@@ -314,7 +314,8 @@ class CTClipTrainer(nn.Module):
 
         self.best_flat_val_acc = 0
         self.best_f1_val_acc = 0
-        self.best_val_cl_loss = float('inf')
+        self.best_iter_based_val_cl_loss = float('inf')
+        self.best_epoch_based_val_cl_loss = float('inf')
         self.text_cl_weight = text_cl_weight
         self.ct_cl_weight = ct_cl_weight
 
@@ -699,16 +700,26 @@ class CTClipTrainer(nn.Module):
                                     'best flat accuracy achieved!!', 
                                     iteration)
 
-                # save model based on contrastive loss on validation split
+                # save model based on contrastive loss on validation split DURING ITERATION EVALUATION
                 epoch_val_cl_loss = running_val_loss / val_size
-                if self.best_val_cl_loss > epoch_val_cl_loss:
-                    print(f'    Previous validation contrastive loss {self.best_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
-                    self.best_val_cl_loss = epoch_val_cl_loss
+
+                if not track_early_stopping and self.best_iter_based_val_cl_loss > epoch_val_cl_loss:
+                    print(f'    Iteration evaluation: Previous validation contrastive loss {self.best_iter_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
+                    self.best_iter_based_val_cl_loss = epoch_val_cl_loss
                     self._save_ckpt(epoch, 
-                                    'CTClip.lowest_val_cl_loss.pt', 
+                                    'CTClip.lowest_val_cl_loss_during_iterations.pt', 
                                     'best contrastive loss on validation split!!', 
                                     iteration)
-                elif track_early_stopping:
+
+                # save model based on contrastive loss on validation split DURING EPOCH EVALUATION
+                if track_early_stopping and self.best_epoch_based_val_cl_loss > epoch_val_cl_loss:
+                    print(f'    After epoch evaluation: Previous validation contrastive loss {self.best_epoch_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
+                    self.best_epoch_based_val_cl_loss = epoch_val_cl_loss
+                    self._save_ckpt(epoch, 
+                                    'CTClip.lowest_val_cl_loss_after_per_epochs.pt', 
+                                    'best contrastive loss on validation split!!', 
+                                    iteration)
+                elif track_early_stopping: # implies that based on epoch-to-epoch comparison, there is not improvement
                     # early stopping based on val cl loss
                     self.early_stop_counter += 1
                     print(f"No improvement in validation loss for {self.early_stop_counter} epochs.")
