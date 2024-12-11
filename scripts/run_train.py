@@ -222,6 +222,7 @@ def run(cfg):
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         train_from_scratch = True,
         epoch_based_patience = 10,
+        iteration_evaluate_frequency = 2,
         # cxr-clip parameters
         wd = 1e-4,
         lr = 5e-5
