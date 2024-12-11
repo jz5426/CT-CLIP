@@ -166,6 +166,8 @@ class CTClipTrainer(nn.Module):
         *,
         num_train_steps,
         batch_size,
+        text_cl_weight = 1.,
+        ct_cl_weight = 1.,
         batch_style='patient',
         data_train = "train",
         data_valid = "valid",
@@ -313,6 +315,8 @@ class CTClipTrainer(nn.Module):
         self.best_flat_val_acc = 0
         self.best_f1_val_acc = 0
         self.best_val_cl_loss = float('inf')
+        self.text_cl_weight = text_cl_weight
+        self.ct_cl_weight = ct_cl_weight
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
@@ -342,157 +346,157 @@ class CTClipTrainer(nn.Module):
     def is_main(self):
         return self.accelerator.is_main_process
 
-    def train_step(self):
-        device = self.device
-        steps = int(self.steps.item())
+    # def train_step(self):
+    #     device = self.device
+    #     steps = int(self.steps.item())
 
-        self.CTClip.train() # set the models in train mode for gradient descent
+    #     self.CTClip.train() # set the models in train mode for gradient descent
 
-        # logs
-        logs = {}
+    #     # logs
+    #     logs = {}
 
-        # update CTClip model
-        data = next(self.dl_iter)
-        if self.triplet_training:
-            video, text, xray = data
-            xray=xray.to(device)
-        else:
-            video, text = data
+    #     # update CTClip model
+    #     data = next(self.dl_iter)
+    #     if self.triplet_training:
+    #         video, text, xray = data
+    #         xray=xray.to(device)
+    #     else:
+    #         video, text = data
 
-        print(video.shape)
+    #     print(video.shape)
         
-        video=video.to(device)
-        mask = torch.ones((video.shape[0], video.shape[2])).bool().to(device)
-        text = list(text)
-        text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device) # automatically prepend the [CLS] token with id 2, 511 actual content maximum.
-        #NOTE: this is the actual forward pass of the CTCLIP
-        with self.accelerator.autocast():
-            if self.triplet_training:
-                loss = self.CTClip(text_tokens, video, xray, return_loss=True, device=device)
-            else:
-                loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
+    #     video=video.to(device)
+    #     mask = torch.ones((video.shape[0], video.shape[2])).bool().to(device)
+    #     text = list(text)
+    #     text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device) # automatically prepend the [CLS] token with id 2, 511 actual content maximum.
+    #     #NOTE: this is the actual forward pass of the CTCLIP
+    #     with self.accelerator.autocast():
+    #         if self.triplet_training:
+    #             loss = self.CTClip(text_tokens, video, xray, return_loss=True, device=device)
+    #         else:
+    #             loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
 
-        self.accelerator.backward(loss)
-        accum_log(logs, {'loss': loss.item()})
-        if exists(self.max_grad_norm):
-            self.accelerator.clip_grad_norm_(self.CTClip.parameters(), self.max_grad_norm)
+    #     self.accelerator.backward(loss)
+    #     accum_log(logs, {'loss': loss.item()})
+    #     if exists(self.max_grad_norm):
+    #         self.accelerator.clip_grad_norm_(self.CTClip.parameters(), self.max_grad_norm)
 
-        self.optim.step()
-        self.optim.zero_grad()
-        self.print(f"{steps}: loss: {logs['loss']}")
+    #     self.optim.step()
+    #     self.optim.zero_grad()
+    #     self.print(f"{steps}: loss: {logs['loss']}")
 
-        if self.is_main and not (steps % self.save_results_every): # execute for every self.save_results_every
-            with torch.no_grad():
+    #     if self.is_main and not (steps % self.save_results_every): # execute for every self.save_results_every
+    #         with torch.no_grad():
 
-                model = self.CTClip
-                model.eval()
-                predictedall=[]
-                realall=[]
+    #             model = self.CTClip
+    #             model.eval()
+    #             predictedall=[]
+    #             realall=[]
 
-                #Fast inference on 100 images
-                for i in range(10): #NOTE: might need to change this to evaluate on the whole validation set.
-                    val_data = next(self.valid_dl_iter)
+    #             #Fast inference on 100 images
+    #             for i in range(10): #NOTE: might need to change this to evaluate on the whole validation set.
+    #                 val_data = next(self.valid_dl_iter)
 
-                    if self.triplet_training:
-                        valid_data, text, onehotlabels, xray_image, _, _ = val_data
-                        xray_image = xray_image.to(device)
-                    else:
-                        valid_data, text, onehotlabels, _, _ = val_data
+    #                 if self.triplet_training:
+    #                     valid_data, text, onehotlabels, xray_image, _, _ = val_data
+    #                     xray_image = xray_image.to(device)
+    #                 else:
+    #                     valid_data, text, onehotlabels, _, _ = val_data
 
-                    valid_data = valid_data.to(device)
+    #                 valid_data = valid_data.to(device)
 
-                    if "module" in model.__dict__:
-                        model = model.module
+    #                 if "module" in model.__dict__:
+    #                     model = model.module
 
-                    pathologies = ['Medical material',
-                                    'Arterial wall calcification', 
-                                    'Cardiomegaly', 
-                                    'Pericardial effusion',
-                                    'Coronary artery wall calcification', 
-                                    'Hiatal hernia',
-                                    'Lymphadenopathy', 
-                                    'Emphysema', 
-                                    'Atelectasis', 
-                                    'Lung nodule',
-                                    'Lung opacity', 
-                                    'Pulmonary fibrotic sequela', 
-                                    'Pleural effusion', 
-                                    'Mosaic attenuation pattern',
-                                    'Peribronchial thickening', 
-                                    'Consolidation', 
-                                    'Bronchiectasis',
-                                    'Interlobular septal thickening']
-                    plotdir = str(self.results_folder / f'CTClip_{steps}' )
-                    plotdir = plotdir + os.sep
+    #                 pathologies = ['Medical material',
+    #                                 'Arterial wall calcification', 
+    #                                 'Cardiomegaly', 
+    #                                 'Pericardial effusion',
+    #                                 'Coronary artery wall calcification', 
+    #                                 'Hiatal hernia',
+    #                                 'Lymphadenopathy', 
+    #                                 'Emphysema', 
+    #                                 'Atelectasis', 
+    #                                 'Lung nodule',
+    #                                 'Lung opacity', 
+    #                                 'Pulmonary fibrotic sequela', 
+    #                                 'Pleural effusion', 
+    #                                 'Mosaic attenuation pattern',
+    #                                 'Peribronchial thickening', 
+    #                                 'Consolidation', 
+    #                                 'Bronchiectasis',
+    #                                 'Interlobular septal thickening']
+    #                 plotdir = str(self.results_folder / f'CTClip_{steps}' )
+    #                 plotdir = plotdir + os.sep
 
-                    Path(plotdir).mkdir(parents=True, exist_ok=True)
+    #                 Path(plotdir).mkdir(parents=True, exist_ok=True)
 
-                    predictedlabels=[]
-                    for pathology in pathologies:
-                        text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
-                        text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+    #                 predictedlabels=[]
+    #                 for pathology in pathologies:
+    #                     text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
+    #                     text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
                         
-                        # this should be the logit score between the text and xray
-                        logits = model(text_tokens, valid_data, xray_image, device=device, return_logits_only=True)
-                        output = apply_softmax(logits)
+    #                     # this should be the logit score between the text and xray
+    #                     logits = model(text_tokens, valid_data, xray_image, device=device, return_logits_only=True)
+    #                     output = apply_softmax(logits)
 
-                        if output[0]>output[1]:
-                            predictedlabels.append(1) # 1 indicates has pathology in the one-hot label
-                        else:
-                            predictedlabels.append(0) # 0 indicates no pathnology in the one-hot label
+    #                     if output[0]>output[1]:
+    #                         predictedlabels.append(1) # 1 indicates has pathology in the one-hot label
+    #                     else:
+    #                         predictedlabels.append(0) # 0 indicates no pathnology in the one-hot label
                     
-                    # append the pathology classifications for one validation image
-                    predictedall.append(predictedlabels)
-                    realall.append(onehotlabels.detach().cpu().numpy()[0])
+    #                 # append the pathology classifications for one validation image
+    #                 predictedall.append(predictedlabels)
+    #                 realall.append(onehotlabels.detach().cpu().numpy()[0])
 
-                # Print and save classification report
-                realall=np.array(realall)
-                predictedall=np.array(predictedall)
+    #             # Print and save classification report
+    #             realall=np.array(realall)
+    #             predictedall=np.array(predictedall)
 
-                dfs=evaluate_internal(predictedall,realall,pathologies, plotdir)
-                realall = np.rint(realall).astype(int)
-                predictedall = np.rint(predictedall).astype(int)
+    #             dfs=evaluate_internal(predictedall,realall,pathologies, plotdir)
+    #             realall = np.rint(realall).astype(int)
+    #             predictedall = np.rint(predictedall).astype(int)
                 
-                f1 = f1_score(realall, predictedall,average='micro')
-                flat_acc = accuracy_score(realall.flatten(), predictedall.flatten())
-                print('Test F1 Accuracy: ', f1)
-                print('Test Flat Accuracy: ', flat_acc,'\n')
-                # NOTE: high flat accuracy but low f1 accuracy indicates poor minority class performance
-                writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
+    #             f1 = f1_score(realall, predictedall,average='micro')
+    #             flat_acc = accuracy_score(realall.flatten(), predictedall.flatten())
+    #             print('Test F1 Accuracy: ', f1)
+    #             print('Test Flat Accuracy: ', flat_acc,'\n')
+    #             # NOTE: high flat accuracy but low f1 accuracy indicates poor minority class performance
+    #             writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
 
-                dfs.to_excel(writer, sheet_name='Sheet1', index=False)
-                writer.close()
-                del output
+    #             dfs.to_excel(writer, sheet_name='Sheet1', index=False)
+    #             writer.close()
+    #             del output
 
-                # save model every so often (NOTE: should be based on epochs or iterations)
-                model_path = str(self.results_folder / f'CTClip.{steps}.pt')
-                state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
-                self.accelerator.save(state_dict, model_path)
-                self.print(f'{steps}: saving model to {str(self.results_folder)}')
+    #             # save model every so often (NOTE: should be based on epochs or iterations)
+    #             model_path = str(self.results_folder / f'CTClip.{steps}.pt')
+    #             state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
+    #             self.accelerator.save(state_dict, model_path)
+    #             self.print(f'{steps}: saving model to {str(self.results_folder)}')
                 
-                if self.best_f1_val_acc < f1:
-                    self.best_f1_val_acc = f1
-                    model_path = str(self.results_folder / 'CTClip_best_f1_val.pt')
-                    state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
-                    self.accelerator.save(state_dict, model_path)
-                    self.print(f'{steps}: saving model to {str(self.results_folder)}')
+    #             if self.best_f1_val_acc < f1:
+    #                 self.best_f1_val_acc = f1
+    #                 model_path = str(self.results_folder / 'CTClip_best_f1_val.pt')
+    #                 state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
+    #                 self.accelerator.save(state_dict, model_path)
+    #                 self.print(f'{steps}: saving model to {str(self.results_folder)}')
                 
-                if self.best_flat_val_acc < flat_acc:
-                    self.best_flat_val_acc = flat_acc
-                    model_path = str(self.results_folder / 'CTClip_best_flat_acc_val.pt')
-                    state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
-                    self.accelerator.save(state_dict, model_path)
-                    self.print(f'{steps}: saving model to {str(self.results_folder)}')
+    #             if self.best_flat_val_acc < flat_acc:
+    #                 self.best_flat_val_acc = flat_acc
+    #                 model_path = str(self.results_folder / 'CTClip_best_flat_acc_val.pt')
+    #                 state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
+    #                 self.accelerator.save(state_dict, model_path)
+    #                 self.print(f'{steps}: saving model to {str(self.results_folder)}')
                 
-        self.steps += 1
-        return logs
+    #     self.steps += 1
+    #     return logs
 
-    def train(self, log_fn=noop):
-        while self.steps < self.num_train_steps:
-            logs = self.train_step()
-            log_fn(logs)
+    # def train(self, log_fn=noop):
+    #     while self.steps < self.num_train_steps:
+    #         logs = self.train_step()
+    #         log_fn(logs)
 
-        self.print('training complete')
+    #     self.print('training complete')
 
     def train_by_epoch(self, epochs):
         print('Epoch Training Starts\n')
@@ -523,6 +527,8 @@ class CTClipTrainer(nn.Module):
                                            video, 
                                            xray, 
                                            device=device,
+                                           text_cl_weight = self.text_cl_weight,
+                                           ct_cl_weight = self.ct_cl_weight,
                                            is_text_latent_input=True, 
                                            is_image_latent_input=True)
                     else:
@@ -588,6 +594,8 @@ class CTClipTrainer(nn.Module):
                                                 valid_data, 
                                                 xray_image, 
                                                 device=device, 
+                                                text_cl_weight = self.text_cl_weight,
+                                                ct_cl_weight = self.ct_cl_weight,
                                                 is_text_latent_input=True, 
                                                 is_image_latent_input=True)
                     else:

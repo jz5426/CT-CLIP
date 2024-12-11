@@ -223,6 +223,8 @@ def run(cfg):
         train_from_scratch = True,
         epoch_based_patience = 10,
         iteration_evaluate_frequency = 4,
+        text_cl_weight = 1.,
+        ct_cl_weight = 1., 
         # lr = 5e-3
         # cxr-clip parameters
         wd = 1e-4,
