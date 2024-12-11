@@ -78,7 +78,11 @@ class HuggingfaceImageEncoder(nn.Module):
         self.model_type = model_type
         if pretrained:
             if self.model_type == "swin":
-                self.image_encoder = SwinModel.from_pretrained(name)
+                self.image_encoder = SwinModel.from_pretrained(
+                    name,
+                    cache_dir=cache_dir, 
+                    local_files_only=local_files_only
+                )
             else:
                 self.image_encoder = AutoModel.from_pretrained(
                     name, add_pooling_layer=False, cache_dir=cache_dir, local_files_only=local_files_only

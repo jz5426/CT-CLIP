@@ -202,12 +202,8 @@ class CTClipTrainer(nn.Module):
             # max_grad_norm = None # TODO: might need to experiment if need this.
 
         self.max_grad_norm = max_grad_norm
-
-        if tokenizer != None:
-            self.tokenizer=tokenizer
-        else:
-            self.tokenizer=BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
-
+        
+        self.tokenizer = tokenizer if tokenizer else BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
         self.register_buffer('steps', torch.Tensor([0]))
 
         self.num_train_steps = num_train_steps
@@ -523,7 +519,6 @@ class CTClipTrainer(nn.Module):
                 
                 video=video.to(device)
                 # TODO: change the following so that it only uses the embedding without forward pass
-                # TODO: make sure whether the embedding should have gradient off.
 
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.
                     if self.triplet_training:
@@ -609,7 +604,7 @@ class CTClipTrainer(nn.Module):
                     running_val_loss += val_cl_loss.item()
 
                     if not (i % (self.iteration_evaluate_frequency // 10)):
-                        print(f"Evaluating Batch {i}/{val_size}")
+                        print(f"Evaluating Batch {i}/{val_size} in validation split")
 
                     if "module" in self.CTClip.__dict__:
                         self.CTClip = self.CTClip.module
@@ -637,7 +632,7 @@ class CTClipTrainer(nn.Module):
 
                     Path(plotdir).mkdir(parents=True, exist_ok=True)
 
-                    predictedlabels=[]
+                    predictedlabels = [[] for _ in range(onehotlabels.shape[0])] # hold the predicted multi-label vector for each sample in the batch
                     for pathology in pathologies:
                         text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
                         text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
@@ -656,22 +651,22 @@ class CTClipTrainer(nn.Module):
 
                         outputs = apply_softmax(logits)
 
-                        for idx in range(outputs.shape[-1]):
+                        for idx in range(outputs.shape[-1]): # batch size
                             output = outputs[:,idx]
                             if output[0]>output[1]:
-                                predictedlabels.append(1) # 1 indicates has pathology in the one-hot label
+                                predictedlabels[idx].append(1) # 1 indicates has pathology in the one-hot label
                             else:
-                                predictedlabels.append(0) # 0 indicates no pathnology in the one-hot label
+                                predictedlabels[idx].append(0) # 0 indicates no pathnology in the one-hot label
                     
                     # append the pathology classifications for one validation image
-                    predictedall.append(predictedlabels)
-                    realall.append(onehotlabels.detach().cpu().numpy()[0])
+                    predictedall.extend(predictedlabels)
+                    realall.extend(onehotlabels.detach().cpu().tolist())
 
                 # Print and save classification report
                 realall=np.array(realall)
                 predictedall=np.array(predictedall)
 
-                dfs=evaluate_internal(predictedall,realall,pathologies, plotdir)
+                dfs=evaluate_internal(predictedall, realall, pathologies, plotdir)
                 realall = np.rint(realall).astype(int)
                 predictedall = np.rint(predictedall).astype(int)
                 

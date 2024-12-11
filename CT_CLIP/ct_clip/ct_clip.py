@@ -411,7 +411,7 @@ class CTCLIP(nn.Module):
             *,
             image_encoder = None,
             text_encoder = None,
-            tokenizer = None,
+            # tokenizer = None,
             dim_text = 512,
             dim_image = 512,
             dim_latent = 512,
@@ -584,7 +584,7 @@ class CTCLIP(nn.Module):
 
         self.multiview_loss_weight = multiview_loss_weight
 
-        self.tokenizer= tokenizer if tokenizer else BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
+        # self.tokenizer= tokenizer if tokenizer else BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
     def state_dict(self, *args, **kwargs):
         return super().state_dict(*args, **kwargs)
 
@@ -598,9 +598,9 @@ class CTCLIP(nn.Module):
         pt = torch.load(str(path))
         self.load_state_dict(pt)
 
-    def tokenize(self, prompt):
-        text_tokens=self.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(torch.cuda)
-        return text_tokens
+    # def tokenize(self, prompt):
+    #     text_tokens=self.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(torch.cuda)
+    #     return text_tokens
     def token_embedding(self,input_ids):
         input_shape = input_ids.size()
         batch_size, seq_length = input_shape
