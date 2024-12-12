@@ -99,7 +99,7 @@ if __name__ == '__main__':
     # NOTE: automatically download in the split folder without manually create one
 
     # perform feature extraction after download 100 of them
-    feature_extraction_frequency = 12000
+    feature_extraction_frequency = 15000
 
     repo_id = "ibrahimhamamci/CT-RATE"
     folder_path = "dataset/{}".format(split)
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     files = [f for f in all_files if f.startswith(folder_path)]
 
     # Filter out the files that are already processed previously
-    saving_path = os.path.join('F:\\Chris\\dataset\\features_embeddings', split) # /mnt/f/Chris/dataset/features_embeddings'
+    saving_path = os.path.join('F:\\Chris\\dataset\\features_embeddings_correct', split) # /mnt/f/Chris/dataset/features_embeddings_correct'
     img_feature_path = os.path.join(saving_path, 'image_features.pth')
     text_feature_path = os.path.join(saving_path, 'text_features.pth')
     if os.path.exists(img_feature_path):

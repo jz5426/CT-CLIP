@@ -13,9 +13,8 @@ from functools import partial
 import shutil
 
 
-df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv')
-# if split == 'valid' \
-#         else pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\train_metadata.csv')
+# df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv')
+df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\train_metadata.csv')
 # "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
 # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
@@ -112,7 +111,8 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
 
     # avoid duplicate processing.
     if os.path.exists(ct_save_path) and os.path.exists(xray_save_path) and os.path.exists(xray_rgb_save_path):
-        print(f"{file_name} already exists. Passing")
+        # print(f"{file_name} already exists. Passing")
+        # os.remove(file_path)  # Remove the file
         return
 
     img_data = read_nii_data(file_path)
@@ -220,8 +220,8 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
 
     # save the ct image as a pt tensor
     torch.save(tensor, ct_save_path) # save as .pt file # np.savez(save_path, resized_array)
-    # if os.path.exists(file_path):
-    #     os.remove(file_path)  # Remove the file
+    if os.path.exists(file_path):
+        os.remove(file_path)  # Remove the file
 
     # save the xray as a .mha image
     sitk.WriteImage(xray_image, xray_save_path)
@@ -377,7 +377,7 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
 # Example usage:
 if __name__ == "__main__":
     #NOTE: TRY IT ON WINNDOWS
-    split = 'valid' # change the split to valid to process the validation data instead.
+    split = 'train' # change the split to valid to process the validation data instead.
 
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
     raw_ct_dir = f"F:\\Chris\\CT-RATE-FINAL\\dataset\\{split}" #select the validation or test split

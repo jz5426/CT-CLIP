@@ -340,10 +340,6 @@ class CTClipInference(nn.Module):
             idx = 0
             for batch_data in tqdm.tqdm(self.dl, desc="Feature Extration", leave=False):
                 valid_data, text, _, _, instance_name, _ = batch_data
-                # skip the forward pass if exists
-                instance_name = [key for key in instance_name if key not in self.image_features and key not in self.text_features]
-                if len(instance_name) == 0:
-                    continue
 
                 # batch processing
                 text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
