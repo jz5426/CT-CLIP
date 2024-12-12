@@ -546,14 +546,14 @@ class CTClipTrainer(nn.Module):
                 if self.is_main and not (batch_idx % self.iteration_evaluate_frequency):
                     print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
                     print('    Evaluate based on iterations')
-                    self.eval_on_validation_split(epoch, val_size, iteration=batch_idx, track_early_stopping=False)
+                    self.eval_on_validation_split(epoch, val_size, iteration=batch_idx, is_epoch_evaluation=False)
 
                 # Accumulate loss
                 running_loss += loss.item()
 
             # run per-epoch validation and automatically save the model
             print(f'Validation after epoch {epoch}')
-            exit_training = self.eval_on_validation_split(epoch, val_size, track_early_stopping=True)
+            exit_training = self.eval_on_validation_split(epoch, val_size, is_epoch_evaluation=True)
 
             # Print average loss for the epoch
             epoch_loss = running_loss / train_size
@@ -565,7 +565,7 @@ class CTClipTrainer(nn.Module):
 
         print('Training by epochs complete\n')
 
-    def eval_on_validation_split(self, epoch, val_size, iteration=-1, track_early_stopping=False):
+    def eval_on_validation_split(self, epoch, val_size, iteration=-1, is_epoch_evaluation=False):
         """
         return: boolean -> whether should stop training or nort.
         """
@@ -703,7 +703,7 @@ class CTClipTrainer(nn.Module):
                 # save model based on contrastive loss on validation split DURING ITERATION EVALUATION
                 epoch_val_cl_loss = running_val_loss / val_size
 
-                if not track_early_stopping and self.best_iter_based_val_cl_loss > epoch_val_cl_loss:
+                if not is_epoch_evaluation and self.best_iter_based_val_cl_loss > epoch_val_cl_loss:
                     print(f'    Iteration evaluation: Previous validation contrastive loss {self.best_iter_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
                     self.best_iter_based_val_cl_loss = epoch_val_cl_loss
                     self._save_ckpt(epoch, 
@@ -712,7 +712,7 @@ class CTClipTrainer(nn.Module):
                                     iteration)
 
                 # save model based on contrastive loss on validation split DURING EPOCH EVALUATION
-                if track_early_stopping and self.best_epoch_based_val_cl_loss > epoch_val_cl_loss:
+                if is_epoch_evaluation and self.best_epoch_based_val_cl_loss > epoch_val_cl_loss:
                     print(f'    After epoch evaluation: Previous validation contrastive loss {self.best_epoch_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
                     self.best_epoch_based_val_cl_loss = epoch_val_cl_loss
                     self.early_stop_counter = 0 # reset if there are any improvement
@@ -720,7 +720,7 @@ class CTClipTrainer(nn.Module):
                                     'CTClip.lowest_val_cl_loss_after_per_epochs.pt', 
                                     'best contrastive loss on validation split!!', 
                                     iteration)
-                elif track_early_stopping: # implies that based on epoch-to-epoch comparison, there is not improvement
+                elif is_epoch_evaluation: # implies that based on epoch-to-epoch comparison, there is not improvement
                     # early stopping based on val cl loss
                     self.early_stop_counter += 1
                     print(f"No improvement in validation loss for {self.early_stop_counter} epochs.")
