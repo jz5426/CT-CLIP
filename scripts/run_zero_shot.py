@@ -96,7 +96,7 @@ inference_train = CTClipInference(
 )
 
 # inference_train.infer()
-inference_train.feature_extraction('/mnt/f/Chris/dataset/features_embeddings_correct', split, True)
+inference_train.feature_extraction('/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct', split, True)
 
 print('    removing processed ct files\n')
 shutil.rmtree(processed_ct_dir)
