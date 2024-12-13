@@ -352,12 +352,12 @@ class CTClipInference(nn.Module):
                     self.image_features[key] = img_feature[i, :]
                     self.text_features[key] = text_feature[i, :]
         
-                # save the feature embeddings every 100 iterations.
-                if append and idx % 100 == 0:
-                    os.makedirs(saving_path, exist_ok=True)
-                    torch.save(self.image_features, img_feature_path)
-                    torch.save(self.text_features, text_feature_path)
-                idx += 1
+                # # save the feature embeddings every 100 iterations.
+                # if append and idx % 100 == 0:
+                #     os.makedirs(saving_path, exist_ok=True)
+                #     torch.save(self.image_features, img_feature_path)
+                #     torch.save(self.text_features, text_feature_path)
+                # idx += 1
         
         # save the remaining.
         if append:
