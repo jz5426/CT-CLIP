@@ -10,6 +10,7 @@ from ct_clip import CTCLIP, TextTransformer, CTCLIPwithXray
 from CTCLIPTrainer import CTClipTrainer
 import random
 import numpy as np
+import argparse
 
 @hydra.main(
         version_base=None,
@@ -197,12 +198,13 @@ def run(cfg):
     #     train_from_scratch = True
     # )
 
-    # # uhn cluster
+    args = parse_args()
+
+    # uhn cluster
     trainer = CTClipTrainer(
         clip_xray,
         cfg=cfg,
         tokenizer=tokenizer,
-        batch_style='experiment',
         data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         data_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
         img_embedding_paths = {
@@ -216,27 +218,82 @@ def run(cfg):
         reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        batch_size = 360,
         results_folder='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS',
         num_train_steps = 100001,
-        num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-        train_from_scratch = True,
-        epoch_based_patience = 100,
-        iteration_evaluate_frequency = 4,
-        text_cl_weight = 1.,
-        ct_cl_weight = 1., 
+        batch_style=args.batch_style,
+        batch_size = args.batch_size,
+        num_workers = args.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        train_from_scratch = args.train_from_scratch,
+        epoch_based_patience = args.epoch_based_patience,
+        iteration_evaluate_frequency = args.iteration_evaluate_frequency,
+        text_cl_weight = args.text_cl_weight,
+        ct_cl_weight = args.ct_cl_weight, 
         # lr = 5e-3
         # cxr-clip parameters
-        wd = 1e-4,
-        lr = 5e-5
+        wd = args.weight_decay,
+        lr = args.learing_rate
         # TODO: interpolate the learing rate between ULIP and CXR-CLIP
     )
+    trainer.train_by_epoch(args.epochs)
 
-    trainer.train_by_epoch(1000)
+
+    # # uhn cluster #NOTE: backup code without arg base
+    # trainer = CTClipTrainer(
+    #     clip_xray,
+    #     cfg=cfg,
+    #     tokenizer=tokenizer,
+    #     batch_style='experiment',
+    #     data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+    #     data_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
+    #     img_embedding_paths = {
+    #         'train': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/train/image_features.pth', 
+    #         'valid': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/valid/image_features.pth'
+    #     },
+    #     text_embedding_paths = {
+    #         'train': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/train/text_features.pth',
+    #         'valid': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/valid/text_features.pth'
+    #     },
+    #     reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+    #     reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
+    #     labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     batch_size = 360,
+    #     results_folder='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS',
+    #     num_train_steps = 100001,
+    #     num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+    #     train_from_scratch = True,
+    #     epoch_based_patience = 100,
+    #     iteration_evaluate_frequency = 4,
+    #     text_cl_weight = 1.,
+    #     ct_cl_weight = 1., 
+    #     # lr = 5e-3
+    #     # cxr-clip parameters
+    #     wd = 1e-4,
+    #     lr = 5e-5
+    #     # TODO: interpolate the learing rate between ULIP and CXR-CLIP
+    # )
+    # trainer.train_by_epoch(1000)
     """
     TODO: check the performance when the xray encoder is initialized from scratch.
     TODO: brainstorm different approachs for the contrastive learning function.
     """
+
+def parse_args():
+    """
+    Parse additional command-line arguments.
+    """
+    parser = argparse.ArgumentParser(description="Additional arguments for CT-CLIP training")
+    parser.add_argument('--batch_size', type=int, default=360, help='Override batch size')
+    parser.add_argument('--num_workers', type=int, default=10, help='number of cpu workers')
+    parser.add_argument('--batch_style', type=str, default='experiment', help='patient, experiment, instance')
+    parser.add_argument('--train_from_scratch', type=bool, default=True, help='override previously saved checkpoints')
+    parser.add_argument('--epoch_based_patience', type=int, default=50, help='patience for early stoppping')
+    parser.add_argument('--iteration_evaluate_frequency', type=int, default=4, help='iteration based evaluation on the validation set')
+    parser.add_argument('--text_cl_weight', type=float, default=1., help='weighting for xray to ct-text')
+    parser.add_argument('--ct_cl_weight', type=float, default=1., help='weighting for xray to ct images')
+    parser.add_argument('--learing_rate', type=float, default=5e-5, help='learning rate')
+    parser.add_argument('--weight_decay', type=float, default=1e-4, help='decay factor for the learning rate')
+    parser.add_argument('--epochs', type=int, default=1000, help='total number of epoch training')
+    return parser.parse_args()
 
 if __name__ == '__main__':
     main()
