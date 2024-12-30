@@ -49,20 +49,25 @@ for value in tqdm.tqdm(list_ks):
     num_is_in = 0
     num_random = 0
 
+    # for each report
     for i in tqdm.tqdm(range(text_data.shape[0])):
         crosses = []
         crosses_rands = []
+
+        # find the similarity between the report and each image
         for k in range(image_data.shape[0]):
             text = torch.tensor(text_data[i])
             image = torch.tensor(image_data[k])
 
             cross = text @ image
             crosses.append(cross)
-
+        
+        # find the top k indiices
         top_k_indices = find_top_k_indices(crosses, value)
         if i in top_k_indices:
             num_is_in += 1
 
+        # this is the baseline performance on the random pairs.
         for k in range(image_data.shape[0]):
             size = (512)
             text = torch.rand(size)

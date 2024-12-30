@@ -333,31 +333,81 @@ class CTClipInference(nn.Module):
         if os.path.exists(text_feature_path):
             self.text_features = torch.load(text_feature_path)
 
+        assert(isinstance(self.image_features, dict))
+        assert(isinstance(self.text_features, dict))
+
         device = self.device
         with torch.no_grad():
             self.CTClip.eval()
             # bar = tqdm.tqdm(self.dl, desc="Feature Extration", leave=False)
             idx = 0
-            for batch_data in tqdm.tqdm(self.dl, desc="Feature Extration", leave=False):
+            # for batch_data in tqdm.tqdm(self.dl, desc="Feature Extration", leave=False):
+            #     valid_data, text, _, _, instance_name, _ = batch_data
+
+            #     # batch processing
+            #     text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+            #     output = self.CTClip(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
+            #     text_feature, img_feature, _ = output
+            #     text_feature, img_feature = text_feature.cpu().numpy(), img_feature.cpu().numpy()
+
+            #     # assign the features inside the batch in the dict
+            #     for i, key in enumerate(instance_name):
+            #         self.image_features[key] = img_feature[i, :]
+            #         self.text_features[key] = text_feature[i, :]
+        
+            #     # # save the feature embeddings every 100 iterations.
+            #     if append and idx % 100 == 0:
+            #         os.makedirs(saving_path, exist_ok=True)
+            #         torch.save(self.image_features, img_feature_path)
+            #         torch.save(self.text_features, text_feature_path)
+            #     else:
+            #         print('NOT SAVING IT THE EMBEDDINGS!!!')
+            #     idx += 1
+
+            for batch_data in tqdm.tqdm(self.dl, desc="Feature Extraction", leave=False):
                 valid_data, text, _, _, instance_name, _ = batch_data
 
-                # batch processing
-                text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-                output = self.CTClip(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
+                # Filter out instance names that already exist in image_features and text_features
+                new_instance_indices = [
+                    i for i, key in enumerate(instance_name) 
+                    if key not in self.image_features or key not in self.text_features
+                ]
+                if not new_instance_indices:
+                    print("All keys in the batch already exist. Skipping model forward pass.")
+                    continue  # Skip the current batch if all keys already exist
+
+                # Select only the new data for processing
+                valid_data = valid_data[new_instance_indices]
+                text = [text[i] for i in new_instance_indices]
+                instance_name = [instance_name[i] for i in new_instance_indices]
+
+                # Tokenize and forward pass
+                text_tokens = self.tokenizer(
+                    text, return_tensors="pt", padding="max_length", truncation=True, max_length=512
+                ).to(device)
+                output = self.CTClip(
+                    text_tokens,
+                    valid_data.cuda(),
+                    device=device,
+                    return_latents=self.feature_extraction_mode,
+                )
                 text_feature, img_feature, _ = output
                 text_feature, img_feature = text_feature.cpu().numpy(), img_feature.cpu().numpy()
 
-                # assign the features inside the batch in the dict
+                # Assign the features to the respective dictionaries
                 for i, key in enumerate(instance_name):
                     self.image_features[key] = img_feature[i, :]
                     self.text_features[key] = text_feature[i, :]
-        
-                # # save the feature embeddings every 100 iterations.
-                # if append and idx % 100 == 0:
-                #     os.makedirs(saving_path, exist_ok=True)
-                #     torch.save(self.image_features, img_feature_path)
-                #     torch.save(self.text_features, text_feature_path)
-                # idx += 1
+
+                # Save the feature embeddings every 100 iterations
+                if append and idx % 100 == 0:
+                    os.makedirs(saving_path, exist_ok=True)
+                    torch.save(self.image_features, img_feature_path)
+                    torch.save(self.text_features, text_feature_path)
+                else:
+                    print("NOT SAVING THE EMBEDDINGS!!!")
+                idx += 1
+
         
         # save the remaining.
         if append:

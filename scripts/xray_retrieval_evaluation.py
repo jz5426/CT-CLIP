@@ -170,9 +170,10 @@ def run(cfg):
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         train_from_scratch = False
     )  
-
+    retrival_evaluator.extract_xray_features('/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct')
+    
     # retrival evaluation on the ct modality, queried by the xray
-    retrival_evaluator.retrieval_evaluation(latent_type='ct', split='valid', topk=[1, 5, 10, 50])
+    # retrival_evaluator.retrieval_evaluation(latent_type='ct', split='valid', topk=[1, 5, 10, 50])
 
     # retrival evaluation on the report modality, qurired by the xray
     # retrival_evaluator.retrieval_evaluation(latent_type='report', split='valid', topk=[1, 5, 10, 50])

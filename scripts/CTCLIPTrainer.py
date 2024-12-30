@@ -31,6 +31,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP
 import os
 import random
+import tqdm
 
 
 # helpers
@@ -502,41 +503,99 @@ class CTClipTrainer(nn.Module):
     #     self.print('training complete')
 
 
-    def retrieval_evaluation(self, latent_type='ct', split='valid', topk=[1, 5, 10, 50]):
+    # def retrieval_evaluation(self, latent_type='ct', split='valid', topk=[1, 5, 10, 50]):
 
+    #     # sanity check
+    #     assert(split in ['valid', 'train'])
+    #     assert(latent_type in ['ct', 'report'])
+    #     assert(self.triplet == True)
+
+    #     print('Retrieval Evaluation Starts\n')
+    #     device = self.device
+    #     data_size = len(self.valid_dl) if split == 'valid' else len(self.dl)
+    #     data_iterator = self.valid_dl_iter if split == 'valid' else self.dl_iter
+
+    #     # load the target embeddings for retrival.
+    #     target_embedding_path = self.img_embedding_paths if latent_type == 'ct' else self.text_embedding_paths
+    #     target_embedding_split_path = target_embedding_path['valid'] if split == 'valid' else target_embedding_path['train']
+    #     target_embedding_dict = torch.load(target_embedding_split_path) # loaded from '.pth' file.
+
+    #     # evaluation  mode
+    #     with torch.no_grad():
+    #         self.CTClip.eval()
+
+    #         for batch_idx in range(data_size):
+    #             data = next(data_iterator)
+    #             video, text, xray = data
+    #             xray=xray.to(device)
+    #             text=text.to(device)
+    #             video=video.to(device)
+
+    #             # only get the xray latents (in the size of batch), in shape (batch, latent size)
+    #             batch_xray_latents = self.CTClip.get_xray_latents(xray)
+
+    #             # TODO: perform retrieval evaluation based on target_embedding_dict (agnostic to report or ct latents)
+
+
+    #     return
+
+    def extract_xray_features(self, directory, append=True, split='valid'):
         # sanity check
-        assert(split in ['valid', 'train'])
-        assert(latent_type in ['ct', 'report'])
+        assert(split in ['valid']) # NOTE: for train to work, need to change the __get_item__ method in the class to output the instance name
         assert(self.triplet == True)
 
         print('Retrieval Evaluation Starts\n')
         device = self.device
         data_size = len(self.valid_dl) if split == 'valid' else len(self.dl)
-        data_iterator = self.valid_dl_iter if split == 'valid' else self.dl_iter
+        data_iterator = self.valid_dl if split == 'valid' else self.dl
 
-        # load the target embeddings for retrival.
-        target_embedding_path = self.img_embedding_paths if latent_type == 'ct' else self.text_embedding_paths
-        target_embedding_split_path = target_embedding_path['valid'] if split == 'valid' else target_embedding_path['train']
-        target_embedding_dict = torch.load(target_embedding_split_path) # loaded from '.pth' file.
+        # load the .pth object if exists
+        saving_path = os.path.join(directory, split)
+        xray_feature_path = os.path.join(saving_path, 'xray_features.pth')
+        xray_features = {}
+        if os.path.exists(xray_feature_path):
+            xray_features = torch.load(xray_feature_path)
 
-        # evaluation  mode
         with torch.no_grad():
             self.CTClip.eval()
 
-            for batch_idx in range(data_size):
-                data = next(data_iterator)
-                video, text, xray = data
-                xray=xray.to(device)
-                text=text.to(device)
-                video=video.to(device)
+            idx = 0
+            # for batch_idx in range(data_size):
+            for data in tqdm.tqdm(data_iterator, desc="XRay Feature Extraction", leave=False):
+                # data = next(data_iterator)
+                _, _, _, xray, instance_name, _ = data  # NOTE: double-check this.
 
-                # only get the xray latents (in the size of batch), in shape (batch, latent size)
+                # Filter out instance names that already exist in xray_features
+                new_instance_indices = [i for i, key in enumerate(instance_name) if key not in xray_features]
+                if not new_instance_indices:
+                    print("All keys in the batch already exist. Skipping model forward pass.")
+                    continue  # Skip the current batch if all keys already exist
+
+                # Select only the new xray data for processing
+                instance_name = [instance_name[i] for i in new_instance_indices]
+                xray = xray[new_instance_indices].to(device)
+
+                # Forward pass for the new xray latents
                 batch_xray_latents = self.CTClip.get_xray_latents(xray)
+                batch_xray_latents = batch_xray_latents.cpu().detach().numpy()
 
-                # TODO: perform retrieval evaluation based on target_embedding_dict (agnostic to report or ct latents)
+                # Assign the features inside the batch in the dict
+                for i, key in enumerate(instance_name):
+                    xray_features[key] = batch_xray_latents[i, :]
 
+                # periodically save the features
+                if append and idx % 100 == 0:
+                    os.makedirs(saving_path, exist_ok=True)
+                    torch.save(xray_features, xray_feature_path)
+                else:
+                    print('NOT SAVING IT THE EMBEDDINGS!!!')
+                idx += 1
 
-        return
+        if append:
+            os.makedirs(saving_path, exist_ok=True)
+            torch.save(xray_features, xray_feature_path)
+        else:
+            print('NOT SAVING IT THE EMBEDDINGS!!!')
 
     def train_by_epoch(self, epochs):
         print('Epoch Training Starts\n')
