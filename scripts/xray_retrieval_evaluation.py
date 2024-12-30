@@ -118,20 +118,6 @@ def run(cfg):
     )
     #dim_image = 131072,
 
-
-    # clip = CTCLIP(
-    #     image_encoder = image_encoder,
-    #     text_encoder = text_encoder,
-    #     dim_text = 768,
-    #     dim_image = 294912,
-    #     dim_latent = 512,
-    #     extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
-    #     use_mlm=False,
-    #     downsample_image_embeds = False,
-    #     use_all_token_embeds = False
-
-    # )
-
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
@@ -150,21 +136,8 @@ def run(cfg):
 
     # NOTE: load the pretrained backbones
     ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar'
-
-    # windows
-    # clip_xray.load("C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\CT-CLIP_v2.pt",
-    #             "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\cxr_clip\\{}".format(ckpt_name))
-
-    # windows wsl
-    # clip_xray.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt",
-    #             "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
-
-    # uhn cluster
-    # clip_xray.load("/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
-    #             "/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
-    
     # generic command to load the pretrained xray encoder weights and freeze the parameters.
-    clip_xray.load_xray_encoder('path_to_pretrained_xray_encoder_weights', freeze_weights=True)
+    clip_xray.load_xray_encoder('path_to_pretrained_xray_encoder_weights_{}'.format(ckpt_name), freeze_weights=True)
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
