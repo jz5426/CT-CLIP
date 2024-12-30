@@ -1,4 +1,6 @@
 """
+run the following script to check the retrieval performance using xray as query.
+
 TODO:
 repeat the following and accumulate the stats:
     1. forward pass a synethic xray for each CT image in the validation set, to the pretrained xray encoder from ULIP style training
@@ -193,7 +195,11 @@ def run(cfg):
         train_from_scratch = False
     )  
 
-    retrival_evaluator.retrieval_evaluation(split='valid', topk=[1, 5, 10, 50])
+    # retrival evaluation on the ct modality, queried by the xray
+    retrival_evaluator.retrieval_evaluation(latent_type='ct', split='valid', topk=[1, 5, 10, 50])
+
+    # retrival evaluation on the report modality, qurired by the xray
+    retrival_evaluator.retrieval_evaluation(latent_type='report', split='valid', topk=[1, 5, 10, 50])
 
 if __name__ == '__main__':
     main()
