@@ -742,3 +742,8 @@ class CTClipTrainer(nn.Module):
             print(f'    Epoch:{epoch}: saving model to {str(self.results_folder)} -- {print_annotation}\n')
             return
         print(f'    Epoch:{epoch} - iteration:{iteration}: saving model to {str(self.results_folder)} -- {print_annotation}\n')
+
+
+    def retrieval_evaluation(self):
+        # TODO:
+        return

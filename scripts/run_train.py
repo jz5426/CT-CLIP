@@ -236,7 +236,6 @@ def run(cfg):
     )
     trainer.train_by_epoch(args.epochs)
 
-
     # # uhn cluster #NOTE: backup code without arg base
     # trainer = CTClipTrainer(
     #     clip_xray,
