@@ -1125,17 +1125,29 @@ class CTCLIPwithXray(nn.Module):
         return loss
 
     def load(self, ctclip_path, cxr_path):
+        self.load_ctclip(ctclip_path, freeze_weights=True)
+        self.load_xray_encoder(cxr_path, False)
+    
+    def load_ctclip(self, ctclip_path, freeze_weights=True):
         warnings.filterwarnings('ignore')
         # load the pretrained model for the ctclip
         self.CTCLIP.load(ctclip_path)
         print('    finished loading the checkpoint for ct clip encoders')
 
         #NOTE: freeze the image and text backbones
-        print("    freezing weights in CTCLIP")
-        for param in self.CTCLIP.parameters():
-            param.requires_grad = False
-
-        # load the pretrained model for cxrclip
+        if freeze_weights:
+            print("    freezing weights in CTCLIP")
+            for param in self.CTCLIP.parameters():
+                param.requires_grad = False
+    
+    def load_xray_encoder(self, cxr_path, freeze_weights=False):
+        warnings.filterwarnings('ignore')
         ckpt = torch.load(cxr_path, map_location="cpu")
         self.xray_encoder.load_state_dict(ckpt["model"], strict=False)
         print('    finished loading the checkpoint for xray encoder')
+
+        #NOTE: freeze the image and text backbones
+        if freeze_weights:
+            print("    freezing weights in XRay encoder")
+            for param in self.xray_encoder.parameters():
+                param.requires_grad = False

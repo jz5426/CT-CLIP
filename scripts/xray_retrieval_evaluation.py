@@ -160,8 +160,11 @@ def run(cfg):
     #             "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
 
     # uhn cluster
-    clip_xray.load("/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
-                "/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
+    # clip_xray.load("/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
+    #             "/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
+    
+    # generic command to load the pretrained xray encoder weights and freeze the parameters.
+    clip_xray.load_xray_encoder('path_to_pretrained_xray_encoder_weights', freeze_weights=True)
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)

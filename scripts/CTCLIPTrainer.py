@@ -503,7 +503,6 @@ class CTClipTrainer(nn.Module):
 
 
     def retrieval_evaluation(self, latent_type='ct', split='valid', topk=[1, 5, 10, 50]):
-        # TODO: retrieval implementation
 
         # sanity check
         assert(split in ['valid', 'train'])
@@ -518,8 +517,6 @@ class CTClipTrainer(nn.Module):
         target_embedding_split_path = target_embedding_path['valid'] if split == 'valid' else target_embedding_path['train']
         target_embedding_dict = torch.load(target_embedding_split_path) # loaded from '.pth' file.
 
-        # TODO: load the pre-trained xray checkpoint.
-
         # evaluation  mode
         with torch.no_grad():
             self.CTClip.eval()
@@ -533,10 +530,10 @@ class CTClipTrainer(nn.Module):
                 text=text.to(device)
                 video=video.to(device)
 
-                # only get the xray latents (in the size of batch)
+                # only get the xray latents (in the size of batch), in shape (batch, latent size)
                 batch_xray_latents = self.CTClip.get_xray_latents(xray)
 
-                # TODO: perform retrieval evaluation based on target_embedding_dict
+                # TODO: perform retrieval evaluation based on target_embedding_dict (agnostic to report or ct latents)
 
 
         return
