@@ -511,6 +511,8 @@ class CTClipTrainer(nn.Module):
 
         print('Retrieval Evaluation Starts\n')
         device = self.device
+        data_size = len(self.valid_dl) if split == 'valid' else len(self.dl)
+        data_iterator = self.valid_dl_iter if split == 'valid' else self.dl_iter
 
         # load the target embeddings for retrival.
         target_embedding_path = self.img_embedding_paths if latent_type == 'ct' else self.text_embedding_paths
@@ -520,8 +522,6 @@ class CTClipTrainer(nn.Module):
         # evaluation  mode
         with torch.no_grad():
             self.CTClip.eval()
-            data_size = len(self.valid_dl) if split == 'valid' else len(self.dl)
-            data_iterator = self.valid_dl_iter if split == 'valid' else self.dl_iter
 
             for batch_idx in range(data_size):
                 data = next(data_iterator)
