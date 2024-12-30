@@ -199,7 +199,7 @@ def run(cfg):
     retrival_evaluator.retrieval_evaluation(latent_type='ct', split='valid', topk=[1, 5, 10, 50])
 
     # retrival evaluation on the report modality, qurired by the xray
-    retrival_evaluator.retrieval_evaluation(latent_type='report', split='valid', topk=[1, 5, 10, 50])
+    # retrival_evaluator.retrieval_evaluation(latent_type='report', split='valid', topk=[1, 5, 10, 50])
 
 if __name__ == '__main__':
     main()
