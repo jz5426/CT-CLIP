@@ -191,12 +191,9 @@ def run(cfg):
         num_train_steps = -1, # placeholder
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         train_from_scratch = False
-    )
+    )  
 
-    # get the xray encoder only.
-    
-    # load the ct embeddings
-
+    retrival_evaluator.retrieval_evaluation(split='valid', topk=[1, 5, 10, 50])
 
 if __name__ == '__main__':
     main()

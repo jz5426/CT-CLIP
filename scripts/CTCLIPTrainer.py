@@ -196,10 +196,10 @@ class CTClipTrainer(nn.Module):
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
 
-        # alter to ULIP-style mode if the xray encoder exists in the CTCLIP
-        self.triplet_training = False
+        # NOTE: automatic toggle: alter to ULIP-style mode if the xray encoder exists in the CTCLIP
+        self.triplet = False
         if hasattr(self.CTClip, 'xray_encoder'):
-            self.triplet_training = True
+            self.triplet = True
             # max_grad_norm = None # TODO: might need to experiment if need this.
 
         self.max_grad_norm = max_grad_norm
@@ -225,7 +225,9 @@ class CTClipTrainer(nn.Module):
         self.lr=lr
         
         # Load the pre-trained weights
-        if self.triplet_training:
+        self.img_embedding_paths = img_embedding_paths
+        self.text_embedding_paths = text_embedding_paths
+        if self.triplet:
 
             # train does not need csv file as it does not requires report
             self.train_ds = CTReportXRayDataset(
@@ -499,6 +501,44 @@ class CTClipTrainer(nn.Module):
 
     #     self.print('training complete')
 
+
+    def retrieval_evaluation(self, latent_type='ct', split='valid', topk=[1, 5, 10, 50]):
+        # TODO: retrieval implementation
+
+        # sanity check
+        assert(split in ['valid', 'train'])
+        assert(latent_type in ['ct', 'report'])
+        assert(self.triplet == True)
+
+        print('Retrieval Evaluation Starts\n')
+        device = self.device
+
+        # load the target embeddings for retrival.
+        target_embedding_path = self.img_embedding_paths if latent_type == 'ct' else self.text_embedding_paths
+        target_embedding_split_path = target_embedding_path['valid'] if split == 'valid' else target_embedding_path['train']
+        target_embedding_dict = torch.load(target_embedding_split_path) # loaded from '.pth' file.
+
+        # evaluation  mode
+        with torch.no_grad():
+            self.CTClip.eval()
+            data_size = len(self.valid_dl) if split == 'valid' else len(self.dl)
+            data_iterator = self.valid_dl_iter if split == 'valid' else self.dl_iter
+
+            for batch_idx in range(data_size):
+                data = next(data_iterator)
+                video, text, xray = data
+                xray=xray.to(device)
+                text=text.to(device)
+                video=video.to(device)
+
+                # only get the xray latents (in the size of batch)
+                batch_xray_latents = self.CTClip.get_xray_latents(xray)
+
+                # TODO: perform retrieval evaluation based on target_embedding_dict
+
+
+        return
+
     def train_by_epoch(self, epochs):
         print('Epoch Training Starts\n')
         device = self.device
@@ -514,7 +554,7 @@ class CTClipTrainer(nn.Module):
                 self.optim.zero_grad()
 
                 data = next(self.dl_iter)
-                if self.triplet_training:
+                if self.triplet:
                     video, text, xray = data
                     xray=xray.to(device)
                     text=text.to(device)
@@ -523,7 +563,7 @@ class CTClipTrainer(nn.Module):
                 video=video.to(device)
 
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.
-                    if self.triplet_training:
+                    if self.triplet:
                         loss = self.CTClip(text,
                                            video, 
                                            xray, 
@@ -580,7 +620,7 @@ class CTClipTrainer(nn.Module):
                 for i in range(val_size): #NOTE: might need to change this to evaluate on the whole validation set.
                     val_data = next(self.valid_dl_iter)
 
-                    if self.triplet_training:
+                    if self.triplet:
                         valid_data, text, onehotlabels, xray_image, _, _ = val_data
                         xray_image = xray_image.to(device)
                         text=text.to(device)
@@ -590,7 +630,7 @@ class CTClipTrainer(nn.Module):
                     valid_data = valid_data.to(device)
 
                     # mainly for the validation contrastive loss
-                    if self.triplet_training:
+                    if self.triplet:
                         val_cl_loss = self.CTClip(text, 
                                                 valid_data, 
                                                 xray_image, 
@@ -640,7 +680,7 @@ class CTClipTrainer(nn.Module):
                         text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
 
                         # this should be the logit score between the text and xray
-                        if self.triplet_training:
+                        if self.triplet:
                             logits = self.CTClip(text_tokens, 
                                                 valid_data, 
                                                 xray_image, 
@@ -742,8 +782,3 @@ class CTClipTrainer(nn.Module):
             print(f'    Epoch:{epoch}: saving model to {str(self.results_folder)} -- {print_annotation}\n')
             return
         print(f'    Epoch:{epoch} - iteration:{iteration}: saving model to {str(self.results_folder)} -- {print_annotation}\n')
-
-
-    def retrieval_evaluation(self):
-        # TODO:
-        return

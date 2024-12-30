@@ -1058,13 +1058,7 @@ class CTCLIPwithXray(nn.Module):
             image_latents = image
 
         # always extract xray feature representation
-        enc_xray = self.xray_encoder(xray)
-        #TODO: also experiment with the 1st token.
-        enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features
-        enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch
-        xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
-        xray_latents = self.to_xray_latent(xray_embeds)
-        xray_latents = l2norm(xray_latents)
+        xray_latents = self.get_xray_latents(xray)
 
         # get temperature
         temp = self.CTCLIP.temperature.exp()
@@ -1085,6 +1079,18 @@ class CTCLIPwithXray(nn.Module):
         loss = text_cl_weight*cl_text_to_xray + ct_cl_weight*cl_img_to_xray
       
         return loss
+
+    def get_xray_latents(self, xray):
+        # always extract xray feature representation
+        enc_xray = self.xray_encoder(xray)
+        #TODO: also experiment with the 1st token.
+        enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features
+        enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch
+        xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
+        xray_latents = self.to_xray_latent(xray_embeds)
+        xray_latents = l2norm(xray_latents)
+
+        return xray_latents
 
     def cl_loss(self, m1_latent, m2_latent, temp):
         """
