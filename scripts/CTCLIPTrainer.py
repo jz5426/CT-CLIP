@@ -518,6 +518,8 @@ class CTClipTrainer(nn.Module):
         target_embedding_split_path = target_embedding_path['valid'] if split == 'valid' else target_embedding_path['train']
         target_embedding_dict = torch.load(target_embedding_split_path) # loaded from '.pth' file.
 
+        # TODO: load the pre-trained xray checkpoint.
+
         # evaluation  mode
         with torch.no_grad():
             self.CTClip.eval()
