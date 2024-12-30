@@ -597,6 +597,8 @@ class CTClipTrainer(nn.Module):
         else:
             print('NOT SAVING IT THE EMBEDDINGS!!!')
 
+        return xray_features
+
     def train_by_epoch(self, epochs):
         print('Epoch Training Starts\n')
         device = self.device

@@ -191,8 +191,8 @@ def run(cfg):
     #     reports_file_train = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
     #     reports_file_valid = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
     #     labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
-    #     batch_size = 3,
     #     results_folder="./checkpoints",
+    #     batch_size = 3,
     #     num_train_steps = 100001,
     #     num_workers = 1, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
     #     train_from_scratch = True

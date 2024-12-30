@@ -26,7 +26,7 @@ text_npz_files = [f for f in os.listdir("/path_to_valid_latents_folder/text") if
 image_data_list = []
 text_data_list = []
 
-# Load image and text .npz files
+# Load image and text .npz files (NOTE: these are embeddings)
 for npz_file in tqdm.tqdm(image_npz_files):
     file_path = os.path.join("/path_to_valid_latents_folder/image", npz_file)
     image_data = np.load(file_path)["arr"][0]
