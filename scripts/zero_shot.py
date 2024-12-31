@@ -471,6 +471,7 @@ class CTClipInference(nn.Module):
         print(f'size of image features {len(loaded_img_features)}; size of text features {len(loaded_txt_features)}')
 
     def xray_feature_extraction(self, directory, append=True):
+
         # sanity check
         assert(self.split in ['valid']) # NOTE: for train to work, need to change the __get_item__ method in the class to output the instance name
         assert(self.triplet == True)
@@ -529,3 +530,4 @@ class CTClipInference(nn.Module):
             print('NOT SAVING IT THE EMBEDDINGS!!!')
 
         return xray_features
+    
