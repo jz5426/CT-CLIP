@@ -20,6 +20,7 @@ import random
 import numpy as np
 from CTCLIPTrainer import CTClipTrainer
 import tqdm
+from torch.utils.data import DataLoader, TensorDataset
 
 def find_top_k_indices(values, k):
     # Check if the list has at least 50 values
@@ -52,15 +53,19 @@ def retrieval_evaluation(
         # for each target latent
         for i in tqdm.tqdm(range(target_latents.shape[0])):
             crosses, crosses_rands = [], []
-            target = torch.tensor(target_latents[i])
+            target = torch.tensor(target_latents[i]).to('cuda')
+
+            # Create a DataLoader for batching
+            dataset = TensorDataset(torch.tensor(xray_latents))
+            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
             # find the similarity between the xray and the target embeddings
-            for k in range(xray_latents.shape[0]):
-                xray = torch.tensor(xray_latents[k])
-
-                # similarity between the xray and the target embeddings
-                cross = target @ xray
-                crosses.append(cross)
+            for batch in dataloader:
+                xray_batch = batch[0].to('cuda')
+                
+                # Compute similarity in batch
+                cross_batch = torch.matmul(target, xray_batch.T) # TODO: double check the dimension is correct.
+                crosses.extend(cross_batch.cpu().tolist())
             
             # find the top k indiices
             top_k_indices = find_top_k_indices(crosses, value)
@@ -68,13 +73,15 @@ def retrieval_evaluation(
                 num_is_in += 1
 
             # this is the baseline performance on the random pairs.
-            for k in range(xray_latents.shape[0]):
-                size = (512)
-                target = torch.rand(size)
-                xray = torch.rand(size)
+            for _ in range(len(dataloader)): # number of batches
+                size = (512,)
+                target_batch = torch.rand((batch_size, *size)).to('cuda')
+                xray_batch = torch.rand((batch_size, *size)).to('cuda')
 
-                crosses_rand = target @ xray
-                crosses_rands.append(crosses_rand)
+                # Compute similarity in batch
+                cross_batch = torch.matmul(target_batch, xray_batch.T)
+                crosses_rands.extend(cross_batch.tolist())
+
             top_k_indices = find_top_k_indices(crosses_rands, value)
             if i in top_k_indices:
                 num_random += 1
@@ -263,8 +270,6 @@ def run(cfg):
     
     # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
     triplet_embeddings = [(image_features[key], text_feature_path[key], xray_features[key]) for key in xray_features.keys()]
-
-    # refers to report_to_volumne_new.py for retrieval implmementation
 
     # xray2image retrival evaluation
     retrieval_evaluation(xray_latents=[triple[-1] for triple in triplet_embeddings], target_latents=[triple[0] for triple in triplet_embeddings])
