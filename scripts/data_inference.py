@@ -364,7 +364,7 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         # transformation borrowed from cxr_clip
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
 
-        # name_acc = xray_file.split(os.sep)[-2] #TODO: double check this, this is being used in feature_extraction function in run_zero_shot.py
+        # name_acc = xray_file.split(os.sep)[-2] #TODO: double check this, this is being used in ctclip_feature_extraction function in run_zero_shot.py
         name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
 
         img_embedding = torch.from_numpy(img_embedding.reshape(-1)).requires_grad_(False)

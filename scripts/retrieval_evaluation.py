@@ -18,9 +18,10 @@ from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
-from CTCLIPTrainer import CTClipTrainer
 import tqdm
 from torch.utils.data import DataLoader, TensorDataset
+from zero_shot import CTClipInference
+
 
 def find_top_k_indices(values, k):
     # Check if the list has at least 50 values
@@ -226,37 +227,33 @@ def run(cfg):
     assert(xray_encoder_trainable > 0)
     assert(ct_clip_trainable == 0)
 
-    # from run_train.py
-    retrival_evaluator = CTClipTrainer(
+    split = 'valid'
+    retrival_evaluator = CTClipInference(
         clip_xray,
         cfg=cfg,
         tokenizer=tokenizer,
-        batch_style='instance', # for the purpose of this script, 'instance' is necessary to get the embeddings of each instance.
-        data_train= "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha",
-        data_valid = "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha",
+        data_folder = "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha",
+        # NOTE: the embedding paths mainly for the dataloader to work.
         img_embedding_paths = {
-            'train': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/train/image_features.pth', 
-            'valid': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/valid/image_features.pth'
+            f'{split}': f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/{split}/image_features.pth'
         },
         text_embedding_paths = {
-            'train': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/train/text_features.pth',
-            'valid': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/valid/text_features.pth'
+            f'{split}': f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/{split}/text_features.pth'
         },
-        reports_file_train = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        reports_file_valid = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-        labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
-        results_folder="./checkpoints",
-        batch_size = 4,
+        reports_file = f'/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+        labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
+        results_folder="./inference_zeroshot_retrieval",
+        batch_size = 16,
         num_train_steps = -1, # placeholder
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-        train_from_scratch = False
+        feature_extraction_mode = True # might be optional
     )  
 
     embedding_directory = '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct'
-    xray_features = retrival_evaluator.extract_xray_features(embedding_directory)
+    xray_features = retrival_evaluator.xray_feature_extraction(embedding_directory)
     
     # get the image and text features
-    saving_path = os.path.join(embedding_directory, split='valid')
+    saving_path = os.path.join(embedding_directory, split=split)
     img_feature_path = os.path.join(saving_path, 'image_features.pth')
     text_feature_path = os.path.join(saving_path, 'text_features.pth')
     image_features, text_features = None, None

@@ -539,65 +539,6 @@ class CTClipTrainer(nn.Module):
 
     #     return
 
-    def extract_xray_features(self, directory, append=True, split='valid'):
-        # sanity check
-        assert(split in ['valid']) # NOTE: for train to work, need to change the __get_item__ method in the class to output the instance name
-        assert(self.triplet == True)
-
-        print('Retrieval Evaluation Starts\n')
-        device = self.device
-        data_size = len(self.valid_dl) if split == 'valid' else len(self.dl)
-        data_iterator = self.valid_dl if split == 'valid' else self.dl
-
-        # load the .pth object if exists
-        saving_path = os.path.join(directory, split)
-        xray_feature_path = os.path.join(saving_path, 'xray_features.pth')
-        xray_features = {}
-        if os.path.exists(xray_feature_path):
-            xray_features = torch.load(xray_feature_path)
-
-        with torch.no_grad():
-            self.CTClip.eval()
-
-            idx = 0
-            # for batch_idx in range(data_size):
-            for data in tqdm.tqdm(data_iterator, desc="XRay Feature Extraction", leave=False):
-                # data = next(data_iterator)
-                _, _, _, xray, instance_name, _ = data  # NOTE: double-check this.
-
-                # Filter out instance names that already exist in xray_features
-                new_instance_indices = [i for i, key in enumerate(instance_name) if key not in xray_features]
-                if not new_instance_indices:
-                    print("All keys in the batch already exist. Skipping model forward pass.")
-                    continue  # Skip the current batch if all keys already exist
-
-                # Select only the new xray data for processing
-                instance_name = [instance_name[i] for i in new_instance_indices]
-                xray = xray[new_instance_indices].to(device)
-
-                # Forward pass for the new xray latents
-                batch_xray_latents = self.CTClip.get_xray_latents(xray)
-                batch_xray_latents = batch_xray_latents.cpu().detach().numpy()
-
-                # Assign the features inside the batch in the dict
-                for i, key in enumerate(instance_name):
-                    xray_features[key] = batch_xray_latents[i, :]
-
-                # periodically save the features
-                if append and idx % 100 == 0:
-                    os.makedirs(saving_path, exist_ok=True)
-                    torch.save(xray_features, xray_feature_path)
-                else:
-                    print('NOT SAVING IT THE EMBEDDINGS!!!')
-                idx += 1
-
-        if append:
-            os.makedirs(saving_path, exist_ok=True)
-            torch.save(xray_features, xray_feature_path)
-        else:
-            print('NOT SAVING IT THE EMBEDDINGS!!!')
-
-        return xray_features
 
     def train_by_epoch(self, epochs):
         print('Epoch Training Starts\n')

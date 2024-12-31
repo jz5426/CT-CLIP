@@ -3,7 +3,7 @@ from shutil import rmtree
 from transformer_maskgit.optimizer import get_optimizer
 from transformers import BertTokenizer, BertModel
 
-from data import CTReportDataset
+from data import CTReportDataset, CTReportXRayDataset
 from eval import evaluate_internal, plot_roc, accuracy, sigmoid, bootstrap, compute_cis
 
 from sklearn.metrics import classification_report, confusion_matrix, multilabel_confusion_matrix, f1_score, accuracy_score
@@ -15,7 +15,7 @@ from torch.utils.data.distributed import DistributedSampler
 
 # from data_inference_nii import CTReportDatasetinfer
 # from data_external_valid import CTReportDatasetinfer
-from data_inference import CTReportDatasetinfer
+from data_inference import CTReportDatasetinfer, CTReportXRayDatasetinfer
 
 import numpy as np
 import tqdm
@@ -30,6 +30,8 @@ import math
 import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP
 import os
+
+from scripts.CTCLIPTrainer import UniqueLevelSampler
 
 # helpers
 
@@ -145,6 +147,10 @@ class CTClipInference(nn.Module):
         *,
         num_train_steps,
         batch_size,
+        cfg=None,
+        num_workers = 1,
+        img_embedding_paths = {},
+        text_embedding_paths = {},
         feature_extraction_mode = False,
         data_folder = "external_valid",
         reports_file = "data_reports.xslx",
@@ -174,24 +180,66 @@ class CTClipInference(nn.Module):
 
         self.max_grad_norm = max_grad_norm
         self.lr=lr
-        # Load the pre-trained weights
-        self.ds = CTReportDatasetinfer(data_folder=data_folder, csv_file=reports_file,labels=labels)
 
-        self.feature_extraction_mode = feature_extraction_mode
+        # NOTE: automatic toggle: alter to ULIP-style mode if the xray encoder exists in the CTCLIP
+        self.triplet = False
+        if hasattr(self.CTClip, 'xray_encoder'):
+            self.triplet = True
+            # max_grad_norm = None # TODO: might need to experiment if need this.
+
+        if self.triplet:
+            assert(img_embedding_paths.keys() == text_embedding_paths.keys())
+            assert(cfg is not None)
+
+            # Load the pre-trained weights
+            self.ds = CTReportXRayDataset(
+                        data_folder=data_folder,
+                        csv_file=reports_file,
+                        cfg=cfg,
+                        img_embedding_path=img_embedding_paths['train'], 
+                        text_embedding_path=text_embedding_paths['train'],
+                        batch_style='instance') if 'train' in img_embedding_paths else \
+                      CTReportXRayDatasetinfer(
+                        data_folder=data_folder, 
+                        cfg=cfg, 
+                        csv_file=reports_file,
+                        img_embedding_path=img_embedding_paths['valid'],
+                        text_embedding_path=text_embedding_paths['valid'],
+                        batch_style='instance',
+                        labels=labels)
+
+            custom_sampler = UniqueLevelSampler(self.ds.key_ids, self.batch_size)
+            self.dl = DataLoader(
+                self.ds,
+                num_workers=num_workers,
+                batch_sampler=custom_sampler
+            )
+
+            self.split = 'valid' if 'valid' in img_embedding_paths else 'train'
+        else:
+            # Load the pre-trained weights
+            self.ds = CTReportDatasetinfer(
+                data_folder=data_folder,
+                csv_file=reports_file,
+                labels=labels)
+
+            # Split dataset into train and validation sets
+            self.dl = DataLoader(
+                self.ds,
+                num_workers=num_workers,
+                batch_size=batch_size,
+                shuffle = True,
+            )
+
+            self.split = 'valid' # default
 
         self.image_features = None
         self.text_features = None
+        self.feature_extraction_mode = feature_extraction_mode
         if self.feature_extraction_mode:
             self.image_features = {}
             self.text_features = {}
 
-        # Split dataset into train and validation sets
-        self.dl = DataLoader(
-            self.ds,
-            num_workers=1,
-            batch_size=batch_size,
-            shuffle = True,
-        )
         # prepare with accelerator
         self.dl_iter=cycle(self.dl)
         self.device = self.accelerator.device
@@ -323,7 +371,7 @@ class CTClipInference(nn.Module):
 
         self.print('Inference complete')
 
-    def feature_extraction(self, directory, split='valid', append=True):
+    def ctclip_feature_extraction(self, directory, split='valid', append=True):
         # load the .pth object if exists
         saving_path = os.path.join(directory, split)
         img_feature_path = os.path.join(saving_path, 'image_features.pth')
@@ -421,3 +469,63 @@ class CTClipInference(nn.Module):
         loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
         loaded_txt_features = torch.load(os.path.join(saving_path, 'text_features.pth'))
         print(f'size of image features {len(loaded_img_features)}; size of text features {len(loaded_txt_features)}')
+
+    def xray_feature_extraction(self, directory, append=True):
+        # sanity check
+        assert(self.split in ['valid']) # NOTE: for train to work, need to change the __get_item__ method in the class to output the instance name
+        assert(self.triplet == True)
+
+        print('Retrieval Evaluation Starts\n')
+        device = self.device
+        data_size = len(self.valid_dl) if self.split == 'valid' else len(self.dl)
+        data_iterator = self.valid_dl if self.split == 'valid' else self.dl
+
+        # load the .pth object if exists
+        saving_path = os.path.join(directory, self.split)
+        xray_feature_path = os.path.join(saving_path, 'xray_features.pth')
+        xray_features = {}
+        if os.path.exists(xray_feature_path):
+            xray_features = torch.load(xray_feature_path)
+
+        with torch.no_grad():
+            self.CTClip.eval()
+
+            idx = 0
+            # for batch_idx in range(data_size):
+            for data in tqdm.tqdm(data_iterator, desc="XRay Feature Extraction", leave=False):
+                # data = next(data_iterator)
+                _, _, _, xray, instance_name, _ = data  # NOTE: double-check the instance name, depends on the custom data loader.
+
+                # Filter out instance names that already exist in xray_features
+                new_instance_indices = [i for i, key in enumerate(instance_name) if key not in xray_features]
+                if not new_instance_indices:
+                    print("All keys in the batch already exist. Skipping model forward pass.")
+                    continue  # Skip the current batch if all keys already exist
+
+                # Select only the new xray data for processing
+                instance_name = [instance_name[i] for i in new_instance_indices]
+                xray = xray[new_instance_indices].to(device)
+
+                # Forward pass for the new xray latents
+                batch_xray_latents = self.CTClip.get_xray_latents(xray)
+                batch_xray_latents = batch_xray_latents.cpu().detach().numpy()
+
+                # Assign the features inside the batch in the dict
+                for i, key in enumerate(instance_name):
+                    xray_features[key] = batch_xray_latents[i, :]
+
+                # periodically save the features
+                if append and idx % 100 == 0:
+                    os.makedirs(saving_path, exist_ok=True)
+                    torch.save(xray_features, xray_feature_path)
+                else:
+                    print('NOT SAVING IT THE EMBEDDINGS!!!')
+                idx += 1
+
+        if append:
+            os.makedirs(saving_path, exist_ok=True)
+            torch.save(xray_features, xray_feature_path)
+        else:
+            print('NOT SAVING IT THE EMBEDDINGS!!!')
+
+        return xray_features

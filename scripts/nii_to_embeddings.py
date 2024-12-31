@@ -148,7 +148,7 @@ if __name__ == '__main__':
 
         # # feature extraction save the features to the phe object
         # print('    performing feature extraction\n')
-        # inference.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', f'{split}', append=True)
+        # inference.ctclip_feature_extraction('/mnt/f/Chris/dataset/features_embeddings', f'{split}', append=True)
 
         # # #NOTE: remove the preprocessed ct files ONLY
         # print('    removing processed ct files\n')

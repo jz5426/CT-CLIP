@@ -78,7 +78,7 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 # )
 
 # # inference_valid.infer()
-# inference_valid.feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'valid')
+# inference_valid.ctclip_feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'valid')
 
 split = 'train'
 
@@ -96,7 +96,7 @@ inference_train = CTClipInference(
 )
 
 # inference_train.infer()
-inference_train.feature_extraction('/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct', split, True)
+inference_train.ctclip_feature_extraction('/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct', split, True)
 
 print('    removing processed ct files\n')
 shutil.rmtree(processed_ct_dir)
