@@ -81,7 +81,7 @@ def retrieval_evaluation(
 
                 # Compute similarity in batch
                 cross_batch = torch.matmul(target_batch, xray_batch.T)
-                crosses_rands.extend(cross_batch.tolist())
+                crosses_rands.extend(cross_batch.cpu().tolist())
 
             top_k_indices = find_top_k_indices(crosses_rands, value)
             if i in top_k_indices:
