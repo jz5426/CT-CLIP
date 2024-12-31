@@ -233,7 +233,7 @@ def run(cfg):
         cfg=cfg,
         tokenizer=tokenizer,
         data_folder = "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha",
-        # NOTE: the embedding paths mainly for the dataloader to work.
+        # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
         img_embedding_paths = {
             f'{split}': f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/{split}/image_features.pth'
         },
