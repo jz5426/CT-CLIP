@@ -727,6 +727,9 @@ class CTClipTrainer(nn.Module):
                 writer.close()
                 del output
 
+                #TODO: always save the last model.
+                self._save_ckpt(epoch, 'last_epoch.pt', 'saving the last epoch checkpoint', iteration)
+
                 # save model based on f1 metric
                 if self.best_f1_val_acc < f1:
                     print(f'    Previous f1 {self.best_f1_val_acc} --> New best f1 {f1}')
