@@ -322,6 +322,10 @@ class CTClipTrainer(nn.Module):
         self.text_cl_weight = text_cl_weight
         self.ct_cl_weight = ct_cl_weight
 
+        # base file name for the checkpoints
+        model_type = 'Swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'Resnet'
+        self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}'
+
     def save(self, path):
         if not self.accelerator.is_local_main_process:
             return
@@ -748,7 +752,7 @@ class CTClipTrainer(nn.Module):
                     print(f'    Iteration evaluation: Previous validation contrastive loss {self.best_iter_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
                     self.best_iter_based_val_cl_loss = epoch_val_cl_loss
                     self._save_ckpt(epoch, 
-                                    'CTClip.lowest_val_cl_loss_during_iterations.pt', 
+                                    'CTClip_lowest_val_cl_loss_during_iterations.pt', 
                                     'best contrastive loss on validation split!!', 
                                     iteration)
 
@@ -758,7 +762,7 @@ class CTClipTrainer(nn.Module):
                     self.best_epoch_based_val_cl_loss = epoch_val_cl_loss
                     self.early_stop_counter = 0 # reset if there are any improvement
                     self._save_ckpt(epoch, 
-                                    'CTClip.lowest_val_cl_loss_after_per_epochs.pt', 
+                                    'CTClip_lowest_val_cl_loss_after_per_epochs.pt', 
                                     'best contrastive loss on validation split!!', 
                                     iteration)
                 elif is_epoch_evaluation: # implies that based on epoch-to-epoch comparison, there is not improvement
@@ -776,7 +780,7 @@ class CTClipTrainer(nn.Module):
         iteration = -1 indicates this is epoch based training/evaluation
         iteration != -1 indicates this is interation based training/evaluation 
         """
-        model_path = str(self.results_folder / file_name)
+        model_path = str(self.results_folder / f'{self.base_file_name}_{file_name}')
         state_dict=self.accelerator.get_state_dict(self.CTClip, unwrap=False)
         self.accelerator.save(state_dict, model_path)
         if iteration == -1:
