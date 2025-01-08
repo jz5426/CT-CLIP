@@ -218,6 +218,8 @@ def run(cfg):
 
     # NOTE: load the pretrained backbones
     ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar'
+
+    # TODO: use the pretrained CXR-CLIP weights or the our trained weights
     # generic command to load the pretrained xray encoder weights and freeze the parameters.
     clip_xray.load_xray_encoder('path_to_pretrained_xray_encoder_weights_{}'.format(ckpt_name), freeze_weights=True)
 
