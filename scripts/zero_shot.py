@@ -468,7 +468,7 @@ class CTClipInference(nn.Module):
         loaded_txt_features = torch.load(os.path.join(saving_path, 'text_features.pth'))
         print(f'size of image features {len(loaded_img_features)}; size of text features {len(loaded_txt_features)}')
 
-    def xray_feature_extraction(self, directory, append=True):
+    def xray_feature_extraction(self, directory, pth_name='xray_features.pth', append=True):
 
         # sanity check
         assert(self.split in ['valid']) # NOTE: for train to work, need to change the __get_item__ method in the class to output the instance name
@@ -480,7 +480,7 @@ class CTClipInference(nn.Module):
 
         # load the .pth object if exists
         saving_path = os.path.join(directory, self.split)
-        xray_feature_path = os.path.join(saving_path, 'xray_features.pth')
+        xray_feature_path = os.path.join(saving_path, pth_name)
         xray_features = {}
         if os.path.exists(xray_feature_path):
             xray_features = torch.load(xray_feature_path)

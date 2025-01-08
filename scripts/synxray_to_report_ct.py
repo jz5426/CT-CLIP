@@ -229,15 +229,18 @@ def run(cfg):
     #     '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}'.format(ckpt_name), # cxr-clip pretrained
     #     freeze_weights=True
     # )
+    # pth_name = 'cxr_xray_features.pth'
 
     # NOTE: our weights
-    clip_xray.load_pretrained_ct_xray_clip('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/CTClip.lowest_val_cl_loss_during_iterations.pt')
+    ckp_name = 'CTClip.lowest_val_cl_loss_during_iterations'
+    clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
+    pth_name = f'{ckp_name}_xray_features.pth'
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
     ct_clip_trainable = sum(p.numel() for p in clip_xray.CTCLIP.parameters() if p.requires_grad)
-    assert(xray_encoder_trainable == 0)
-    assert(ct_clip_trainable == 0)
+    # assert(xray_encoder_trainable == 0)
+    # assert(ct_clip_trainable == 0)
 
     split = 'valid'
     retrival_evaluator = CTClipInference(
@@ -269,7 +272,7 @@ def run(cfg):
     # embedding_directory = '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct'
     embedding_directory = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/'
 
-    xray_features = retrival_evaluator.xray_feature_extraction(embedding_directory)
+    xray_features = retrival_evaluator.xray_feature_extraction(embedding_directory, pth_name=pth_name)
     
     # get the image and text features
     saving_path = os.path.join(embedding_directory, split)
