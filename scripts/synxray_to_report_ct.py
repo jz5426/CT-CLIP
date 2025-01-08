@@ -107,8 +107,8 @@ def retrieval_evaluation(
 @hydra.main(
         version_base=None,
         # config_path="C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\configs",
-        config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/configs",
-        # config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
+        # config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/configs",
+        config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
         config_name="train")
 def main(cfg: DictConfig):
 
@@ -159,11 +159,13 @@ def run(cfg):
 
     # windows wsl from local files
     tokenizer = BertTokenizer.from_pretrained(
-        '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+        # '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
         do_lower_case=True,
         local_files_only=True)
     text_encoder = BertModel.from_pretrained(
-        '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+        # '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
         local_files_only=True
         )
 
@@ -221,7 +223,10 @@ def run(cfg):
 
     # TODO: use the pretrained CXR-CLIP weights or the our trained weights
     # generic command to load the pretrained xray encoder weights and freeze the parameters.
-    clip_xray.load_xray_encoder('path_to_pretrained_xray_encoder_weights_{}'.format(ckpt_name), freeze_weights=True)
+    clip_xray.load_xray_encoder(
+        '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}'.format(ckpt_name), # cxr-clip pretrained
+        #TODO: our pretrained
+        freeze_weights=True)
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
@@ -234,16 +239,22 @@ def run(cfg):
         clip_xray,
         cfg=cfg,
         tokenizer=tokenizer,
-        data_folder = "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha",
+        # data_folder = "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha",
+        data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
         img_embedding_paths = {
-            f'{split}': f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/{split}/image_features.pth'
+            # f'{split}': f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/{split}/image_features.pth'
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
         },
         text_embedding_paths = {
-            f'{split}': f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/{split}/text_features.pth'
+            # f'{split}': f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/{split}/text_features.pth'
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
+
         },
-        reports_file = f'/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
-        labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
+        # reports_file = f'/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+        # labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
+        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
         results_folder="./inference_zeroshot_retrieval",
         batch_size = 16,
         num_train_steps = -1, # placeholder
@@ -251,7 +262,9 @@ def run(cfg):
         feature_extraction_mode = True # might be optional
     )  
 
-    embedding_directory = '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct'
+    # embedding_directory = '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct'
+    embedding_directory = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/'
+
     xray_features = retrival_evaluator.xray_feature_extraction(embedding_directory)
     
     # get the image and text features
