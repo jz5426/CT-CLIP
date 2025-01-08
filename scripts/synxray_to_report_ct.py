@@ -51,21 +51,21 @@ def retrieval_evaluation(
     for value in tqdm.tqdm(list_ks):
         num_is_in, num_random = 0, 0
 
-        # for each target latent
-        for i in tqdm.tqdm(range(target_latents.shape[0])):
+        # for each xray => the goal is to retrieve the correct target
+        for i in tqdm.tqdm(range(xray_latents.shape[0])):
             crosses, crosses_rands = [], []
-            target = torch.tensor(target_latents[i]).to('cuda')
+            xray = torch.tensor(xray_latents[i]).to('cuda')
 
             # Create a DataLoader for batching
-            dataset = TensorDataset(torch.tensor(xray_latents))
+            dataset = TensorDataset(torch.tensor(target_latents))
             dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
             # find the similarity between the xray and the target embeddings
             for batch in dataloader:
-                xray_batch = batch[0].to('cuda')
+                targets = batch[0].to('cuda')
                 
                 # Compute similarity in batch
-                cross_batch = torch.matmul(target, xray_batch.T) # TODO: double check the dimension is correct.
+                cross_batch = torch.matmul(xray, targets.T) # TODO: double check the dimension is correct.
                 crosses.extend(cross_batch.cpu().tolist())
             
             # find the top k indiices
@@ -74,22 +74,24 @@ def retrieval_evaluation(
                 num_is_in += 1
 
             # this is the baseline performance on the random pairs.
-            for _ in range(len(dataloader)): # number of batches
-                size = (512,)
-                target_batch = torch.rand((batch_size, *size)).to('cuda')
-                xray_batch = torch.rand((batch_size, *size)).to('cuda')
+            # for _ in range(len(dataloader)): # number of batches
+            #     size = (512,)
+            #     target_batch = torch.rand((batch_size, *size)).to('cuda')
+            #     targets = torch.rand((batch_size, *size)).to('cuda')
 
-                # Compute similarity in batch
-                cross_batch = torch.matmul(target_batch, xray_batch.T)
-                crosses_rands.extend(cross_batch.cpu().tolist())
+            #     # Compute similarity in batch
+            #     cross_batch = torch.matmul(target_batch, targets.T)
+            #     crosses_rands.extend(cross_batch.cpu().tolist())
 
-            top_k_indices = find_top_k_indices(crosses_rands, value)
-            if i in top_k_indices:
-                num_random += 1
+            # top_k_indices = find_top_k_indices(crosses_rands, value)
+            # if i in top_k_indices:
+            #     num_random += 1
 
         clip = num_is_in / target_latents.shape[0]
-        rand = num_random / target_latents.shape[0]
-        write_str = f"K={value}, clip = {clip}, rand= {rand}"
+        # rand = num_random / target_latents.shape[0]
+        # write_str = f"K={value}, clip = {clip}, rand= {rand}"
+        write_str = f"K={value}, clip = {clip}, rand=undefined"
+
         list_texts.append(write_str)
 
     # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
@@ -287,12 +289,14 @@ def run(cfg):
 
     # xray2image retrival evaluation
     retrieval_evaluation(
-        xray_latents=[triple[-1] for triple in triplet_embeddings], target_latents=[triple[0] for triple in triplet_embeddings],
+        xray_latents=[triple[-1] for triple in triplet_embeddings],
+        target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
         file_name='synxray2ct.txt')
 
     # xray2report retrival evaluation
     retrieval_evaluation(
-        xray_latents=[triple[-1] for triple in triplet_embeddings], target_latents=[triple[1] for triple in triplet_embeddings],
+        xray_latents=[triple[-1] for triple in triplet_embeddings],
+        target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
         file_name='synxray2report.txt')
 
 if __name__ == '__main__':
