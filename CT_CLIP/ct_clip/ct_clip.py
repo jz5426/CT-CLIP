@@ -1124,6 +1124,16 @@ class CTCLIPwithXray(nn.Module):
 
         return loss
 
+    def load_pretrained_ct_xray_clip(self, weight_path, freeze_weights=True):
+        """load the pretrained model from our own pretrained modified ct-clip model"""
+        weights = torch.load(weight_path, weights_only=True)
+        self.load_state_dict(weights)
+
+        if freeze_weights:
+            print("    freezing weights in XRAY_CTCLIP")
+            for param in self.parameters():
+                param.requires_grad = False
+
     def load(self, ctclip_path, cxr_path):
         self.load_ctclip(ctclip_path, freeze_weights=True)
         self.load_xray_encoder(cxr_path, False)

@@ -94,6 +94,7 @@ def retrieval_evaluation(
 
     # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
     output_file_path = data_folder + f"{file_name}.txt"
+    os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
     # Open the file for writing (you can also use "a" to append if the file already exists)
     with open(output_file_path, "w") as file:
@@ -221,17 +222,19 @@ def run(cfg):
     # NOTE: load the pretrained backbones
     ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar'
 
-    # TODO: use the pretrained CXR-CLIP weights or the our trained weights
-    # generic command to load the pretrained xray encoder weights and freeze the parameters.
-    clip_xray.load_xray_encoder(
-        '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}'.format(ckpt_name), # cxr-clip pretrained
-        #TODO: our pretrained
-        freeze_weights=True)
+    # NOTE: cxr-clip pretrained weights
+    # clip_xray.load_xray_encoder(
+    #     '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}'.format(ckpt_name), # cxr-clip pretrained
+    #     freeze_weights=True
+    # )
+
+    # NOTE: our weights
+    clip_xray.load_pretrained_ct_xray_clip('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/CTClip.lowest_val_cl_loss_during_iterations.pt')
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
     ct_clip_trainable = sum(p.numel() for p in clip_xray.CTCLIP.parameters() if p.requires_grad)
-    assert(xray_encoder_trainable > 0)
+    assert(xray_encoder_trainable == 0)
     assert(ct_clip_trainable == 0)
 
     split = 'valid'
@@ -240,7 +243,7 @@ def run(cfg):
         cfg=cfg,
         tokenizer=tokenizer,
         # data_folder = "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha",
-        data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+        data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
         # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
         img_embedding_paths = {
             # f'{split}': f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/{split}/image_features.pth'
@@ -249,14 +252,13 @@ def run(cfg):
         text_embedding_paths = {
             # f'{split}': f'/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/{split}/text_features.pth'
             f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
-
         },
         # reports_file = f'/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
         reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
         # labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
         labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
         results_folder="./inference_zeroshot_retrieval",
-        batch_size = 16,
+        batch_size = 128,
         num_train_steps = -1, # placeholder
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         feature_extraction_mode = True # might be optional
@@ -268,7 +270,7 @@ def run(cfg):
     xray_features = retrival_evaluator.xray_feature_extraction(embedding_directory)
     
     # get the image and text features
-    saving_path = os.path.join(embedding_directory, split=split)
+    saving_path = os.path.join(embedding_directory, split)
     img_feature_path = os.path.join(saving_path, 'image_features.pth')
     text_feature_path = os.path.join(saving_path, 'text_features.pth')
     image_features, text_features = None, None
@@ -281,13 +283,17 @@ def run(cfg):
     assert(image_features.keys() == text_features.keys() == xray_features.keys())
     
     # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
-    triplet_embeddings = [(image_features[key], text_feature_path[key], xray_features[key]) for key in xray_features.keys()]
+    triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
 
     # xray2image retrival evaluation
-    retrieval_evaluation(xray_latents=[triple[-1] for triple in triplet_embeddings], target_latents=[triple[0] for triple in triplet_embeddings])
+    retrieval_evaluation(
+        xray_latents=[triple[-1] for triple in triplet_embeddings], target_latents=[triple[0] for triple in triplet_embeddings],
+        file_name='synxray2ct.txt')
 
     # xray2report retrival evaluation
-    retrieval_evaluation(xray_latents=[triple[-1] for triple in triplet_embeddings], target_latents=[triple[1] for triple in triplet_embeddings])
+    retrieval_evaluation(
+        xray_latents=[triple[-1] for triple in triplet_embeddings], target_latents=[triple[1] for triple in triplet_embeddings],
+        file_name='synxray2report.txt')
 
 if __name__ == '__main__':
     main()

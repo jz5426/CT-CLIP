@@ -31,7 +31,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP
 import os
 
-from scripts.CTCLIPTrainer import UniqueLevelSampler
+from CTCLIPTrainer import UniqueLevelSampler
 
 # helpers
 
@@ -145,6 +145,7 @@ class CTClipInference(nn.Module):
         self,
         CTClip: CTCLIP,
         *,
+        tokenizer,
         num_train_steps,
         batch_size,
         cfg=None,
@@ -167,19 +168,17 @@ class CTClipInference(nn.Module):
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
-        self.tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
+        self.tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized', do_lower_case=True) if not tokenizer else tokenizer
         self.results_folder = results_folder
         self.register_buffer('steps', torch.Tensor([0]))
 
-        self.num_train_steps = num_train_steps
+        # self.num_train_steps = num_train_steps
         self.batch_size = batch_size
 
-        all_parameters = set(CTClip.parameters())
-
-        self.optim = get_optimizer(all_parameters, lr=lr, wd=wd)
-
-        self.max_grad_norm = max_grad_norm
-        self.lr=lr
+        # all_parameters = set(CTClip.parameters())
+        # self.optim = get_optimizer(all_parameters, lr=lr, wd=wd)
+        # self.max_grad_norm = max_grad_norm
+        # self.lr=lr
 
         # NOTE: automatic toggle: alter to ULIP-style mode if the xray encoder exists in the CTCLIP
         self.triplet = False
@@ -244,23 +243,23 @@ class CTClipInference(nn.Module):
         self.dl_iter=cycle(self.dl)
         self.device = self.accelerator.device
         self.CTClip.to(self.device)
-        self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
-                                                  T_0=4000000,    # Maximum number of iterations
-                                                  T_warmup=10000, # Number of warmup steps NOTE: TODO: verify this 
-                                                  eta_max=lr)   # Maximum learning rate
+        # self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
+        #                                           T_0=4000000,    # Maximum number of iterations
+        #                                           T_warmup=10000, # Number of warmup steps NOTE: TODO: verify this 
+        #                                           eta_max=lr)   # Maximum learning rate
 
 
-        (
- 			self.dl_iter,
-            self.CTClip,
-            self.optim,
-            self.lr_scheduler
-        ) = self.accelerator.prepare(
-            self.dl_iter,
-            self.CTClip,
-            self.optim,
-            self.lr_scheduler
-        )
+        # (
+ 		# 	self.dl_iter,
+        #     self.CTClip,
+        #     self.optim,
+        #     self.lr_scheduler
+        # ) = self.accelerator.prepare(
+        #     self.dl_iter,
+        #     self.CTClip,
+        #     self.optim,
+        #     self.lr_scheduler
+        # )
 
         self.save_model_every = save_model_every
         self.save_results_every = save_results_every
@@ -296,80 +295,80 @@ class CTClipInference(nn.Module):
     def is_main(self):
         return self.accelerator.is_main_process
 
-    def train_step(self):
-        device = self.device
+    # def train_step(self):
+    #     device = self.device
 
-        steps = int(self.steps.item())
+    #     steps = int(self.steps.item())
 
-        # logs
-        logs = {}
+    #     # logs
+    #     logs = {}
 
-        if True:
-            with torch.no_grad():
+    #     if True:
+    #         with torch.no_grad():
 
-                models_to_evaluate = ((self.CTClip, str(steps)),)
+    #             models_to_evaluate = ((self.CTClip, str(steps)),)
 
-                for model, filename in models_to_evaluate:
-                    model.eval()
-                    predictedall=[]
-                    realall=[]
-                    logits = []
+    #             for model, filename in models_to_evaluate:
+    #                 model.eval()
+    #                 predictedall=[]
+    #                 realall=[]
+    #                 logits = []
 
-                    text_latent_list = []
-                    image_latent_list = []
-                    accession_names=[]
-                    pathologies = ['Medical material','Arterial wall calcification', 'Cardiomegaly', 'Pericardial effusion','Coronary artery wall calcification', 'Hiatal hernia','Lymphadenopathy', 'Emphysema', 'Atelectasis', 'Lung nodule','Lung opacity', 'Pulmonary fibrotic sequela', 'Pleural effusion', 'Mosaic attenuation pattern','Peribronchial thickening', 'Consolidation', 'Bronchiectasis','Interlobular septal thickening']
-                    for i in tqdm.tqdm(range(len(self.ds))):
-                        valid_data, text, onehotlabels, acc_name, instance_name, nii_file = next(self.dl_iter)
+    #                 text_latent_list = []
+    #                 image_latent_list = []
+    #                 accession_names=[]
+    #                 pathologies = ['Medical material','Arterial wall calcification', 'Cardiomegaly', 'Pericardial effusion','Coronary artery wall calcification', 'Hiatal hernia','Lymphadenopathy', 'Emphysema', 'Atelectasis', 'Lung nodule','Lung opacity', 'Pulmonary fibrotic sequela', 'Pleural effusion', 'Mosaic attenuation pattern','Peribronchial thickening', 'Consolidation', 'Bronchiectasis','Interlobular septal thickening']
+    #                 for i in tqdm.tqdm(range(len(self.ds))):
+    #                     valid_data, text, onehotlabels, acc_name, instance_name, nii_file = next(self.dl_iter)
 
-                        plotdir = self.result_folder_txt
-                        Path(plotdir).mkdir(parents=True, exist_ok=True)
+    #                     plotdir = self.result_folder_txt
+    #                     Path(plotdir).mkdir(parents=True, exist_ok=True)
 
-                        predictedlabels=[]
-                        onehotlabels_append=[]
-                        for pathology in pathologies:
-                            text = [f"{pathology} is present.", f"{pathology} is not present."]
-                            text_tokens=self.tokenizer(
-                                            text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+    #                     predictedlabels=[]
+    #                     onehotlabels_append=[]
+    #                     for pathology in pathologies:
+    #                         text = [f"{pathology} is present.", f"{pathology} is not present."]
+    #                         text_tokens=self.tokenizer(
+    #                                         text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
 
-                            output = model(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
+    #                         output = model(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
 
-                            output = apply_softmax(output)
+    #                         output = apply_softmax(output)
 
-                            append_out=output.detach().cpu().numpy()
-                            predictedlabels.append(append_out[0])
+    #                         append_out=output.detach().cpu().numpy()
+    #                         predictedlabels.append(append_out[0])
 
-                        predictedall.append(predictedlabels)
-                        realall.append(onehotlabels.detach().cpu().numpy()[0])
-                        accession_names.append(acc_name[0])
+    #                     predictedall.append(predictedlabels)
+    #                     realall.append(onehotlabels.detach().cpu().numpy()[0])
+    #                     accession_names.append(acc_name[0])
 
-                    realall=np.array(realall)
-                    predictedall=np.array(predictedall)
+    #                 realall=np.array(realall)
+    #                 predictedall=np.array(predictedall)
 
-                    np.savez(f"{plotdir}labels_weights.npz", data=realall)
-                    np.savez(f"{plotdir}predicted_weights.npz", data=predictedall)
-                    with open(f"{plotdir}accessions.txt", "w") as file:
-                        for item in accession_names:
-                            file.write(item + "\n")
+    #                 np.savez(f"{plotdir}labels_weights.npz", data=realall)
+    #                 np.savez(f"{plotdir}predicted_weights.npz", data=predictedall)
+    #                 with open(f"{plotdir}accessions.txt", "w") as file:
+    #                     for item in accession_names:
+    #                         file.write(item + "\n")
 
-                    dfs=evaluate_internal(predictedall,realall,pathologies, plotdir)
+    #                 dfs=evaluate_internal(predictedall,realall,pathologies, plotdir)
 
-                    writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
+    #                 writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
 
-                    dfs.to_excel(writer, sheet_name='Sheet1', index=False)
+    #                 dfs.to_excel(writer, sheet_name='Sheet1', index=False)
 
-                    writer.close()
-        self.steps += 1
-        return logs
+    #                 writer.close()
+    #     self.steps += 1
+    #     return logs
 
-    def infer(self, log_fn=noop):
-        device = next(self.CTClip.parameters()).device
-        device=torch.device('cuda')
-        while self.steps < self.num_train_steps:
-            logs = self.train_step()
-            log_fn(logs)
+    # def infer(self, log_fn=noop):
+    #     device = next(self.CTClip.parameters()).device
+    #     device=torch.device('cuda')
+    #     while self.steps < self.num_train_steps:
+    #         logs = self.train_step()
+    #         log_fn(logs)
 
-        self.print('Inference complete')
+    #     self.print('Inference complete')
 
     def ctclip_feature_extraction(self, directory, split='valid', append=True):
         # load the .pth object if exists
@@ -478,8 +477,7 @@ class CTClipInference(nn.Module):
 
         print('Retrieval Evaluation Starts\n')
         device = self.device
-        data_size = len(self.valid_dl) if self.split == 'valid' else len(self.dl)
-        data_iterator = self.valid_dl if self.split == 'valid' else self.dl
+        data_size = len(self.dl)
 
         # load the .pth object if exists
         saving_path = os.path.join(directory, self.split)
@@ -488,12 +486,15 @@ class CTClipInference(nn.Module):
         if os.path.exists(xray_feature_path):
             xray_features = torch.load(xray_feature_path)
 
+        if not append:
+            print('NOT SAVING IT THE EMBEDDINGS!!!')
+
         with torch.no_grad():
             self.CTClip.eval()
 
             idx = 0
             # for batch_idx in range(data_size):
-            for data in tqdm.tqdm(data_iterator, desc="XRay Feature Extraction", leave=False):
+            for data in tqdm.tqdm(self.dl, desc="XRay Feature Extraction", leave=False):
                 # data = next(data_iterator)
                 _, _, _, xray, instance_name, _ = data  # NOTE: double-check the instance name, depends on the custom data loader.
 
@@ -519,15 +520,11 @@ class CTClipInference(nn.Module):
                 if append and idx % 100 == 0:
                     os.makedirs(saving_path, exist_ok=True)
                     torch.save(xray_features, xray_feature_path)
-                else:
-                    print('NOT SAVING IT THE EMBEDDINGS!!!')
                 idx += 1
 
         if append:
             os.makedirs(saving_path, exist_ok=True)
             torch.save(xray_features, xray_feature_path)
-        else:
-            print('NOT SAVING IT THE EMBEDDINGS!!!')
 
         return xray_features
     
