@@ -485,6 +485,10 @@ class CTClipInference(nn.Module):
         if os.path.exists(xray_feature_path):
             xray_features = torch.load(xray_feature_path)
 
+        if len(xray_features.keys()) == data_size:
+            print('All keys already exist. Skipping model forward pass.')
+            return xray_features
+
         if not append:
             print('NOT SAVING IT THE EMBEDDINGS!!!')
 
