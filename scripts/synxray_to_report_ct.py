@@ -60,12 +60,14 @@ def retrieval_evaluation(
             dataset = TensorDataset(torch.tensor(target_latents))
             dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
+            #TODO: normalize the feature before testing?
+
             # find the similarity between the xray and the target embeddings
             for batch in dataloader:
                 targets = batch[0].to('cuda')
                 
                 # Compute similarity in batch
-                cross_batch = torch.matmul(xray, targets.T) # TODO: double check the dimension is correct.
+                cross_batch = torch.matmul(xray, targets.T)
                 crosses.extend(cross_batch.cpu().tolist())
             
             # find the top k indiices
@@ -74,23 +76,23 @@ def retrieval_evaluation(
                 num_is_in += 1
 
             # this is the baseline performance on the random pairs.
-            # for _ in range(len(dataloader)): # number of batches
-            #     size = (512,)
-            #     target_batch = torch.rand((batch_size, *size)).to('cuda')
-            #     targets = torch.rand((batch_size, *size)).to('cuda')
+            for _ in range(len(dataloader)): # number of batches
+                size = (512,)
+                target_batch = torch.rand((batch_size, *size)).to('cuda')
+                targets = torch.rand((batch_size, *size)).to('cuda')
 
-            #     # Compute similarity in batch
-            #     cross_batch = torch.matmul(target_batch, targets.T)
-            #     crosses_rands.extend(cross_batch.cpu().tolist())
+                # Compute similarity in batch
+                cross_batch = torch.matmul(target_batch, targets.T)
+                crosses_rands.extend(cross_batch.cpu().tolist())
 
-            # top_k_indices = find_top_k_indices(crosses_rands, value)
-            # if i in top_k_indices:
-            #     num_random += 1
+            top_k_indices = find_top_k_indices(crosses_rands, value)
+            if i in top_k_indices:
+                num_random += 1
 
         clip = num_is_in / target_latents.shape[0]
-        # rand = num_random / target_latents.shape[0]
-        # write_str = f"K={value}, clip = {clip}, rand= {rand}"
-        write_str = f"K={value}, clip = {clip}, rand=undefined"
+        rand = num_random / target_latents.shape[0]
+        write_str = f"K={value}, clip = {clip}, rand= {rand}"
+        # write_str = f"K={value}, clip = {clip}, rand=undefined"
 
         list_texts.append(write_str)
 
