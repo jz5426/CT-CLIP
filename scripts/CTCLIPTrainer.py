@@ -173,6 +173,7 @@ class CTClipTrainer(nn.Module):
         data_train = "train",
         data_valid = "valid",
         cfg=None,
+        pretrained_xray_encoder = True,
         img_embedding_paths = {}, # contain both train and validation
         text_embedding_paths = {}, # contian both train and validation
         reports_file_train = "data_reports.xslx",
@@ -324,7 +325,7 @@ class CTClipTrainer(nn.Module):
 
         # base file name for the checkpoints
         model_type = 'Swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'Resnet'
-        self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}'
+        self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}'
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
@@ -727,8 +728,10 @@ class CTClipTrainer(nn.Module):
                 writer.close()
                 del output
 
-                #TODO: always save the last model.
+                #save model based on epoch and always saving the last epoch
                 self._save_ckpt(epoch, 'last_epoch.pt', 'saving the last epoch checkpoint', iteration)
+                if epoch % 50 == 0:
+                    self._save_ckpt(epoch, f'{epoch}_epoch.pt', f'saving the {epoch}th epoch checkpoint', iteration)
 
                 # save model based on f1 metric
                 if self.best_f1_val_acc < f1:
