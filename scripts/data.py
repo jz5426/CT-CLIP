@@ -180,8 +180,108 @@ class CTReportDataset(Dataset):
         input_text = input_text.replace(')', '')
 
         return video_tensor, input_text
-    
 
+class CTReportXRayClassificationDataset(CTReportDataset):
+
+    def __init__(self,
+                 data_folder, 
+                 cfg, 
+                 report_file='',
+                 labels='labels.csv',
+                 min_slices=20, 
+                 resize_dim=500, 
+                 force_num_frames=True):
+        self.xray_paths = []
+        self.parent_folder = os.path.basename(data_folder)
+        self.file_extension = 'mha'
+
+        super().__init__(data_folder, report_file, min_slices, resize_dim, force_num_frames)
+        self.cfg = cfg
+        self.labels = labels
+        self.normalize = "huggingface" # when use swin or non-resnet architecture
+        if cfg["model"]["image_encoder"]["name"] == "resnet":
+            self.normalize = "imagenet" # only for resnet architecture
+
+        self.xray_transform = load_transform(split='train', transform_config=cfg['transform'])
+            # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
+            # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
+        self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
+
+    def nii_img_to_tensor(self, path, transform):
+        """
+        override the parent method
+        """
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            img_data = torch.load(path)
+        return img_data
+
+    def xray_mha_to_rgb(self, path, transform):
+        """
+        assume the path to the xray is mha format
+        """
+        
+        # Step 1: Read the .mha file using SimpleITK
+        itk_image = sitk.ReadImage(path)
+        
+        # Step 2: Convert to a NumPy array
+        np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
+
+        np_image = (np_image - np_image.min()) / (np_image.max() - np_image.min()) * 255
+        np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
+
+        rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
+        rgb_image = Image.fromarray(rgb_image, mode="RGB")
+
+        return rgb_image
+
+    def __getitem__(self, key_id):
+
+        selected_sample = self.samples[key_id]
+        img_embedding, text_embedding, xray_file = selected_sample
+
+        xray_image = self.xray_to_rgb(xray_file)
+        # transformation borrowed from cxr_clip
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+
+        img_embedding = torch.from_numpy(img_embedding.reshape(-1)).requires_grad_(False)
+        text_embedding = torch.from_numpy(text_embedding.reshape(-1)).requires_grad_(False)
+        return  img_embedding, text_embedding, xray_image
+
+    def prepare_samples(self):
+        """
+        this prepare the xray data in a dictionary format
+        """
+
+        # Read labels once outside the loop
+        label_df = pd.read_csv(self.labels)
+        test_label_cols = list(label_df.columns[1:])
+        label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
+
+        samples = {}
+        for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
+            for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
+                mha_files = glob.glob(os.path.join(accession_folder, f'*.{self.file_extension}'))
+                for xray_file in mha_files:
+                    
+                    # ignore the current .mha file if no corresponding rerport file
+                    path_dirs = xray_file.split(os.sep)
+                    accession_number = path_dirs[-1]
+                    accession_number = accession_number.replace(f".{self.file_extension}", ".nii.gz")
+                    if accession_number not in self.accession_to_text:
+                        continue
+
+                    # ignore the current .mha file if no label exists
+                    onehotlabels = label_df[label_df["VolumeName"] == accession_number]["one_hot_labels"].values
+                    if len(onehotlabels) == 0:
+                        continue
+                    
+                    # TODO: double check if this is a multilabel label instead of binary one hot
+                    # TODO: allow for binary classification task or multilabel task.
+                    samples.append((xray_file, onehotlabels[0]))
+
+        return samples
+    
 class CTReportXRayDataset(CTReportDataset):
 
     def __init__(self,
