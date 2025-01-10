@@ -1136,7 +1136,8 @@ class CTCLIPwithXray(nn.Module):
 
     def load(self, ctclip_path, cxr_path):
         self.load_ctclip(ctclip_path, freeze_weights=True)
-        self.load_xray_encoder(cxr_path, False)
+        if cxr_path: # if false, implies randomly initialized
+            self.load_xray_encoder(cxr_path, False)
     
     def load_ctclip(self, ctclip_path, freeze_weights=True):
         warnings.filterwarnings('ignore')

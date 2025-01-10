@@ -150,8 +150,10 @@ def run(cfg):
     #             "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
 
     # uhn cluster
-    clip_xray.load("/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
-                "/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
+    clip_xray.load(
+        "/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
+        f"/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{ckpt_name}" if args.use_pretrained_xray_encoder else None
+    )
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
@@ -203,6 +205,7 @@ def run(cfg):
     # uhn cluster
     trainer = CTClipTrainer(
         clip_xray,
+        pretrained_xray_encoder = args.use_pretrained_xray_encoder,
         cfg=cfg,
         tokenizer=tokenizer,
         data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
@@ -292,6 +295,8 @@ def parse_args():
     parser.add_argument('--learing_rate', type=float, default=5e-5, help='learning rate')
     parser.add_argument('--weight_decay', type=float, default=1e-4, help='decay factor for the learning rate')
     parser.add_argument('--epochs', type=int, default=1000, help='total number of epoch training')
+    parser.add_argument('--use_pretrained_xray_encoder', type=bool, default=True, help='whether using the pretrained xray encoder from cxr_clip')
+
     return parser.parse_args()
 
 if __name__ == '__main__':
