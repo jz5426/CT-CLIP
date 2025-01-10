@@ -727,8 +727,10 @@ class CTClipTrainer(nn.Module):
                 writer.close()
                 del output
 
-                #TODO: always save the last model.
+                #save model based on epoch and always saving the last epoch
                 self._save_ckpt(epoch, 'last_epoch.pt', 'saving the last epoch checkpoint', iteration)
+                if epoch % 50 == 0:
+                    self._save_ckpt(epoch, f'{epoch}_epoch.pt', f'saving the {epoch}th epoch checkpoint', iteration)
 
                 # save model based on f1 metric
                 if self.best_f1_val_acc < f1:
