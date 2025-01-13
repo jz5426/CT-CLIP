@@ -297,6 +297,9 @@ def run(cfg):
         xray_latents=[triple[-1] for triple in triplet_embeddings],
         target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
         file_name='synxray2ct.txt')
+    
+    #TODO: add MAP metric for xray-image retrieval based on the diease labels, might be xray-to-report?
+
 
     # xray2report retrival evaluation
     retrieval_evaluation(
