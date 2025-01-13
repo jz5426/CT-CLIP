@@ -65,7 +65,7 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 # )
 # inference.infer()
 
-# NOTE: to work on the WSL drive, do the sudo mount -t drvfs F: /mnt/f if the external drive has no content
+# NOTE: to work on the WSL drive, do the sudo mount -t drvfs F: /mnt/f  or sudo mount -t drvfs G: /mnt/g if the external drive has no content
 # inference_valid = CTClipInference(
 #     clip,
 #     data_folder = "/mnt/f/Chris/dataset/valid_preprocessed_ct",

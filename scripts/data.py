@@ -191,13 +191,15 @@ class CTReportXRayClassificationDataset(CTReportDataset):
                  min_slices=20, 
                  resize_dim=500, 
                  force_num_frames=True):
+        self.file_extension = 'mha' # make sure the xray data file path are the .mha file
+        assert self.file_extension in data_folder
         self.xray_paths = []
         self.parent_folder = os.path.basename(data_folder)
-        self.file_extension = 'mha'
-
-        super().__init__(data_folder, report_file, min_slices, resize_dim, force_num_frames)
-        self.cfg = cfg
         self.labels = labels
+        self.cfg = cfg
+        super().__init__(data_folder, report_file, min_slices, resize_dim, force_num_frames)
+        
+
         self.normalize = "huggingface" # when use swin or non-resnet architecture
         if cfg["model"]["image_encoder"]["name"] == "resnet":
             self.normalize = "imagenet" # only for resnet architecture
@@ -238,15 +240,17 @@ class CTReportXRayClassificationDataset(CTReportDataset):
     def __getitem__(self, key_id):
 
         selected_sample = self.samples[key_id]
-        img_embedding, text_embedding, xray_file = selected_sample
+        xray_file, label = selected_sample
 
-        xray_image = self.xray_to_rgb(xray_file)
         # transformation borrowed from cxr_clip
+        xray_image = self.xray_to_rgb(xray_file)
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+        label = torch.from_numpy(label)
 
-        img_embedding = torch.from_numpy(img_embedding.reshape(-1)).requires_grad_(False)
-        text_embedding = torch.from_numpy(text_embedding.reshape(-1)).requires_grad_(False)
-        return  img_embedding, text_embedding, xray_image
+        # img_embedding = torch.from_numpy(img_embedding.reshape(-1)).requires_grad_(False)
+        # text_embedding = torch.from_numpy(text_embedding.reshape(-1)).requires_grad_(False)
+
+        return xray_image, label
 
     def prepare_samples(self):
         """
@@ -258,7 +262,7 @@ class CTReportXRayClassificationDataset(CTReportDataset):
         test_label_cols = list(label_df.columns[1:])
         label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
 
-        samples = {}
+        samples = []
         for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
             for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
                 mha_files = glob.glob(os.path.join(accession_folder, f'*.{self.file_extension}'))
@@ -276,7 +280,6 @@ class CTReportXRayClassificationDataset(CTReportDataset):
                     if len(onehotlabels) == 0:
                         continue
                     
-                    # TODO: double check if this is a multilabel label instead of binary one hot
                     # TODO: allow for binary classification task or multilabel task.
                     samples.append((xray_file, onehotlabels[0]))
 
