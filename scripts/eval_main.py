@@ -101,7 +101,7 @@ def run(cfg):
 
     #TODO: uncomment this when not testing.
     if args.is_evaluate_our_model:
-        ckp_name = 'CTClip.lowest_val_cl_loss_during_iterations'
+        ckp_name = 'CTClip_lowest_val_cl_loss_during_iterations'
         # clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
         pth_base_name = f'{ckp_name}_pretrained_xray_encoder_features'
     else:
@@ -112,6 +112,8 @@ def run(cfg):
             freeze_weights=True
         )
         pth_base_name = 'cxr_clip_pretrained_xray_encoder_features.pth'
+
+    # modify the base file name
 
     pathologies = ['Medical material',
                     'Arterial wall calcification', 
@@ -147,16 +149,22 @@ def run(cfg):
 
     # Set up the dataset and data loaders
     train_dataset = CTReportXRayClassificationDataset(
-        data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha', # data path for the xray train
+        # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha', # data path for the xray train
+        # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+        # labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv' # path for train xray data label
+        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+        report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
         cfg=cfg,
-        report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv' # path for train xray data label
     )
     val_dataset = CTReportXRayClassificationDataset(
-        data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha', # data path for the xray val
+        # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha', # data path for the xray val
+        # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
+        # labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv' # path for val xray data label
+        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
+        report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
+        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         cfg=cfg,
-        report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-        labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv' # path for val xray data label
     )
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
@@ -228,7 +236,9 @@ def run(cfg):
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            torch.save(model.state_dict(), f"{pth_base_name}_best_model.pth")
+            os.makedirs(args.cpt_dest, exist_ok=True)
+            dest = os.path.join(args.cpt_dest, f'{pth_base_name}_best_model.pth')
+            torch.save(model.state_dict(), dest)
         else:
             patience_counter += 1
 
@@ -249,7 +259,7 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
     parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate")
     parser.add_argument("--progress_window", type=int, default=2, help="show progress every progress window elapsed")
-
+    parser.add_argument('--cpt_dest', type=str, default='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation', help='destinatin folder for the weights')
     args = parser.parse_args()
 
     return args

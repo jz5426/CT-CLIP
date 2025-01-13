@@ -241,15 +241,10 @@ class CTReportXRayClassificationDataset(CTReportDataset):
 
         selected_sample = self.samples[key_id]
         xray_file, label = selected_sample
-
         # transformation borrowed from cxr_clip
         xray_image = self.xray_to_rgb(xray_file)
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
         label = torch.from_numpy(label)
-
-        # img_embedding = torch.from_numpy(img_embedding.reshape(-1)).requires_grad_(False)
-        # text_embedding = torch.from_numpy(text_embedding.reshape(-1)).requires_grad_(False)
-
         return xray_image, label
 
     def prepare_samples(self):

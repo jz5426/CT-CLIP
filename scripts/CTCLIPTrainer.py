@@ -311,8 +311,9 @@ class CTClipTrainer(nn.Module):
         self.early_stop_counter = 0
         self.results_folder = Path(results_folder)
 
-        if len([*self.results_folder.glob('**/*')]) > 0 and train_from_scratch:
-            rmtree(str(self.results_folder))
+        # if len([*self.results_folder.glob('**/*')]) > 0 and train_from_scratch:
+        #     print('eliminating existing checkpoints')
+        #     rmtree(str(self.results_folder))
 
         self.results_folder.mkdir(parents=True, exist_ok=True)
 
