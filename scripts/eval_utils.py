@@ -42,6 +42,7 @@ class XrayClassificationModel(nn.Module):
         enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch
         xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
 
+        #TODO: whether should normalize it when doing full finetuning, linear probe should use it
         # projection and normalize the features, exactly the way during pretraining
         xray_latents = self.to_xray_latent(xray_embeds) # [8, 512]
         xray_latents = F.normalize(xray_latents, dim = -1)
