@@ -1,5 +1,5 @@
 """
-main evaluation training loop
+main evaluation training loop for finetune/linear probe the xray encoder only.
 """
 
 import torch
@@ -12,38 +12,117 @@ import sys
 from data import CTReportXRayClassificationDataset
 from eval_utils import XrayClassificationModel
 
-# Example usage
-if __name__ == "__main__":
-    from torchvision.models import resnet18
+import os
+from cxr_clip_utils import convert_dictconfig_to_dict
+import hydra
+from omegaconf import DictConfig, OmegaConf
+import torch
+from transformer_maskgit import CTViT
+from transformers import BertTokenizer, BertModel
+from ct_clip import CTCLIPwithXray
+import random
+import numpy as np
+import tqdm
+from torch.utils.data import DataLoader, TensorDataset
+from zero_shot import CTClipInference
 
-    # Argument parser setup
-    parser = argparse.ArgumentParser(description="Train Vision Model Wrapper")
-    parser.add_argument("--use_binary_classification", action="store_true", help="Toggle for binary classification")
-    parser.add_argument("--num_epochs", type=int, default=200, help="Number of epochs")
-    parser.add_argument("--patience", type=int, default=20, help="Early stopping patience")
-    parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
-    parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate")
-    args = parser.parse_args()
 
-    # Example dataset
-    class ExampleDataset(Dataset):
-        def __init__(self, num_samples, num_features):
-            self.data = torch.randn(num_samples, 3, 224, 224)  # Example input size for vision models
-            self.labels_binary = torch.randint(0, 2, (num_samples,))  # Binary labels
-            self.labels_multilabel = torch.randint(0, 2, (num_samples, 5))  # Multi-label classification
+@hydra.main(
+        version_base=None,
+        config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
+        config_name="train")
+def main(cfg: DictConfig):
 
-        def __len__(self):
-            return len(self.data)
+    OmegaConf.resolve(cfg)
 
-        def __getitem__(self, idx):
-            return self.data[idx], self.labels_binary[idx], self.labels_multilabel[idx]
+    if "LOCAL_RANK" in os.environ:
+        # for ddp
+        # passed by torchrun or torch.distributed.launch
+        local_rank = int(os.environ["LOCAL_RANK"])
+    else:
+        # for debugging
+        local_rank = -1
 
-    # Load a pre-trained vision model
-    pretrained_model = resnet18(pretrained=True)
+    if local_rank < 1:
+        print(f"Configurations:\n{OmegaConf.to_yaml(cfg)}")
 
-    # Initialize the wrapper model
-    num_classes = 1 if args.use_binary_classification else 5  # Change based on binary or multi-label classification
-    model = XrayClassificationModel(vision_model=pretrained_model, isLinearProbe=True, in_features=512, num_classes=num_classes)
+    # seed_everything(1234)
+    # torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True # efficient performance optimization.
+
+    cfg = convert_dictconfig_to_dict(cfg)
+
+    # seed everything
+    seed = 1024
+    random.seed(seed)    
+    np.random.seed(seed)    
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # If using multiple GPUs
+
+    run(cfg)
+
+def run(cfg):
+    torch.cuda.empty_cache()
+    text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
+    image_encoder = CTViT(
+        dim = 512,
+        codebook_size = 8192,
+        image_size = 480,
+        patch_size = 20,
+        temporal_patch_size = 10,
+        spatial_depth = 4,
+        temporal_depth = 4,
+        dim_head = 32,
+        heads = 8
+    )
+
+    latent_size = 512
+    clip_xray = CTCLIPwithXray(
+        image_encoder = image_encoder,
+        text_encoder = text_encoder,
+        dim_text = 768,
+        dim_image = 294912,
+        xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet',
+        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048, # output size of the xray feature extractor
+        dim_latent = latent_size, # latent size that match the CT vision encoder and the text encoder.
+        extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+        use_mlm=False,
+        downsample_image_embeds = False,
+        use_all_token_embeds = False,
+        cfg=cfg
+    )
+    ckp_name = 'CTClip.lowest_val_cl_loss_during_iterations'
+    clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
+    pth_base_name = f'{ckp_name}_pretrained_xray_encoder_features'
+    # Load a pre-trained xray encoder model
+    pretrained_model = clip_xray.xray_encoder
+
+    # custom script argument
+    args = parse_args()
+
+    pathologies = ['Medical material',
+                    'Arterial wall calcification', 
+                    'Cardiomegaly', 
+                    'Pericardial effusion',
+                    'Coronary artery wall calcification', 
+                    'Hiatal hernia',
+                    'Lymphadenopathy', 
+                    'Emphysema', 
+                    'Atelectasis', 
+                    'Lung nodule',
+                    'Lung opacity', 
+                    'Pulmonary fibrotic sequela', 
+                    'Pleural effusion', 
+                    'Mosaic attenuation pattern',
+                    'Peribronchial thickening', 
+                    'Consolidation', 
+                    'Bronchiectasis',
+                    'Interlobular septal thickening']
+
+    # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
+    num_classes = 1 if args.use_binary_classification else len(pathologies)
+    model = XrayClassificationModel(vision_model=pretrained_model, isLinearProbe=True, in_features=latent_size, num_classes=num_classes)
 
     # Set up the dataset and data loaders
     train_dataset = CTReportXRayClassificationDataset(
@@ -120,7 +199,7 @@ if __name__ == "__main__":
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            torch.save(model.state_dict(), "best_model.pth")
+            torch.save(model.state_dict(), f"{pth_base_name}_best_model.pth")
         else:
             patience_counter += 1
 
@@ -129,3 +208,19 @@ if __name__ == "__main__":
             break
 
     print("Training complete.")
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train Vision Model Wrapper")
+    parser.add_argument("--use_binary_classification", action="store_true", help="Toggle for binary classification")
+    parser.add_argument("--num_epochs", type=int, default=200, help="Number of epochs")
+    parser.add_argument("--patience", type=int, default=20, help="Early stopping patience")
+    parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
+    parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate")
+    args = parser.parse_args()
+
+    return args
+
+# Example usage
+if __name__ == "__main__":
+    main()

@@ -60,15 +60,18 @@ def run(cfg):
     #NOTE: you need to use the follownig command to copy and past to the location cp -rL /path/to/source_directory /path/to/destination_directory 
         # the copied files in the destination folder will behave like regular files and directories. You can copy and paste them as usual using a file manager
 
+    tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
+    text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
+
     # uhn cluster from local filesc
-    tokenizer = BertTokenizer.from_pretrained(
-        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-        do_lower_case=True,
-        local_files_only=True)
-    text_encoder = BertModel.from_pretrained(
-        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-        local_files_only=True
-        )
+    # tokenizer = BertTokenizer.from_pretrained(
+    #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+    #     do_lower_case=True,
+    #     local_files_only=True)
+    # text_encoder = BertModel.from_pretrained(
+    #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+    #     local_files_only=True
+    #     )
 
     print("---------")
     print(tokenizer.pad_token_id)
@@ -115,9 +118,9 @@ def run(cfg):
     # )
     # pth_name = 'cxr_xray_features.pth'
 
-    # NOTE: for our pretrained model: load the whole thing
+    # NOTE: for our pretrained model: load the whole thing TODO: uncomment this when evaluate
     ckp_name = 'CTClip.lowest_val_cl_loss_during_iterations'
-    clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
+    # clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
     pth_name = f'{ckp_name}_xray_features.pth'
 
     # check the trainable parameters
