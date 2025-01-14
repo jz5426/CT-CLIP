@@ -6,6 +6,7 @@ stratification for multilabel dataset:
 - http://scikit.ml/stratification.html
 - https://datascience.stackexchange.com/questions/45174/how-to-use-sklearn-train-test-split-to-stratify-data-for-multi-label-classificat
 
+- think of the following script as linear probing with 10%, 20%, 50%, 80%, 100% of the data and see the performance comparison.
 """
 
 import torch
