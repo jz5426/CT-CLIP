@@ -37,8 +37,6 @@ def main(cfg: DictConfig):
     # torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
 
-    cfg = convert_dictconfig_to_dict(cfg)
-
     # seed everything
     seed = 1024
     random.seed(seed)    
@@ -50,22 +48,25 @@ def main(cfg: DictConfig):
     run(cfg)
 
 
-def run(cfg):
+def run(cfg_dot):
     torch.cuda.empty_cache()
-    args = parse_args()
+    # args = parse_args()
 
-    print("Batch Size:", args.batch_size)
-    print("Number of Workers:", args.num_workers)
-    print("Batch Style:", args.batch_style)
-    print("Train from Scratch:", args.train_from_scratch)
-    print("Epoch-Based Patience:", args.epoch_based_patience)
-    print("Iteration Evaluate Frequency:", args.iteration_evaluate_frequency)
-    print("Text Contrastive Learning Weight:", args.text_cl_weight)
-    print("CT Contrastive Learning Weight:", args.ct_cl_weight)
-    print("Learning Rate:", args.learning_rate)
-    print("Weight Decay:", args.weight_decay)
-    print("Epochs:", args.epochs)
-    print("Use Pretrained X-Ray Encoder:", args.use_pretrained_xray_encoder)
+    print("Batch Size:", cfg_dot.training_params.batch_size)
+    print("Number of Workers:", cfg_dot.training_params.num_workers)
+    print("Batch Style:", cfg_dot.training_params.batch_style)
+    print("Train from Scratch:", cfg_dot.training_params.train_from_scratch)
+    print("Epoch-Based Patience:", cfg_dot.training_params.epoch_based_patience)
+    print("Iteration Evaluate Frequency:", cfg_dot.training_params.iteration_evaluate_frequency)
+    print("Text Contrastive Learning Weight:", cfg_dot.training_params.text_cl_weight)
+    print("CT Contrastive Learning Weight:", cfg_dot.training_params.ct_cl_weight)
+    print("Learning Rate:", cfg_dot.training_params.learning_rate)
+    print("Weight Decay:", cfg_dot.training_params.weight_decay)
+    print("Epochs:", cfg_dot.training_params.epochs)
+    print("Use Pretrained X-Ray Encoder:", cfg_dot.training_params.use_pretrained_xray_encoder)
+
+    # convert the config file to dictionary
+    cfg = convert_dictconfig_to_dict(cfg_dot)
 
     #NOTE: you need to use the follownig command to copy and past to the location cp -rL /path/to/source_directory /path/to/destination_directory 
         # the copied files in the destination folder will behave like regular files and directories. You can copy and paste them as usual using a file manager
@@ -167,7 +168,7 @@ def run(cfg):
     # uhn cluster
     clip_xray.load(
         "/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
-        f"/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{ckpt_name}" if args.use_pretrained_xray_encoder else None
+        f"/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{ckpt_name}" if cfg_dot.training_params.use_pretrained_xray_encoder else None
     )
 
     # check the trainable parameters
@@ -218,7 +219,7 @@ def run(cfg):
     # uhn cluster
     trainer = CTClipTrainer(
         clip_xray,
-        pretrained_xray_encoder = args.use_pretrained_xray_encoder,
+        pretrained_xray_encoder = cfg_dot.training_params.use_pretrained_xray_encoder,
         cfg=cfg,
         tokenizer=tokenizer,
         data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
@@ -236,21 +237,21 @@ def run(cfg):
         labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         results_folder='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS',
         num_train_steps = 100001,
-        batch_style=args.batch_style,
-        batch_size = args.batch_size,
-        num_workers = args.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-        train_from_scratch = args.train_from_scratch,
-        epoch_based_patience = args.epoch_based_patience,
-        iteration_evaluate_frequency = args.iteration_evaluate_frequency,
-        text_cl_weight = args.text_cl_weight,
-        ct_cl_weight = args.ct_cl_weight, 
+        batch_style=cfg_dot.training_params.batch_style,
+        batch_size = cfg_dot.training_params.batch_size,
+        num_workers = cfg_dot.training_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        train_from_scratch = cfg_dot.training_params.train_from_scratch,
+        epoch_based_patience = cfg_dot.training_params.epoch_based_patience,
+        iteration_evaluate_frequency = cfg_dot.training_params.iteration_evaluate_frequency,
+        text_cl_weight = cfg_dot.training_params.text_cl_weight,
+        ct_cl_weight = cfg_dot.training_params.ct_cl_weight, 
         # lr = 5e-3
         # cxr-clip parameters
-        wd = args.weight_decay,
-        lr = args.learning_rate
+        wd = cfg_dot.training_params.weight_decay,
+        lr = cfg_dot.training_params.learning_rate
         # TODO: interpolate the learing rate between ULIP and CXR-CLIP
     )
-    trainer.train_by_epoch(args.epochs)
+    trainer.train_by_epoch(cfg_dot.training_params.epochs)
 
     # # uhn cluster #NOTE: backup code without arg base
     # trainer = CTClipTrainer(
@@ -291,26 +292,6 @@ def run(cfg):
     TODO: check the performance when the xray encoder is initialized from scratch.
     TODO: brainstorm different approachs for the contrastive learning function.
     """
-
-def parse_args():
-    """
-    Parse additional command-line arguments.
-    """
-    parser = argparse.ArgumentParser(description="Additional arguments for CT-CLIP training")
-    parser.add_argument('--batch_size', type=int, default=360, help='Override batch size')
-    parser.add_argument('--num_workers', type=int, default=10, help='number of cpu workers')
-    parser.add_argument('--batch_style', type=str, default='instance', help='patient, experiment, instance')
-    parser.add_argument('--train_from_scratch', type=bool, default=False, help='override previously saved checkpoints')
-    parser.add_argument('--epoch_based_patience', type=int, default=25, help='patience for early stoppping')
-    parser.add_argument('--iteration_evaluate_frequency', type=int, default=10, help='iteration based evaluation on the validation set')
-    parser.add_argument('--text_cl_weight', type=float, default=1., help='weighting for xray to ct-text')
-    parser.add_argument('--ct_cl_weight', type=float, default=1., help='weighting for xray to ct images')
-    parser.add_argument('--learning_rate', type=float, default=5e-5, help='learning rate, default is the cxr_clip parameters')
-    parser.add_argument('--weight_decay', type=float, default=1e-4, help='decay factor for the learning rate, default is the cxr_clip parameters')
-    parser.add_argument('--epochs', type=int, default=250, help='total number of epoch training')
-    parser.add_argument('--use_pretrained_xray_encoder', type=bool, default=True, help='whether using the pretrained xray encoder from cxr_clip')
-
-    return parser.parse_args()
 
 if __name__ == '__main__':
     main()

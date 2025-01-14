@@ -24,6 +24,20 @@ base:
   output:
     checkpoint: ${hydra:run.dir}/checkpoints/
     tensorboard: ${hydra:run.dir}/tensorboard/
+  
+training_params:
+  batch_size: 360
+  num_workers: 10
+  batch_style: instance
+  train_from_scratch: false
+  epoch_based_patience: 25
+  iteration_evaluate_frequency: 10
+  text_cl_weight: 1.0
+  ct_cl_weight: 1.0
+  learning_rate: 5e-5
+  weight_decay: 1e-4
+  epochs: 250
+  use_pretrained_xray_encoder: true
 
 hydra:
   run:
