@@ -39,6 +39,17 @@ training_params:
   epochs: 250
   use_pretrained_xray_encoder: true
 
+linear_probing_params:
+  use_binary_classification: false
+  is_linear_probe_eval: true
+  is_evaluate_our_model: True
+  num_epochs: 200
+  patience: 20
+  batch_size: 8
+  learning_rate: 1e-4
+  progress_window: 10
+  cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation'
+
 hydra:
   run:
     dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}

@@ -67,10 +67,21 @@ def main(cfg: DictConfig):
 
     run(cfg)
 
-def run(cfg):
+def run(cfg_dot):
 
-    # custom script argument
-    args = parse_args()
+    # print custom script argument
+    print(f"use_binary_classification: {cfg_dot.linear_probing_params.use_binary_classification}")
+    print(f"is_linear_probe_eval: {cfg_dot.linear_probing_params.is_linear_probe_eval}")
+    print(f"is_evaluate_our_model: {cfg_dot.linear_probing_params.is_evaluate_our_model}")
+    print(f"num_epochs: {cfg_dot.linear_probing_params.num_epochs}")
+    print(f"patience: {cfg_dot.linear_probing_params.patience}")
+    print(f"batch_size: {cfg_dot.linear_probing_params.batch_size}")
+    print(f"learning_rate: {cfg_dot.linear_probing_params.learning_rate}")
+    print(f"progress_window: {cfg_dot.linear_probing_params.progress_window}")
+    print(f"cpt_dest: {cfg_dot.linear_probing_params.cpt_dest}")
+
+    # convert the config file to dictionary
+    cfg = convert_dictconfig_to_dict(cfg_dot)
 
     torch.cuda.empty_cache()
     text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
@@ -107,7 +118,7 @@ def run(cfg):
     )
 
     #TODO: uncomment this when not testing.
-    if args.is_evaluate_our_model:
+    if cfg_dot.linear_probing_params.is_evaluate_our_model:
         ckp_name = 'CTClip_lowest_val_cl_loss_during_iterations'
         # clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
         pth_base_name = f'{ckp_name}_pretrained_xray_encoder_features'
@@ -142,11 +153,11 @@ def run(cfg):
                     'Interlobular septal thickening']
 
     # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
-    num_classes = 1 if args.use_binary_classification else len(pathologies)
+    num_classes = 1 if cfg_dot.linear_probing_params.use_binary_classification else len(pathologies)
     model = XrayClassificationModel(
         vision_model=clip_xray.xray_encoder, 
         feature_projector=clip_xray.to_xray_latent, 
-        isLinearProbe=args.is_linear_probe_eval, 
+        isLinearProbe=cfg_dot.linear_probing_params.is_linear_probe_eval, 
         in_features=latent_size, 
         num_classes=num_classes)
 
@@ -173,17 +184,17 @@ def run(cfg):
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         cfg=cfg,
     )
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=False)
     train_size = len(train_loader)
     val_size = len(val_loader)
 
     # Training loop configuration
-    criterion = nn.BCEWithLogitsLoss() if not args.use_binary_classification else nn.CrossEntropyLoss()
-    optimizer = optim.AdamW(model.parameters(), lr=args.learning_rate)
+    criterion = nn.BCEWithLogitsLoss() if not cfg_dot.linear_probing_params.use_binary_classification else nn.CrossEntropyLoss()
+    optimizer = optim.AdamW(model.parameters(), lr=cfg_dot.linear_probing_params.learning_rate)
 
     # Early stopping setup
-    patience = args.patience
+    patience = cfg_dot.linear_probing_params.patience
     best_val_loss = float('inf')
     patience_counter = 0
 
@@ -192,7 +203,7 @@ def run(cfg):
     model.to(device)
 
     # Training and validation loop
-    for epoch in range(args.num_epochs):
+    for epoch in range(cfg_dot.linear_probing_params.num_epochs):
         model.train()
         total_loss = 0.0
 
@@ -205,7 +216,7 @@ def run(cfg):
             outputs = model(inputs)
 
             # Compute loss
-            loss = criterion(outputs, labels.float() if not args.use_binary_classification else labels)
+            loss = criterion(outputs, labels.float() if not cfg_dot.linear_probing_params.use_binary_classification else labels)
 
             # Backward pass and optimization
             optimizer.zero_grad()
@@ -213,10 +224,10 @@ def run(cfg):
             optimizer.step()
 
             total_loss += loss.item()
-            if idx % args.progress_window == 0:
-                print(f"Epoch [{epoch}/{args.num_epochs}], Batch [{idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
+            if idx % cfg_dot.linear_probing_params.progress_window == 0:
+                print(f"Epoch [{epoch}/{cfg_dot.linear_probing_params.num_epochs}], Batch [{idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
 
-        print(f"Epoch {epoch+1}/{args.num_epochs}, Training Loss: {total_loss/len(train_loader):.4f}")
+        print(f"Epoch {epoch+1}/{cfg_dot.linear_probing_params.num_epochs}, Training Loss: {total_loss/len(train_loader):.4f}")
 
         # Validation loop
         model.eval()
@@ -230,11 +241,11 @@ def run(cfg):
                 outputs = model(inputs)
 
                 # Compute loss
-                loss = criterion(outputs, labels.float() if not args.use_binary_classification else labels)
+                loss = criterion(outputs, labels.float() if not cfg_dot.linear_probing_params.use_binary_classification else labels)
                 val_loss += loss.item()
 
-            if idx % args.progress_window == 0:
-                print(f"Epoch [{epoch}/{args.num_epochs}], Batch [{idx}/{val_size}] in training split, Validation Loss: {loss.item():.4f}")
+            if idx % cfg_dot.linear_probing_params.progress_window == 0:
+                print(f"Epoch [{epoch}/{cfg_dot.linear_probing_params.num_epochs}], Batch [{idx}/{val_size}] in training split, Validation Loss: {loss.item():.4f}")
 
         val_loss /= len(val_loader)
         print(f"Validation Loss: {val_loss:.4f}")
@@ -243,8 +254,8 @@ def run(cfg):
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            os.makedirs(args.cpt_dest, exist_ok=True)
-            dest = os.path.join(args.cpt_dest, f'{pth_base_name}_best_model.pth')
+            os.makedirs(cfg_dot.linear_probing_params.cpt_dest, exist_ok=True)
+            dest = os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth')
             torch.save(model.state_dict(), dest)
         else:
             patience_counter += 1
@@ -256,20 +267,20 @@ def run(cfg):
     print("Finetuning the XRay encoder complete.")
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Train Vision Model Wrapper")
-    parser.add_argument("--use_binary_classification", type=bool, default=False,  help="Toggle for binary classification")
-    parser.add_argument("--is_linear_probe_eval", type=bool, default=True, help="linear probing evaluation or full model finetuning")
-    parser.add_argument("--is_evaluate_our_model", type=bool, default=True, help="whether evalute our model or the one from cxr_clip")
-    parser.add_argument("--num_epochs", type=int, default=200, help="Number of epochs")
-    parser.add_argument("--patience", type=int, default=20, help="Early stopping patience")
-    parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
-    parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate")
-    parser.add_argument("--progress_window", type=int, default=2, help="show progress every progress window elapsed")
-    parser.add_argument('--cpt_dest', type=str, default='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation', help='destinatin folder for the weights')
-    args = parser.parse_args()
+# def parse_args():
+#     parser = argparse.ArgumentParser(description="Train Vision Model Wrapper")
+#     parser.add_argument("--use_binary_classification", type=bool, default=False,  help="Toggle for binary classification")
+#     parser.add_argument("--is_linear_probe_eval", type=bool, default=True, help="linear probing evaluation or full model finetuning")
+#     parser.add_argument("--is_evaluate_our_model", type=bool, default=True, help="whether evalute our model or the one from cxr_clip")
+#     parser.add_argument("--num_epochs", type=int, default=200, help="Number of epochs")
+#     parser.add_argument("--patience", type=int, default=20, help="Early stopping patience")
+#     parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
+#     parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate")
+#     parser.add_argument("--progress_window", type=int, default=2, help="show progress every progress window elapsed")
+#     parser.add_argument('--cpt_dest', type=str, default='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation', help='destinatin folder for the weights')
+#     args = parser.parse_args()
 
-    return args
+#     return args
 
 # Example usage
 if __name__ == "__main__":
