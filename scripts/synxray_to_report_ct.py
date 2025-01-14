@@ -54,32 +54,37 @@ def calc_similarity(arr1, arr2):
     return (oneandone / (oneandone + oneorzero))
 
 def map_retrieval_evaluation(
-        data_folder='/path_to_valid_latents_folder/image/',
+        xray_latents, # dictionary of the xray latents
+        data_folder = "./retrieval_results/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
         k_list=[1, 5, 10, 50, 100],
         batch_size=100,
         file_name='xray2ct',
     ):
 
-    # Scan the folder for .npz files
-    mha_files = [f for f in tqdm.tqdm(os.listdir(data_folder)) if f.endswith('.mha')]
+    # # Scan the folder for .npz files
+    # mha_files = [f for f in tqdm.tqdm(os.listdir(data_folder)) if f.endswith('.mha')]
+    # Load each .mha file and use the filename (without extension) as the accession number
+    # for mha_file in tqdm.tqdm(mha_files):
+    #     file_path = os.path.join(data_folder, mha_file)
+    #     image_data = np.load(file_path)["arr"][0] # get the embedding itself.
+    #     print(image_data.shape) # NOTE: for testing
+    #     image_data_list.append(image_data) # insert the embeddings
+    #     accs.append(mha_file.replace("mha","nii.gz"))  # Use the filename without the extension as the accession number
 
-    # Initialize lists to store loaded data and accession numbers
+    #TODO: double check this
+    # convert the xray key as the accession to access the label later on.
     image_data_list = []
     accs = []
-
-    # Load each .mha file and use the filename (without extension) as the accession number
-    for mha_file in tqdm.tqdm(mha_files):
-        file_path = os.path.join(data_folder, mha_file)
-        image_data = np.load(file_path)["arr"][0]
-        print(image_data.shape) # NOTE: for testing
-        image_data_list.append(image_data)
-        accs.append(mha_file.replace("mha","nii.gz"))  # Use the filename without the extension as the accession number
+    for xray_file_key in tqdm.tqdm(xray_latents.keys()):
+        image_data_list.append(xray_latents[xray_file_key]) # insert the embeddings
+        accs.append(xray_file_key+'.nii.gz')  # Use the filename without the extension as the accession number
 
     # Concatenate all loaded image data
     image_data = np.array(image_data_list)
     print(image_data.shape)
 
+    # mainly for reading the file labels.
     df = pd.read_csv(predicted_label_csv_path)
 
     ratios_external = []
@@ -103,16 +108,16 @@ def map_retrieval_evaluation(
     list_outs = []
 
     # Calculate the similarity for each image in the dataset
+    dataset = TensorDataset(torch.tensor(image_data_for_second))
     for return_n in k_list:
         for i in tqdm.tqdm(range(image_data.shape[0])):
             first = image_data[i] # get the embedding
-            first = torch.tensor(row_first).to('cuda')
+            first = torch.tensor(row_first).to('cuda') # place it in the GPU for batch processing.
             acc_first = accs[i]
             row_first = df[df['VolumeName'] == acc_first]
-            row_first = row_first.iloc[:, 1:].values[0]
+            row_first = row_first.iloc[:, 1:].values[0] #TODO: check this.
 
             # Create a DataLoader for batching processing, with respect to each row_first
-            dataset = TensorDataset(torch.tensor(image_data_for_second))
             dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
             crosses = []
@@ -408,18 +413,19 @@ def run(cfg):
     recall_retrieval_evaluation(
         xray_latents=[triple[-1] for triple in triplet_embeddings],
         target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-        file_name='synxray2ct.txt')
+        file_name='synxray2ct_recall.txt')
     
     #TODO: add MAP metric for xray-image retrieval based on the diease labels, might be xray-to-report?
     map_retrieval_evaluation(
-
+        xray_features,
+        file_name='synxray2ct_map.txt'
     )
 
     # xray2report retrival evaluation
     recall_retrieval_evaluation(
         xray_latents=[triple[-1] for triple in triplet_embeddings],
         target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-        file_name='synxray2report.txt')
+        file_name='synxray2report_recall.txt')
 
 if __name__ == '__main__':
     main()
