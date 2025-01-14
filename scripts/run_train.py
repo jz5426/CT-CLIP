@@ -52,6 +52,21 @@ def main(cfg: DictConfig):
 
 def run(cfg):
     torch.cuda.empty_cache()
+    args = parse_args()
+
+    print("Batch Size:", args.batch_size)
+    print("Number of Workers:", args.num_workers)
+    print("Batch Style:", args.batch_style)
+    print("Train from Scratch:", args.train_from_scratch)
+    print("Epoch-Based Patience:", args.epoch_based_patience)
+    print("Iteration Evaluate Frequency:", args.iteration_evaluate_frequency)
+    print("Text Contrastive Learning Weight:", args.text_cl_weight)
+    print("CT Contrastive Learning Weight:", args.ct_cl_weight)
+    print("Learning Rate:", args.learning_rate)
+    print("Weight Decay:", args.weight_decay)
+    print("Epochs:", args.epochs)
+    print("Use Pretrained X-Ray Encoder:", args.use_pretrained_xray_encoder)
+
     #NOTE: you need to use the follownig command to copy and past to the location cp -rL /path/to/source_directory /path/to/destination_directory 
         # the copied files in the destination folder will behave like regular files and directories. You can copy and paste them as usual using a file manager
 
@@ -200,8 +215,6 @@ def run(cfg):
     #     train_from_scratch = True
     # )
 
-    args = parse_args()
-
     # uhn cluster
     trainer = CTClipTrainer(
         clip_xray,
@@ -234,7 +247,7 @@ def run(cfg):
         # lr = 5e-3
         # cxr-clip parameters
         wd = args.weight_decay,
-        lr = args.learing_rate
+        lr = args.learning_rate
         # TODO: interpolate the learing rate between ULIP and CXR-CLIP
     )
     trainer.train_by_epoch(args.epochs)
@@ -286,15 +299,15 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Additional arguments for CT-CLIP training")
     parser.add_argument('--batch_size', type=int, default=360, help='Override batch size')
     parser.add_argument('--num_workers', type=int, default=10, help='number of cpu workers')
-    parser.add_argument('--batch_style', type=str, default='experiment', help='patient, experiment, instance')
+    parser.add_argument('--batch_style', type=str, default='instance', help='patient, experiment, instance')
     parser.add_argument('--train_from_scratch', type=bool, default=False, help='override previously saved checkpoints')
-    parser.add_argument('--epoch_based_patience', type=int, default=50, help='patience for early stoppping')
+    parser.add_argument('--epoch_based_patience', type=int, default=25, help='patience for early stoppping')
     parser.add_argument('--iteration_evaluate_frequency', type=int, default=10, help='iteration based evaluation on the validation set')
     parser.add_argument('--text_cl_weight', type=float, default=1., help='weighting for xray to ct-text')
     parser.add_argument('--ct_cl_weight', type=float, default=1., help='weighting for xray to ct images')
-    parser.add_argument('--learing_rate', type=float, default=5e-5, help='learning rate')
-    parser.add_argument('--weight_decay', type=float, default=1e-4, help='decay factor for the learning rate')
-    parser.add_argument('--epochs', type=int, default=500, help='total number of epoch training')
+    parser.add_argument('--learning_rate', type=float, default=5e-5, help='learning rate, default is the cxr_clip parameters')
+    parser.add_argument('--weight_decay', type=float, default=1e-4, help='decay factor for the learning rate, default is the cxr_clip parameters')
+    parser.add_argument('--epochs', type=int, default=250, help='total number of epoch training')
     parser.add_argument('--use_pretrained_xray_encoder', type=bool, default=True, help='whether using the pretrained xray encoder from cxr_clip')
 
     return parser.parse_args()
