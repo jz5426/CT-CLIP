@@ -409,19 +409,19 @@ def run(cfg):
     # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
     triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
 
-    # xray2image retrival evaluation
+    # xray2image retrival evaluation with recall
     recall_retrieval_evaluation(
         xray_latents=[triple[-1] for triple in triplet_embeddings],
         target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
         file_name='synxray2ct_recall.txt')
     
-    #TODO: add MAP metric for xray-image retrieval based on the diease labels, might be xray-to-report?
+    #xray2image retrieval evaluation with mean average precision metric
     map_retrieval_evaluation(
         xray_features,
         file_name='synxray2ct_map.txt'
     )
 
-    # xray2report retrival evaluation
+    # xray2report retrival evaluation with recall
     recall_retrieval_evaluation(
         xray_latents=[triple[-1] for triple in triplet_embeddings],
         target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
