@@ -1,5 +1,11 @@
 """
 main evaluation training loop for finetune/linear probe the xray encoder only.
+
+stratification for multilabel dataset:
+- https://github.com/trent-b/iterative-stratification
+- http://scikit.ml/stratification.html
+- https://datascience.stackexchange.com/questions/45174/how-to-use-sklearn-train-test-split-to-stratify-data-for-multi-label-classificat
+
 """
 
 import torch

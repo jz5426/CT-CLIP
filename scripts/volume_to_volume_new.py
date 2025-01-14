@@ -86,7 +86,8 @@ for return_n in k_list:
         for k in range(image_data_for_second.shape[0]):
             second = image_data_for_second[k]
 
-            # Calculate the cosine similarity
+            # Calculate the cosine similarity between the latent vectors
+            # NOTE: this is equivalent to norm the vector and then perform dot products
             dot_product = np.dot(first, second)
             magnitude_vector1 = norm(first)
             magnitude_vector2 = norm(second)

@@ -50,7 +50,6 @@ def main(cfg: DictConfig):
 
 def run(cfg_dot):
     torch.cuda.empty_cache()
-    # args = parse_args()
 
     print("Batch Size:", cfg_dot.training_params.batch_size)
     print("Number of Workers:", cfg_dot.training_params.num_workers)

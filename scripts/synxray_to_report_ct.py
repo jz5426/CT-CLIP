@@ -21,6 +21,7 @@ import numpy as np
 import tqdm
 from torch.utils.data import DataLoader, TensorDataset
 from zero_shot import CTClipInference
+import pandas as pd
 
 
 def find_top_k_indices(values, k):
@@ -36,10 +37,120 @@ def find_top_k_indices(values, k):
 
     return top_k_indices
 
-def retrieval_evaluation(
+def calc_similarity(arr1, arr2):
+    oneandone = 0
+    oneorzero = 0
+    zeroandzero = 0
+    for k in range(len(arr1)):
+        if arr1[k] == 0 and arr2[k] == 0:
+            zeroandzero += 1
+        if arr1[k] == 1 and arr2[k] == 1:
+            oneandone += 1
+        if arr1[k] == 0 and arr2[k] == 1:
+            oneorzero += 1
+        if arr1[k] == 1 and arr2[k] == 0:
+            oneorzero += 1
+
+    return (oneandone / (oneandone + oneorzero))
+
+def map_retrieval_evaluation(
+        data_folder='/path_to_valid_latents_folder/image/',
+        predicted_label_csv_path='path_to_valid_predicted_labels.csv',
+        k_list=[1, 5, 10, 50, 100],
+        batch_size=100,
+        file_name='xray2ct',
+    ):
+
+    # Scan the folder for .npz files
+    mha_files = [f for f in tqdm.tqdm(os.listdir(data_folder)) if f.endswith('.mha')]
+
+    # Initialize lists to store loaded data and accession numbers
+    image_data_list = []
+    accs = []
+
+    # Load each .mha file and use the filename (without extension) as the accession number
+    for mha_file in tqdm.tqdm(mha_files):
+        file_path = os.path.join(data_folder, mha_file)
+        image_data = np.load(file_path)["arr"][0]
+        print(image_data.shape) # NOTE: for testing
+        image_data_list.append(image_data)
+        accs.append(mha_file.replace("mha","nii.gz"))  # Use the filename without the extension as the accession number
+
+    # Concatenate all loaded image data
+    image_data = np.array(image_data_list)
+    print(image_data.shape)
+
+    df = pd.read_csv(predicted_label_csv_path)
+
+    ratios_external = []
+    image_data_for_second = []
+    accs_for_second = []
+
+    # Filter the image data based on the condition in the validation labels
+    # TODO: check the following exactly what they are doing.
+    for k in tqdm.tqdm(range(image_data.shape[0])):
+        acc_second = accs[k]
+        row_second = df[df['VolumeName'] == acc_second]
+        num_path = np.sum(row_second.iloc[:, 1:].values[0])
+        if num_path != 0:
+            image_data_for_second.append(image_data[k])
+            accs_for_second.append(accs[k])
+    
+    # one huge matrix
+    image_data_for_second = np.array(image_data_for_second)
+    print(image_data_for_second.shape)
+
+    list_outs = []
+
+    # Calculate the similarity for each image in the dataset
+    for return_n in k_list:
+        for i in tqdm.tqdm(range(image_data.shape[0])):
+            first = image_data[i] # get the embedding
+            first = torch.tensor(row_first).to('cuda')
+            acc_first = accs[i]
+            row_first = df[df['VolumeName'] == acc_first]
+            row_first = row_first.iloc[:, 1:].values[0]
+
+            # Create a DataLoader for batching processing, with respect to each row_first
+            dataset = TensorDataset(torch.tensor(image_data_for_second))
+            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+
+            crosses = []
+            ratios_internal = []
+            for batch in dataloader:
+                second = batch[0].to('cuda')
+                cross_batch = torch.matmul(first, second.T) #TODO: double check this.
+                crosses.extend(cross_batch.cpu().tolist())
+
+            top_k_indices = find_top_k_indices(crosses, return_n)
+            for index in top_k_indices:
+                acc_second = accs_for_second[index]
+                row_second = df[df['VolumeName'] == acc_second]
+                row_second = row_second.iloc[:, 1:].values[0]
+
+                # find the similarity (overlapping labels) based on the top-k
+                ratio = calc_similarity(row_first, row_second)
+                ratios_internal.append(ratio)
+            ratios_external.append(np.mean(np.array(ratios_internal)))
+
+        list_outs.append(str(np.mean(np.array(ratios_external))))
+
+    # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
+    output_file_path = data_folder + f"{file_name}.txt"
+    os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
+
+    # Open the file for writing (you can also use "a" to append if the file already exists)
+    with open(output_file_path, "w") as file:
+        # Write each string from the list to the file
+        for string in list_outs:
+            file.write(string + "\n")
+
+    return list_outs
+
+def recall_retrieval_evaluation(
         xray_latents, 
         target_latents, 
-        list_ks=[5,10,50,100], 
+        list_ks=[1, 5,10,50,100], 
         data_folder = "./retrieval_results/",
         file_name='xray2ct',
         batch_size=1000):
@@ -61,12 +172,13 @@ def retrieval_evaluation(
             dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
             #TODO: normalize the feature before testing?
+            # NOTE: should be normed already.
 
             # find the similarity between the xray and the target embeddings
             for batch in dataloader:
                 targets = batch[0].to('cuda')
                 
-                # Compute similarity in batch
+                # Compute similarity in batch and save the results.
                 cross_batch = torch.matmul(xray, targets.T)
                 crosses.extend(cross_batch.cpu().tolist())
             
@@ -293,16 +405,18 @@ def run(cfg):
     triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
 
     # xray2image retrival evaluation
-    retrieval_evaluation(
+    recall_retrieval_evaluation(
         xray_latents=[triple[-1] for triple in triplet_embeddings],
         target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
         file_name='synxray2ct.txt')
     
     #TODO: add MAP metric for xray-image retrieval based on the diease labels, might be xray-to-report?
+    map_retrieval_evaluation(
 
+    )
 
     # xray2report retrival evaluation
-    retrieval_evaluation(
+    recall_retrieval_evaluation(
         xray_latents=[triple[-1] for triple in triplet_embeddings],
         target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
         file_name='synxray2report.txt')
