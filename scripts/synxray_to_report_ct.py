@@ -58,7 +58,7 @@ def map_retrieval_evaluation(
         data_folder = "./retrieval_results/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
         k_list=[1, 5, 10, 50, 100],
-        batch_size=100,
+        batch_size=1024,
         file_name='xray2ct',
     ):
 
@@ -97,9 +97,13 @@ def map_retrieval_evaluation(
         acc_second = accs[k]
         row_second = df[df['VolumeName'] == acc_second]
         num_path = np.sum(row_second.iloc[:, 1:].values[0])
+
+        # if there are any labels (multihot or onehot) for this, save the embeddings and the file name NOTE: do we need this?
         if num_path != 0:
             image_data_for_second.append(image_data[k])
             accs_for_second.append(accs[k])
+        # else:
+        #     print(acc_second)
     
     # one huge matrix
     image_data_for_second = np.array(image_data_for_second)
@@ -112,7 +116,7 @@ def map_retrieval_evaluation(
     for return_n in k_list:
         for i in tqdm.tqdm(range(image_data.shape[0])):
             first = image_data[i] # get the embedding
-            first = torch.tensor(row_first).to('cuda') # place it in the GPU for batch processing.
+            first = torch.tensor(first).to('cuda') # place it in the GPU for batch processing.
             acc_first = accs[i]
             row_first = df[df['VolumeName'] == acc_first]
             row_first = row_first.iloc[:, 1:].values[0] #TODO: check this.
@@ -351,7 +355,7 @@ def run(cfg):
     # pth_name = 'cxr_xray_features.pth'
 
     # NOTE: our weights
-    ckp_name = 'CTClip.lowest_val_cl_loss_during_iterations'
+    ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_CTClip_lowest_val_cl_loss_during_iterations'
     clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
     pth_name = f'{ckp_name}_xray_features.pth'
 
@@ -410,22 +414,23 @@ def run(cfg):
     triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
 
     # xray2image retrival evaluation with recall
-    recall_retrieval_evaluation(
-        xray_latents=[triple[-1] for triple in triplet_embeddings],
-        target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-        file_name='synxray2ct_recall.txt')
+    # recall_retrieval_evaluation(
+    #     xray_latents=[triple[-1] for triple in triplet_embeddings],
+    #     target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
+    #     file_name='synxray2ct_recall.txt')
     
     #xray2image retrieval evaluation with mean average precision metric
     map_retrieval_evaluation(
         xray_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         file_name='synxray2ct_map.txt'
     )
 
     # xray2report retrival evaluation with recall
-    recall_retrieval_evaluation(
-        xray_latents=[triple[-1] for triple in triplet_embeddings],
-        target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-        file_name='synxray2report_recall.txt')
+    # recall_retrieval_evaluation(
+    #     xray_latents=[triple[-1] for triple in triplet_embeddings],
+    #     target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+    #     file_name='synxray2report_recall.txt')
 
 if __name__ == '__main__':
     main()

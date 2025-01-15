@@ -476,7 +476,7 @@ class CTClipInference(nn.Module):
 
         print('Retrieval Evaluation Starts\n')
         device = self.device
-        data_size = len(self.dl)
+        data_size = len(self.ds)
 
         # load the .pth object if exists
         saving_path = os.path.join(directory, self.split)
@@ -485,7 +485,7 @@ class CTClipInference(nn.Module):
         if os.path.exists(xray_feature_path):
             xray_features = torch.load(xray_feature_path)
 
-        if len(xray_features.keys()) == data_size:
+        if len(xray_features.keys()) >= data_size:
             print('All keys already exist. Skipping model forward pass.')
             return xray_features
 
