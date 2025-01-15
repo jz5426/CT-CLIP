@@ -219,6 +219,7 @@ def run(cfg_dot):
     trainer = CTClipTrainer(
         clip_xray,
         pretrained_xray_encoder = cfg_dot.training_params.use_pretrained_xray_encoder,
+        min_epochs=cfg_dot.training_params.min_epochs,
         cfg=cfg,
         tokenizer=tokenizer,
         data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',

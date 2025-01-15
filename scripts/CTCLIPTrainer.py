@@ -165,6 +165,7 @@ class CTClipTrainer(nn.Module):
         self,
         CTClip: CTCLIP,
         *,
+        min_epochs,
         num_train_steps,
         batch_size,
         text_cl_weight = 1.,
@@ -197,6 +198,7 @@ class CTClipTrainer(nn.Module):
         kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=36000))
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs, kwargs], **accelerate_kwargs)
         self.CTClip = CTClip
+        self.min_epochs = min_epochs
 
         # NOTE: automatic toggle: alter to ULIP-style mode if the xray encoder exists in the CTCLIP
         self.triplet = False
@@ -776,8 +778,10 @@ class CTClipTrainer(nn.Module):
                     # early stopping based on val cl loss
                     self.early_stop_counter += 1
                     print(f"No improvement in validation loss for {self.early_stop_counter} epochs.")
-                    if self.early_stop_counter >= self.epoch_based_patience:
-                        print("Early stopping triggered. Stopping training.")
+
+                    # make sure number of minimum epochs are trained.
+                    if self.early_stop_counter >= self.epoch_based_patience and epoch > self.min_epochs:
+                        print(f"Early stopping triggered. Stopping training. {epoch}")
                         return True # Exit training loop
 
         return False
