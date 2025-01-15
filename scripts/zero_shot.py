@@ -482,11 +482,6 @@ class CTClipInference(nn.Module):
         saving_path = os.path.join(directory, self.split)
         xray_feature_path = os.path.join(saving_path, pth_name)
         xray_features = {}
-        # if os.path.exists(xray_feature_path):
-        #     xray_features = torch.load(xray_feature_path)
-        # if len(xray_features.keys()) >= data_size:
-        #     print('All keys already exist. Skipping model forward pass.')
-        #     return xray_features
 
         if not append:
             print('NOT SAVING IT THE EMBEDDINGS!!!')
@@ -499,16 +494,7 @@ class CTClipInference(nn.Module):
             for data in tqdm.tqdm(self.dl, desc="XRay Feature Extraction", leave=False):
                 # data = next(data_iterator)
                 _, _, _, xray, instance_name, _ = data  # NOTE: double-check the instance name, depends on the custom data loader.
-
-                # Filter out instance names that already exist in xray_features
-                # new_instance_indices = [i for i, key in enumerate(instance_name) if key not in xray_features]
-                # if not new_instance_indices:
-                #     print("All keys in the batch already exist. Skipping model forward pass.")
-                #     continue  # Skip the current batch if all keys already exist
                 new_instance_indices = [i for i, key in enumerate(instance_name)]
-                if not new_instance_indices:
-                    print("All keys in the batch already exist. Skipping model forward pass.")
-                    continue  # Skip the current batch if all keys already exist
 
                 # Select only the new xray data for processing
                 instance_name = [instance_name[i] for i in new_instance_indices]

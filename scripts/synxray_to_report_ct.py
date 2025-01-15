@@ -53,6 +53,10 @@ def calc_similarity(arr1, arr2):
 
     return (oneandone / (oneandone + oneorzero))
 
+def load_model_weights():
+
+    return
+
 def map_retrieval_evaluation(
         xray_latents, # dictionary of the xray latents
         target_latents, # xray or CT feature dictionary
@@ -202,24 +206,24 @@ def recall_retrieval_evaluation(
                 num_is_in += 1
 
             # this is the baseline performance on the random pairs.
-            # for _ in range(len(dataloader)): # number of batches
-            #     size = (512,)
-            #     target_batch = torch.rand((batch_size, *size)).to('cuda')
-            #     targets = torch.rand((batch_size, *size)).to('cuda')
+            for _ in range(len(dataloader)): # number of batches
+                size = (512,)
+                target_batch = torch.rand((batch_size, *size)).to('cuda')
+                targets = torch.rand((batch_size, *size)).to('cuda')
 
-            #     # Compute similarity in batch
-            #     cross_batch = torch.matmul(target_batch, targets.T)
-            #     crosses_rands.extend(cross_batch.cpu().tolist())
+                # Compute similarity in batch
+                cross_batch = torch.matmul(target_batch, targets.T)
+                crosses_rands.extend(cross_batch.cpu().tolist())
 
-            # top_k_indices = find_top_k_indices(crosses_rands, value)
-            # if i in top_k_indices:
-            #     num_random += 1
+            top_k_indices = find_top_k_indices(crosses_rands, value)
+            if i in top_k_indices:
+                num_random += 1
 
         clip = num_is_in / target_latents.shape[0]
-        # rand = num_random / target_latents.shape[0]
+        rand = num_random / target_latents.shape[0]
         rand = 'n/a'
         write_str = f"K={value}, clip = {clip}, rand= {rand}"
-        # write_str = f"K={value}, clip = {clip}, rand=undefined"
+        write_str = f"K={value}, clip = {clip}, rand=undefined"
 
         list_texts.append(write_str)
 
@@ -440,45 +444,47 @@ def run(cfg):
     # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
     triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
     
-    #xray2image retrieval evaluation with mean average precision metric
-    # map_retrieval_evaluation(
-    #     xray_features,
-    #     target_latents=image_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     file_name=f'{ckpt_name}_synxray2ct_map',
-    # )
+    # xray2image retrieval evaluation with mean average precision metric
+    map_retrieval_evaluation(
+        xray_features,
+        target_latents=image_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name=f'{ckpt_name}_synxray2ct_map',
+    )
 
-    #xray2xray retrieval evaluation with mean average precision metric
-    # map_retrieval_evaluation(
-    #     xray_features,
-    #     target_latents=xray_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     file_name=f'{ckpt_name}_synxray2synxray_map'
-    # )
+    # xray2xray retrieval evaluation with mean average precision metric
+    map_retrieval_evaluation(
+        xray_features,
+        target_latents=xray_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name=f'{ckpt_name}_synxray2synxray_map'
+    )
 
     # xray2image retrival evaluation with recall
-    # recall_retrieval_evaluation(
-    #     xray_latents=[triple[-1] for triple in triplet_embeddings],
-    #     target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-    #     file_name=f'{ckpt_name}_synxray2ct_recall')
+    recall_retrieval_evaluation(
+        xray_latents=[triple[-1] for triple in triplet_embeddings],
+        target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
+        file_name=f'{ckpt_name}_synxray2ct_recall')
 
     # xray2report retrival evaluation with recall
-    # recall_retrieval_evaluation(
-    #     xray_latents=[triple[-1] for triple in triplet_embeddings],
-    #     target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-    #     file_name=f'{ckpt_name}_synxray2report_recall')
+    recall_retrieval_evaluation(
+        xray_latents=[triple[-1] for triple in triplet_embeddings],
+        target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+        file_name=f'{ckpt_name}_synxray2report_recall')
+
+    ## the following are the upper baseline from CT-CLIP
 
     # report2ct
-    # recall_retrieval_evaluation(
-    #     query_latents=[triple[1] for triple in triplet_embeddings],
-    #     target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-    #     file_name=f'{ckpt_name}_report2ct_recall')
+    recall_retrieval_evaluation(
+        query_latents=[triple[1] for triple in triplet_embeddings],
+        target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
+        file_name=f'{ckpt_name}_report2ct_recall')
 
     # ct2report
-    # recall_retrieval_evaluation(
-    #     query_latents=[triple[0] for triple in triplet_embeddings],
-    #     target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-    #     file_name=f'{ckpt_name}_ct2report_recall')
+    recall_retrieval_evaluation(
+        query_latents=[triple[0] for triple in triplet_embeddings],
+        target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+        file_name=f'{ckpt_name}_ct2report_recall')
 
 if __name__ == '__main__':
     main()
