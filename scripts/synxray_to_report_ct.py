@@ -55,9 +55,10 @@ def calc_similarity(arr1, arr2):
 
 def map_retrieval_evaluation(
         xray_latents, # dictionary of the xray latents
+        target_latents, # xray or CT feature dictionary
         data_folder = "./retrieval_results/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
-        k_list=[1, 5, 10, 50, 100],
+        k_list=[1,5,10,50],
         batch_size=1024,
         file_name='xray2ct',
     ):
@@ -93,15 +94,17 @@ def map_retrieval_evaluation(
 
     # Filter the image data based on the condition in the validation labels
     # TODO: check the following exactly what they are doing.
-    for k in tqdm.tqdm(range(image_data.shape[0])):
-        acc_second = accs[k]
+    for target_key in tqdm.tqdm(target_latents.keys()):
+
+        acc_second = target_key+'.nii.gz'
         row_second = df[df['VolumeName'] == acc_second]
         num_path = np.sum(row_second.iloc[:, 1:].values[0])
 
         # if there are any labels (multihot or onehot) for this, save the embeddings and the file name NOTE: do we need this?
         if num_path != 0:
-            image_data_for_second.append(image_data[k])
-            accs_for_second.append(accs[k])
+            target_latent = target_latents[target_key]
+            image_data_for_second.append(target_latent)
+            accs_for_second.append(acc_second)
         # else:
         #     print(acc_second)
     
@@ -112,7 +115,6 @@ def map_retrieval_evaluation(
     list_outs = []
 
     # Calculate the similarity for each image in the dataset
-    dataset = TensorDataset(torch.tensor(image_data_for_second))
     for return_n in k_list:
         for i in tqdm.tqdm(range(image_data.shape[0])):
             first = image_data[i] # get the embedding
@@ -122,6 +124,7 @@ def map_retrieval_evaluation(
             row_first = row_first.iloc[:, 1:].values[0] #TODO: check this.
 
             # Create a DataLoader for batching processing, with respect to each row_first
+            dataset = TensorDataset(torch.tensor(image_data_for_second))
             dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
             crosses = []
@@ -142,7 +145,9 @@ def map_retrieval_evaluation(
                 ratios_internal.append(ratio)
             ratios_external.append(np.mean(np.array(ratios_internal)))
 
-        list_outs.append(str(np.mean(np.array(ratios_external))))
+        stats = str(np.mean(np.array(ratios_external)))
+        print(stats)
+        list_outs.append(stats)
 
     # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
     output_file_path = data_folder + f"{file_name}.txt"
@@ -159,7 +164,7 @@ def map_retrieval_evaluation(
 def recall_retrieval_evaluation(
         xray_latents, 
         target_latents, 
-        list_ks=[1, 5,10,50,100], 
+        list_ks=[1, 5, 10, 50], 
         data_folder = "./retrieval_results/",
         file_name='xray2ct',
         batch_size=1000):
@@ -345,19 +350,39 @@ def run(cfg):
     )
 
     # NOTE: load the pretrained backbones
-    ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar'
+
+    # randomly initialized layers
+    # ckpt_name = 'random'
+    # pth_name = 'random_xray_features.pth'
+    # rand_layers = 0
+    # for layer in clip_xray.xray_encoder.modules():
+    #     if hasattr(layer, 'reset_parameters'):
+    #         rand_layers += 1
+    #         layer.weight.data = torch.randn_like(layer.weight)
+    #         if layer.bias is not None:
+    #             layer.bias.data = torch.randn_like(layer.bias)
+    # for layer in clip_xray.to_xray_latent.modules():
+    #     if hasattr(layer, 'reset_parameters'):
+    #         rand_layers += 1
+    #         layer.weight.data = torch.randn_like(layer.weight)
+    #         if layer.bias is not None:
+    #             layer.bias.data = torch.randn_like(layer.bias)
+    # print(f'number of randomly initialized layers {rand_layers}')
 
     # NOTE: cxr-clip pretrained weights
-    # clip_xray.load_xray_encoder(
-    #     '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}'.format(ckpt_name), # cxr-clip pretrained
-    #     freeze_weights=True
-    # )
-    # pth_name = 'cxr_xray_features.pth'
+    ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
+    clip_xray.load_xray_encoder(
+        '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
+        freeze_weights=True
+    )
+    pth_name = 'cxr_xray_features.pth'
 
     # NOTE: our weights
-    ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_CTClip_lowest_val_cl_loss_during_iterations'
-    clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
-    pth_name = f'{ckp_name}_xray_features.pth'
+    # ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_CTClip_lowest_val_cl_loss_during_iterations'
+    # ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_last_epoch'
+    # ckp_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+    # clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
+    # pth_name = f'{ckp_name}_xray_features.pth'
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
@@ -386,7 +411,7 @@ def run(cfg):
         # labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
         labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
         results_folder="./inference_zeroshot_retrieval",
-        batch_size = 128,
+        batch_size = 512,
         num_train_steps = -1, # placeholder
         num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         feature_extraction_mode = True # might be optional
@@ -417,20 +442,29 @@ def run(cfg):
     # recall_retrieval_evaluation(
     #     xray_latents=[triple[-1] for triple in triplet_embeddings],
     #     target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-    #     file_name='synxray2ct_recall.txt')
+    #     file_name=f'{ckpt_name}_synxray2ct_recall.txt')
     
     #xray2image retrieval evaluation with mean average precision metric
-    map_retrieval_evaluation(
-        xray_features,
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='synxray2ct_map.txt'
-    )
+    # map_retrieval_evaluation(
+    #     xray_features,
+    #     target_latents=image_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name=f'{ckpt_name}_synxray2ct_map.txt',
+    # )
+
+    #xray2xray retrieval evaluation with mean average precision metric
+    # map_retrieval_evaluation(
+    #     xray_features,
+    #     target_latents=xray_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name=f'{ckpt_name}_synxray2synxray_map.txt'
+    # )
 
     # xray2report retrival evaluation with recall
-    # recall_retrieval_evaluation(
-    #     xray_latents=[triple[-1] for triple in triplet_embeddings],
-    #     target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-    #     file_name='synxray2report_recall.txt')
+    recall_retrieval_evaluation(
+        xray_latents=[triple[-1] for triple in triplet_embeddings],
+        target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+        file_name='synxray2report_recall.txt')
 
 if __name__ == '__main__':
     main()
