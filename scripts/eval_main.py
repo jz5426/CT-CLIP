@@ -164,6 +164,7 @@ def run(cfg_dot):
     print(f'Number of learnable parameters: {learnable_params}')
 
     # Set up the dataset and data loaders
+    #TODO: allow only train with a percentage of data, changes the .sample in the dataset and put that back in.
     train_dataset = CTReportXRayClassificationDataset(
         # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha', # data path for the xray train
         # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
@@ -172,7 +173,8 @@ def run(cfg_dot):
         report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
         cfg=cfg,
-        split='train'
+        split='train',
+        percentage=1.0
     )
     val_dataset = CTReportXRayClassificationDataset(
         # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha', # data path for the xray val
@@ -182,14 +184,14 @@ def run(cfg_dot):
         report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         cfg=cfg,
-        split='valid'
+        split='valid',
+        percentage=1.
     )
 
-    #TODO: allow only train with a percentage of data
+    #load the data
     train_loader = DataLoader(train_dataset, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=False)
-    train_size = len(train_loader)
-    val_size = len(val_loader)
+    train_size, val_size = len(train_loader), len(val_loader)
 
     # Training loop configuration
     criterion = nn.BCEWithLogitsLoss() if not cfg_dot.linear_probing_params.use_binary_classification else nn.CrossEntropyLoss()

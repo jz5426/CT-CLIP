@@ -15,6 +15,7 @@ import tqdm
 import SimpleITK as sitk
 import warnings
 import random
+from skmultilearn.model_selection import iterative_train_test_split
 
 def resize_array(array, current_spacing, target_spacing):
     """
@@ -187,6 +188,7 @@ class CTReportXRayClassificationDataset(CTReportDataset):
                  data_folder, 
                  cfg, 
                  split='train',
+                 percentage=1.,
                  report_file='',
                  labels='labels.csv',
                  min_slices=20, 
@@ -198,9 +200,9 @@ class CTReportXRayClassificationDataset(CTReportDataset):
         self.parent_folder = os.path.basename(data_folder)
         self.labels = labels
         self.cfg = cfg
+        self.percentage = percentage
         super().__init__(data_folder, report_file, min_slices, resize_dim, force_num_frames)
         
-
         self.normalize = "huggingface" # when use swin or non-resnet architecture
         if cfg["model"]["image_encoder"]["name"] == "resnet":
             self.normalize = "imagenet" # only for resnet architecture
@@ -260,6 +262,7 @@ class CTReportXRayClassificationDataset(CTReportDataset):
         label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
 
         samples = []
+        sample_data, sample_labels = [], []
         for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
             for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
                 mha_files = glob.glob(os.path.join(accession_folder, f'*.{self.file_extension}'))
@@ -279,7 +282,13 @@ class CTReportXRayClassificationDataset(CTReportDataset):
                     
                     # TODO: allow for binary classification task or multilabel task.
                     samples.append((xray_file, onehotlabels[0]))
+                    sample_data.append(xray_file)
+                    sample_labels.append(onehotlabels[0])
 
+        # keep the percentage of data here before combine the xray files and the labels TODO: test it.
+        if self.percentage < 1.0:
+            _, _, sample_data, sample_labels = iterative_train_test_split(sample_data, sample_labels, test_size = self.percentage)
+            samples = [(x, y) for x, y in zip(sample_data, sample_labels)]
         return samples
     
 class CTReportXRayDataset(CTReportDataset):
