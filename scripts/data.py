@@ -186,6 +186,7 @@ class CTReportXRayClassificationDataset(CTReportDataset):
     def __init__(self,
                  data_folder, 
                  cfg, 
+                 split='train',
                  report_file='',
                  labels='labels.csv',
                  min_slices=20, 
@@ -204,7 +205,8 @@ class CTReportXRayClassificationDataset(CTReportDataset):
         if cfg["model"]["image_encoder"]["name"] == "resnet":
             self.normalize = "imagenet" # only for resnet architecture
 
-        self.xray_transform = load_transform(split='train', transform_config=cfg['transform'])
+        # TODO: check the split for validation set
+        self.xray_transform = load_transform(split=split, transform_config=cfg['transform'])
             # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
             # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
         self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)

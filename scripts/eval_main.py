@@ -13,7 +13,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-import argparse
 
 from data import CTReportXRayClassificationDataset
 from eval_utils import XrayClassificationModel
@@ -29,7 +28,6 @@ from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
 from torch.utils.data import DataLoader
-
 
 @hydra.main(
         version_base=None,
@@ -174,6 +172,7 @@ def run(cfg_dot):
         report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
         cfg=cfg,
+        split='train'
     )
     val_dataset = CTReportXRayClassificationDataset(
         # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha', # data path for the xray val
@@ -183,7 +182,10 @@ def run(cfg_dot):
         report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         cfg=cfg,
+        split='valid'
     )
+
+    #TODO: allow only train with a percentage of data
     train_loader = DataLoader(train_dataset, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=False)
     train_size = len(train_loader)
