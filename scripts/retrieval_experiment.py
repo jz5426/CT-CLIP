@@ -183,7 +183,7 @@ def map_retrieval_evaluation(
         # Write each string from the list to the file
         for string in list_outs:
             file.write(string + "\n")
-
+    print(f'results saved to {output_file_path}')
     return list_outs
 
 def recall_retrieval_evaluation(
@@ -253,7 +253,7 @@ def recall_retrieval_evaluation(
         # Write each string from the list to the file
         for string in list_texts:
             file.write(string + "\n")
-
+    print(f'results saved to {output_file_path}')
     return list_texts
 
 
@@ -313,27 +313,27 @@ def run(cfg):
     ## the following are the upper baseline from CT-CLIP
 
     # ct2ct
-    print('evaluating ct 2 ct in MAP')
-    map_retrieval_evaluation(
-        image_features,
-        target_latents=image_features,
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='ct2ct_map'
-    )
+    # print('evaluating ct 2 ct in MAP')
+    # map_retrieval_evaluation(
+    #     image_features,
+    #     target_latents=image_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name='ct2ct_map'
+    # )
 
-    # report2ct
-    print('evaluating report 2 ct in recall')
-    recall_retrieval_evaluation(
-        query_latents=[embed[1] for embed in ct_report_embeddings],
-        target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
-        file_name='report2ct_recall')
+    # # report2ct
+    # print('evaluating report 2 ct in recall')
+    # recall_retrieval_evaluation(
+    #     query_latents=[embed[1] for embed in ct_report_embeddings],
+    #     target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
+    #     file_name='report2ct_recall')
 
-    # ct2report
-    print('evaluating ct 2 report in recall')
-    recall_retrieval_evaluation(
-        query_latents=[embed[0] for embed in ct_report_embeddings],
-        target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
-        file_name='ct2report_recall')
+    # # ct2report
+    # print('evaluating ct 2 report in recall')
+    # recall_retrieval_evaluation(
+    #     query_latents=[embed[0] for embed in ct_report_embeddings],
+    #     target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
+    #     file_name='ct2report_recall')
 
     print('Starting Xray related retrieval experiments')
 
@@ -383,19 +383,23 @@ def run(cfg):
 
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip
     ckpt_names = [
-        None, # random weights
-        'cxr_clip', # xray encoder weights from cxr_clip
-        # our pretrained model
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.2__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.9__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.9__pretrained_True_50_epoch'
+        # None, # random weights
+        # 'cxr_clip', # xray encoder weights from cxr_clip
+        # # our pretrained model
+        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.2__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.9__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.9__pretrained_True_50_epoch'
         # TODO: add more here: the following and resnet 
+        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch'
     ]
     for ckpt_name in ckpt_names:
         # NOTE: load the pretrained backbones
@@ -456,14 +460,14 @@ def run(cfg):
         # xray2image retrival evaluation with recall
         print('evaluating xray 2 ct images recall')
         recall_retrieval_evaluation(
-            xray_latents=[triple[-1] for triple in triplet_embeddings],
+            query_latents=[triple[-1] for triple in triplet_embeddings],
             target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
             file_name=f'{ckpt_name}_synxray2ct_recall')
 
         # xray2report retrival evaluation with recall
         print('evaluating xray 2 ct reports recall')
         recall_retrieval_evaluation(
-            xray_latents=[triple[-1] for triple in triplet_embeddings],
+            query_latents=[triple[-1] for triple in triplet_embeddings],
             target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
             file_name=f'{ckpt_name}_synxray2report_recall')
 
