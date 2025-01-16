@@ -7,6 +7,7 @@ stratification for multilabel dataset:
 - https://datascience.stackexchange.com/questions/45174/how-to-use-sklearn-train-test-split-to-stratify-data-for-multi-label-classificat
 
 - think of the following script as linear probing with 10%, 20%, 50%, 80%, 100% of the data and see the performance comparison.
+- follow the "make the most of the text semantics to improve biomedical VLP", try percentage 0, 1, 10, 100 percent of data during linear probing
 """
 
 import torch
