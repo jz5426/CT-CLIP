@@ -91,7 +91,7 @@ def map_retrieval_evaluation(
         target_latents, # xray or CT feature dictionary
         data_folder = "./retrieval_results/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
-        k_list=[1,5,10,50,100],
+        k_list=[1,5,10,50],
         batch_size=1024,
         file_name='xray2ct',
     ):
@@ -110,7 +110,7 @@ def map_retrieval_evaluation(
     # mainly for reading the file labels.
     df = pd.read_csv(predicted_label_csv_path)
 
-    ratios_external = []
+    running_ratios_external = []
     image_data_for_second = []
     accs_for_second = []
 
@@ -137,6 +137,7 @@ def map_retrieval_evaluation(
 
     # Calculate the similarity for each image in the dataset
     for return_n in k_list:
+        ratios_external = [] # take note for this one.
         for i in tqdm.tqdm(range(image_data.shape[0])):
             first = image_data[i] # get the embedding
             first = torch.tensor(first).to('cuda') # place it in the GPU for batch processing.
@@ -164,11 +165,14 @@ def map_retrieval_evaluation(
                 # find the similarity (overlapping labels) based on the top-k
                 ratio = calc_similarity(row_first, row_second)
                 ratios_internal.append(ratio)
+            running_ratios_external.append(np.mean(np.array(ratios_internal)))
             ratios_external.append(np.mean(np.array(ratios_internal)))
 
+        running_avg_stats = str(np.mean(np.array(running_ratios_external)))
         stats = str(np.mean(np.array(ratios_external)))
-        print(stats)
-        list_outs.append(stats)
+
+        print(running_avg_stats, stats)
+        list_outs.append(str((running_avg_stats, stats)))
 
     # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
     output_file_path = data_folder + f"{file_name}.txt"
@@ -185,7 +189,7 @@ def map_retrieval_evaluation(
 def recall_retrieval_evaluation(
         query_latents, 
         target_latents, 
-        list_ks=[5, 10, 50, 100], 
+        list_ks=[5, 10, 50], 
         data_folder = "./retrieval_results/",
         file_name='xray2ct',
         batch_size=1024):
@@ -291,6 +295,46 @@ def main(cfg: DictConfig):
 def run(cfg):
     torch.cuda.empty_cache()
 
+    split = 'valid'
+    embedding_directory = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/'
+    # get the preprocessed image and text features
+    saving_path = os.path.join(embedding_directory, split)
+    img_feature_path = os.path.join(saving_path, 'image_features.pth')
+    text_feature_path = os.path.join(saving_path, 'text_features.pth')
+    image_features, text_features = None, None
+    if os.path.exists(img_feature_path):
+        image_features = torch.load(img_feature_path)
+    if os.path.exists(text_feature_path):
+        text_features = torch.load(text_feature_path)
+    assert(image_features.keys() == text_features.keys())
+    ct_report_embeddings = [(image_features[key], text_features[key]) for key in image_features.keys()]
+
+    ## the following are the upper baseline from CT-CLIP
+
+    # ct2ct
+    print('evaluating ct 2 ct in MAP')
+    map_retrieval_evaluation(
+        image_features,
+        target_latents=image_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name='ct2ct_map'
+    )
+
+    # report2ct
+    print('evaluating report 2 ct in recall')
+    recall_retrieval_evaluation(
+        query_latents=[embed[1] for embed in ct_report_embeddings],
+        target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
+        file_name='report2ct_recall')
+
+    # ct2report
+    print('evaluating ct 2 report in recall')
+    recall_retrieval_evaluation(
+        query_latents=[embed[0] for embed in ct_report_embeddings],
+        target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
+        file_name='ct2report_recall')
+
+    print('Starting Xray related retrieval experiments')
 
     # windows wsl from local files
     tokenizer = BertTokenizer.from_pretrained(
@@ -336,41 +380,21 @@ def run(cfg):
         cfg=cfg
     )
 
-    split = 'valid'
-    embedding_directory = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/'
- 
-    # get the preprocessed image and text features
-    saving_path = os.path.join(embedding_directory, split)
-    img_feature_path = os.path.join(saving_path, 'image_features.pth')
-    text_feature_path = os.path.join(saving_path, 'text_features.pth')
-    image_features, text_features = None, None
-    if os.path.exists(img_feature_path):
-        image_features = torch.load(img_feature_path)
-    if os.path.exists(text_feature_path):
-        text_features = torch.load(text_feature_path)
-    assert(image_features.keys() == text_features.keys())
-    ct_report_embeddings = [(image_features[key], text_features[key]) for key in image_features.keys()]
-
-    ## the following are the upper baseline from CT-CLIP
-
-    # report2ct
-    recall_retrieval_evaluation(
-        query_latents=[embed[1] for embed in ct_report_embeddings],
-        target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
-        file_name='report2ct_recall')
-
-    # ct2report
-    recall_retrieval_evaluation(
-        query_latents=[embed[0] for embed in ct_report_embeddings],
-        target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
-        file_name='ct2report_recall')
-
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip
     ckpt_names = [
         None, # random weights
         'cxr_clip', # xray encoder weights from cxr_clip
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch', # our pretrained model
-        # TODO:
+        # our pretrained model
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.2__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.9__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch',
+        # TODO: add more here: the following and resnet 
+        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.9__pretrained_True_50_epoch'
     ]
     for ckpt_name in ckpt_names:
         # NOTE: load the pretrained backbones

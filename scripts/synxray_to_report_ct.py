@@ -22,6 +22,7 @@ import tqdm
 from torch.utils.data import DataLoader, TensorDataset
 from zero_shot import CTClipInference
 import pandas as pd
+import copy
 
 
 def find_top_k_indices(values, k):
@@ -62,7 +63,7 @@ def map_retrieval_evaluation(
         target_latents, # xray or CT feature dictionary
         data_folder = "./retrieval_results/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
-        k_list=[1,5,10,50],
+        k_list=[5],
         batch_size=1024,
         file_name='xray2ct',
     ):
@@ -92,7 +93,7 @@ def map_retrieval_evaluation(
     # mainly for reading the file labels.
     df = pd.read_csv(predicted_label_csv_path)
 
-    ratios_external = []
+    ratios_external = [] # NOTE: this should be puted inside the loop to prevent number difference when execute [1, 5] and [5] for the list
     image_data_for_second = []
     accs_for_second = []
 
@@ -120,6 +121,7 @@ def map_retrieval_evaluation(
 
     # Calculate the similarity for each image in the dataset
     for return_n in k_list:
+        # ratios_external = []
         for i in tqdm.tqdm(range(image_data.shape[0])):
             first = image_data[i] # get the embedding
             first = torch.tensor(first).to('cuda') # place it in the GPU for batch processing.
@@ -445,46 +447,54 @@ def run(cfg):
     triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
     
     # xray2image retrieval evaluation with mean average precision metric
-    map_retrieval_evaluation(
-        xray_features,
-        target_latents=image_features,
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name=f'{ckpt_name}_synxray2ct_map',
-    )
+    # map_retrieval_evaluation(
+    #     xray_features,
+    #     target_latents=image_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name=f'{ckpt_name}_synxray2ct_map',
+    # )
 
     # xray2xray retrieval evaluation with mean average precision metric
+    # map_retrieval_evaluation(
+    #     xray_features,
+    #     target_latents=xray_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name=f'{ckpt_name}_synxray2synxray_map'
+    # )
+
     map_retrieval_evaluation(
-        xray_features,
-        target_latents=xray_features,
+        image_features,
+        target_latents=image_features,
         predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name=f'{ckpt_name}_synxray2synxray_map'
+        file_name=f'{ckpt_name}_ct2ct_map'
     )
 
-    # xray2image retrival evaluation with recall
-    recall_retrieval_evaluation(
-        xray_latents=[triple[-1] for triple in triplet_embeddings],
-        target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-        file_name=f'{ckpt_name}_synxray2ct_recall')
 
-    # xray2report retrival evaluation with recall
-    recall_retrieval_evaluation(
-        xray_latents=[triple[-1] for triple in triplet_embeddings],
-        target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-        file_name=f'{ckpt_name}_synxray2report_recall')
+    # xray2image retrival evaluation with recall
+    # recall_retrieval_evaluation(
+    #     xray_latents=[triple[-1] for triple in triplet_embeddings],
+    #     target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
+    #     file_name=f'{ckpt_name}_synxray2ct_recall')
+
+    # # xray2report retrival evaluation with recall
+    # recall_retrieval_evaluation(
+    #     xray_latents=[triple[-1] for triple in triplet_embeddings],
+    #     target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+    #     file_name=f'{ckpt_name}_synxray2report_recall')
 
     ## the following are the upper baseline from CT-CLIP
 
     # report2ct
-    recall_retrieval_evaluation(
-        query_latents=[triple[1] for triple in triplet_embeddings],
-        target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-        file_name=f'{ckpt_name}_report2ct_recall')
+    # recall_retrieval_evaluation(
+    #     query_latents=[triple[1] for triple in triplet_embeddings],
+    #     target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
+    #     file_name=f'{ckpt_name}_report2ct_recall')
 
-    # ct2report
-    recall_retrieval_evaluation(
-        query_latents=[triple[0] for triple in triplet_embeddings],
-        target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-        file_name=f'{ckpt_name}_ct2report_recall')
+    # # ct2report
+    # recall_retrieval_evaluation(
+    #     query_latents=[triple[0] for triple in triplet_embeddings],
+    #     target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+    #     file_name=f'{ckpt_name}_ct2report_recall')
 
 if __name__ == '__main__':
     main()
