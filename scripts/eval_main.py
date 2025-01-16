@@ -32,8 +32,8 @@ from torch.utils.data import DataLoader
 
 @hydra.main(
         version_base=None,
-        # config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
-        config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/configs",
+        config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
+        # config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/configs",
         config_name="train")
 def main(cfg: DictConfig):
 
@@ -53,8 +53,6 @@ def main(cfg: DictConfig):
     # seed_everything(1234)
     # torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
-
-    cfg = convert_dictconfig_to_dict(cfg)
 
     # seed everything
     seed = 1024
@@ -83,11 +81,11 @@ def run(cfg_dot):
     cfg = convert_dictconfig_to_dict(cfg_dot)
 
     torch.cuda.empty_cache()
-    text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
-    # text_encoder = BertModel.from_pretrained(
-    #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-    #     local_files_only=True
-    # ) #TODO: uncomment this when not testing
+    # text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
+    text_encoder = BertModel.from_pretrained(
+        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+        local_files_only=True
+    ) #TODO: uncomment this when not testing
     image_encoder = CTViT(
         dim = 512,
         codebook_size = 8192,
@@ -118,8 +116,8 @@ def run(cfg_dot):
 
     #TODO: uncomment this when not testing.
     if cfg_dot.linear_probing_params.is_evaluate_our_model:
-        ckp_name = 'CTClip_lowest_val_cl_loss_during_iterations'
-        # clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
+        ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+        clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
         pth_base_name = f'{ckp_name}_pretrained_xray_encoder_features'
     else:
         # evalute the model from cxr_clip
@@ -166,17 +164,7 @@ def run(cfg_dot):
 
     # Set up the dataset and data loaders
     #TODO: allow only train with a percentage of data, changes the .sample in the dataset and put that back in.
-    train_dataset = CTReportXRayClassificationDataset(
-        # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha', # data path for the xray train
-        # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        # labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv' # path for train xray data label
-        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
-        report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
-        cfg=cfg,
-        split='train',
-        percentage=1.0
-    )
+
     val_dataset = CTReportXRayClassificationDataset(
         # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha', # data path for the xray val
         # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
@@ -187,6 +175,18 @@ def run(cfg_dot):
         cfg=cfg,
         split='valid',
         percentage=1.
+    )
+
+    train_dataset = CTReportXRayClassificationDataset(
+        # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha', # data path for the xray train
+        # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+        # labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv' # path for train xray data label
+        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+        report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
+        cfg=cfg,
+        split='train',
+        percentage=0.8
     )
 
     #load the data

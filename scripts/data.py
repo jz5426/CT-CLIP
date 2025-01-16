@@ -287,8 +287,8 @@ class CTReportXRayClassificationDataset(CTReportDataset):
 
         # keep the percentage of data here before combine the xray files and the labels TODO: test it.
         if self.percentage < 1.0:
-            _, _, sample_data, sample_labels = iterative_train_test_split(sample_data, sample_labels, test_size = self.percentage)
-            samples = [(x, y) for x, y in zip(sample_data, sample_labels)]
+            _, _, sample_data, sample_labels = iterative_train_test_split(np.array(sample_data).reshape(-1,1), np.array(sample_labels), test_size = self.percentage)
+            samples = [(x[0], y) for x, y in zip(sample_data.tolist(), sample_labels.tolist())]
         return samples
     
 class CTReportXRayDataset(CTReportDataset):
