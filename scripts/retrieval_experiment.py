@@ -91,7 +91,7 @@ def map_retrieval_evaluation(
         target_latents, # xray or CT feature dictionary
         data_folder = "./retrieval_results/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
-        k_list=[1,5,10,50],
+        k_list=[1,5,10,50,100],
         batch_size=1024,
         file_name='xray2ct',
     ):
@@ -185,7 +185,7 @@ def map_retrieval_evaluation(
 def recall_retrieval_evaluation(
         query_latents, 
         target_latents, 
-        list_ks=[5, 10, 50], 
+        list_ks=[5, 10, 50, 100], 
         data_folder = "./retrieval_results/",
         file_name='xray2ct',
         batch_size=1024):
