@@ -383,11 +383,11 @@ def run(cfg):
 
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip
     ckpt_names = [
-        # None, # random weights
-        # 'cxr_clip', # xray encoder weights from cxr_clip
+        None, # random weights
+        'cxr_clip', # xray encoder weights from cxr_clip
         # # our pretrained model
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
         # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.2__pretrained_True_50_epoch',
         # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
@@ -439,37 +439,44 @@ def run(cfg):
         assert(image_features.keys() == text_features.keys() == xray_features.keys())
         
         # xray2image retrieval evaluation with mean average precision metric
-        print('evaluating xray 2 ct images MAP')
-        map_retrieval_evaluation(
-            xray_features,
-            target_latents=image_features,
-            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{ckpt_name}_synxray2ct_map')
+        # print('evaluating xray 2 ct images MAP')
+        # map_retrieval_evaluation(
+        #     xray_features,
+        #     target_latents=image_features,
+        #     predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        #     file_name=f'{ckpt_name}_synxray2ct_map')
 
         # xray2xray retrieval evaluation with mean average precision metric
-        print('evaluating xray 2 xray MAP')
+        # print('evaluating xray 2 xray MAP')
+        # map_retrieval_evaluation(
+        #     xray_features,
+        #     target_latents=xray_features,
+        #     predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        #     file_name=f'{ckpt_name}_synxray2synxray_map')
+
+        print('evaluating xray 2 ct_report MAP')
         map_retrieval_evaluation(
             xray_features,
-            target_latents=xray_features,
+            target_latents=text_features,
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{ckpt_name}_synxray2synxray_map')
+            file_name=f'{ckpt_name}_synxray2report_map')
 
         # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
-        triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
+        # triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
 
         # xray2image retrival evaluation with recall
-        print('evaluating xray 2 ct images recall')
-        recall_retrieval_evaluation(
-            query_latents=[triple[-1] for triple in triplet_embeddings],
-            target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-            file_name=f'{ckpt_name}_synxray2ct_recall')
+        # print('evaluating xray 2 ct images recall')
+        # recall_retrieval_evaluation(
+        #     query_latents=[triple[-1] for triple in triplet_embeddings],
+        #     target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
+        #     file_name=f'{ckpt_name}_synxray2ct_recall')
 
         # xray2report retrival evaluation with recall
-        print('evaluating xray 2 ct reports recall')
-        recall_retrieval_evaluation(
-            query_latents=[triple[-1] for triple in triplet_embeddings],
-            target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-            file_name=f'{ckpt_name}_synxray2report_recall')
+        # print('evaluating xray 2 ct reports recall')
+        # recall_retrieval_evaluation(
+        #     query_latents=[triple[-1] for triple in triplet_embeddings],
+        #     target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+        #     file_name=f'{ckpt_name}_synxray2report_recall')
 
 if __name__ == '__main__':
     main()

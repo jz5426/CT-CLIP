@@ -8,6 +8,8 @@ stratification for multilabel dataset:
 
 - think of the following script as linear probing with 10%, 20%, 50%, 80%, 100% of the data and see the performance comparison.
 - follow the "make the most of the text semantics to improve biomedical VLP", try percentage 0, 1, 10, 100 percent of data during linear probing
+# TODO: do the following
+    - performance in auroc, f1, flat acc, precision for 0, 1, 10, 100 during linear probe in multilabel classification. 
 """
 
 import torch
