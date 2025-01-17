@@ -181,28 +181,76 @@ class CTReportDataset(Dataset):
         input_text = input_text.replace(')', '')
 
         return video_tensor, input_text
-
-class CTReportXRayClassificationDataset(CTReportDataset):
-
-    def __init__(self,
-                 data_folder, 
-                 cfg, 
-                 split='train',
-                 percentage=1.,
-                 report_file='',
-                 labels='labels.csv',
-                 min_slices=20, 
-                 resize_dim=500, 
-                 force_num_frames=True):
+    
+class CTReportDataSplitter:
+    """mainly for the evaluation experiment"""
+    def __init__(self, csv_file, labels, data_folder):
+        self.labels = labels
+        self.xray_paths = []
+        self.data_folder = data_folder
+        self.parent_folder = os.path.basename(data_folder)
         self.file_extension = 'mha' # make sure the xray data file path are the .mha file
         assert self.file_extension in data_folder
+        self.accession_to_text = self.load_accession_text(csv_file)
+
+    def load_accession_text(self, csv_file):
+        df = pd.read_csv(csv_file)
+        accession_to_text = {}
+        for index, row in df.iterrows():
+            # accession_to_text[row['AccessionNo']] = row["Findings_EN"],row['Impressions_EN']
+            accession_to_text[row['VolumeName']] = row["Findings_EN"],row['Impressions_EN']
+        return accession_to_text
+    
+    def prepare_samples(self, split_percentage=1.):
+        """
+        this prepare the xray data in a dictionary format
+        """
+
+        # Read labels once outside the loop
+        label_df = pd.read_csv(self.labels)
+        test_label_cols = list(label_df.columns[1:])
+        label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
+
+        samples = []
+        for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
+            for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
+                mha_files = glob.glob(os.path.join(accession_folder, f'*.{self.file_extension}'))
+                for xray_file in mha_files:
+                    
+                    # ignore the current .mha file if no corresponding rerport file
+                    path_dirs = xray_file.split(os.sep)
+                    accession_number = path_dirs[-1]
+                    accession_number = accession_number.replace(f".{self.file_extension}", ".nii.gz")
+                    if accession_number not in self.accession_to_text:
+                        continue
+
+                    # ignore the current .mha file if no label exists
+                    onehotlabels = label_df[label_df["VolumeName"] == accession_number]["one_hot_labels"].values
+                    if len(onehotlabels) == 0:
+                        continue
+                    
+                    # TODO: allow for binary classification task or multilabel task.
+                    samples.append((xray_file, onehotlabels[0]))
+
+        # keep the percentage of data here before combine the xray files and the labels TODO: test it.
+        if split_percentage < 1.0:
+            sample_data, sample_labels = [ s[0] for s in samples], [ s[-1] for s in samples]
+            train_data, train_label, test_data, test_labels = iterative_train_test_split(np.array(sample_data).reshape(-1,1), np.array(sample_labels), test_size=split_percentage)
+            val_split = [(x[0], y) for x, y in zip(test_data.tolist(), test_labels.tolist())]
+            train_split = [(x[0], y) for x, y in zip(train_data.tolist(), train_label.tolist())]
+            return train_split, val_split
+
+        return samples
+
+class CTReportXRayClassificationDataset:
+
+    def __init__(self,
+                 cfg, 
+                 data, # list of data processed from the prepare_sample
+                 split='train'):
         self.xray_paths = []
-        self.parent_folder = os.path.basename(data_folder)
-        self.labels = labels
         self.cfg = cfg
-        self.percentage = percentage
-        super().__init__(data_folder, report_file, min_slices, resize_dim, force_num_frames)
-        
+        self.samples = data
         self.normalize = "huggingface" # when use swin or non-resnet architecture
         if cfg["model"]["image_encoder"]["name"] == "resnet":
             self.normalize = "imagenet" # only for resnet architecture
@@ -243,7 +291,7 @@ class CTReportXRayClassificationDataset(CTReportDataset):
 
     def __getitem__(self, key_id):
 
-        selected_sample = self.samples[key_id]
+        selected_sample = self.samples[key_id] # based on index
         xray_file, label = selected_sample
         # transformation borrowed from cxr_clip
         xray_image = self.xray_to_rgb(xray_file)
@@ -251,46 +299,9 @@ class CTReportXRayClassificationDataset(CTReportDataset):
         label = torch.from_numpy(label)
         return xray_image, label
 
-    def prepare_samples(self):
-        """
-        this prepare the xray data in a dictionary format
-        """
+    def __len__(self):
+        return len(self.samples)
 
-        # Read labels once outside the loop
-        label_df = pd.read_csv(self.labels)
-        test_label_cols = list(label_df.columns[1:])
-        label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
-
-        samples = []
-        sample_data, sample_labels = [], []
-        for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
-            for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
-                mha_files = glob.glob(os.path.join(accession_folder, f'*.{self.file_extension}'))
-                for xray_file in mha_files:
-                    
-                    # ignore the current .mha file if no corresponding rerport file
-                    path_dirs = xray_file.split(os.sep)
-                    accession_number = path_dirs[-1]
-                    accession_number = accession_number.replace(f".{self.file_extension}", ".nii.gz")
-                    if accession_number not in self.accession_to_text:
-                        continue
-
-                    # ignore the current .mha file if no label exists
-                    onehotlabels = label_df[label_df["VolumeName"] == accession_number]["one_hot_labels"].values
-                    if len(onehotlabels) == 0:
-                        continue
-                    
-                    # TODO: allow for binary classification task or multilabel task.
-                    samples.append((xray_file, onehotlabels[0]))
-                    sample_data.append(xray_file)
-                    sample_labels.append(onehotlabels[0])
-
-        # keep the percentage of data here before combine the xray files and the labels TODO: test it.
-        if self.percentage < 1.0:
-            _, _, sample_data, sample_labels = iterative_train_test_split(np.array(sample_data).reshape(-1,1), np.array(sample_labels), test_size = self.percentage)
-            samples = [(x[0], y) for x, y in zip(sample_data.tolist(), sample_labels.tolist())]
-        return samples
-    
 class CTReportXRayDataset(CTReportDataset):
 
     def __init__(self,
