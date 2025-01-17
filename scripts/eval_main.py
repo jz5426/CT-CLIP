@@ -173,6 +173,16 @@ def run(cfg_dot):
     )
     train_sample, internal_val_samples = train_data_splitter.prepare_samples(split_percentage=0.2)
 
+    # sanity check
+    # Extract multi-hot label vectors from the samples
+    # train_labels = np.array([label for _, label in train_sample])
+    # val_labels = np.array([label for _, label in internal_val_samples])
+    # train_label_distribution = train_labels.sum(axis=0)
+    # val_label_distribution = val_labels.sum(axis=0)
+    # print(train_label_distribution)
+    # print(val_label_distribution)
+    # print(val_label_distribution/train_label_distribution)
+
     train_dataset = CTReportXRayClassificationDataset(
         # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha', # data path for the xray train
         # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
