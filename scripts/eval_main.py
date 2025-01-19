@@ -32,6 +32,7 @@ import random
 import numpy as np
 from torch.utils.data import DataLoader
 from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
+import pandas as pd
 
 
 @hydra.main(
@@ -129,7 +130,7 @@ def run(cfg_dot):
             '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}'.format(ckpt_name), # cxr-clip pretrained
             freeze_weights=True
         )
-        pth_base_name = 'cxr_clip_pretrained_xray_encoder_features.pth'
+        pth_base_name = 'cxr_clip_pretrained_xray_encoder_features'
 
     # modify the base file name
 
@@ -292,7 +293,10 @@ def run(cfg_dot):
     test_params = {
         'test_loader': test_loader,
         'device': device,
-        'model': model
+        'model': model,
+        'pth_base_name': pth_base_name,
+        'pretrained_cpt_dest': os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth'),
+        'metric_saving_path': f'./{pth_base_name}_internal_test_metrics_results.xlsx'
     }
     test_loop(test_params)
 
@@ -301,11 +305,15 @@ def test_loop(params):
     test_loader = params['test_loader']
     device = params['device']
     model = params['model']
+    metric_saving_path = params['metric_saving_path']
     
     model.eval()
     all_labels = []
     all_preds = []
     all_probs = []
+
+    # load the pretrained model
+    model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
 
     print('Performing testing...')
     with torch.no_grad():
@@ -343,6 +351,17 @@ def test_loop(params):
     print(f"Test Results for weighted average: Precision: {precision_weighted:.4f}, Recall: {recall_weighted:.4f}, F1 Score: {f1_weighted:.4f}, AUC: {auc_weighted:.4f}")
     print(f"Test Results for macro average: Precision: {precision_macro:.4f}, Recall: {recall_macro:.4f}, F1 Score: {f1_macro:.4f}, AUC: {auc_macro:.4f}")
 
+    print('Saving the metrics results')
+    metrics_data = {
+        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC'],
+        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro],
+        'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted],
+        'Macro': [precision_macro, recall_macro, f1_macro, auc_macro]
+    }
+
+    metrics_df = pd.DataFrame(metrics_data)
+    metrics_df.to_excel(metric_saving_path, index=False)
+    print(f"Metrics saved to {metric_saving_path}")
 
 
 def validation_loop(params):
