@@ -316,7 +316,7 @@ def test_loop(params):
     # load the pretrained model
     model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
 
-    print('Performing testing...')
+    print(f'Performing testing with size (in unit batch) {len(test_loader)}')
     with torch.no_grad():
         for inputs, labels in test_loader:
             inputs = inputs.to(device)
@@ -373,7 +373,7 @@ def validation_loop(params):
 
     model.eval()
     val_loss = 0.0
-    print('Performing validation...')
+    print(f'Performing validation with size (in unit batch) {len(val_loader)}')
     with torch.no_grad():
         for inputs, labels in val_loader:
             inputs = inputs.to(device)
