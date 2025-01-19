@@ -299,6 +299,8 @@ def run(cfg_dot):
     }
     test_loop(test_params)
 
+    print('Finished probing evaluation without error :)')
+
 
 def test_loop(params):
     test_loader = params['test_loader']
