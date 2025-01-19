@@ -294,7 +294,6 @@ def run(cfg_dot):
         'test_loader': test_loader,
         'device': device,
         'model': model,
-        'pth_base_name': pth_base_name,
         'pretrained_cpt_dest': os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth'),
         'metric_saving_path': f'./{pth_base_name}_internal_test_metrics_results.xlsx'
     }
