@@ -41,7 +41,6 @@ training_params:
   use_pretrained_xray_encoder: true
 
 linear_probing_params:
-  use_binary_classification: false
   is_linear_probe_eval: true
   is_evaluate_our_model: True
   num_epochs: 200

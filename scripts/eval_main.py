@@ -31,6 +31,8 @@ from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
 from torch.utils.data import DataLoader
+from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
+
 
 @hydra.main(
         version_base=None,
@@ -69,7 +71,6 @@ def main(cfg: DictConfig):
 def run(cfg_dot):
 
     # print custom script argument
-    print(f"use_binary_classification: {cfg_dot.linear_probing_params.use_binary_classification}")
     print(f"is_linear_probe_eval: {cfg_dot.linear_probing_params.is_linear_probe_eval}")
     print(f"is_evaluate_our_model: {cfg_dot.linear_probing_params.is_evaluate_our_model}")
     print(f"num_epochs: {cfg_dot.linear_probing_params.num_epochs}")
@@ -152,7 +153,7 @@ def run(cfg_dot):
                     'Interlobular septal thickening']
 
     # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
-    num_classes = 1 if cfg_dot.linear_probing_params.use_binary_classification else len(pathologies)
+    num_classes = len(pathologies)
     model = XrayClassificationModel(
         vision_model=clip_xray.xray_encoder, 
         feature_projector=clip_xray.to_xray_latent, 
@@ -233,7 +234,7 @@ def run(cfg_dot):
     train_size, val_size, test_size = len(train_loader), len(val_loader), len(test_loader)
 
     # Training loop configuration
-    criterion = nn.BCEWithLogitsLoss() if not cfg_dot.linear_probing_params.use_binary_classification else nn.CrossEntropyLoss()
+    criterion = nn.BCEWithLogitsLoss()
     optimizer = optim.AdamW(model.parameters(), lr=cfg_dot.linear_probing_params.learning_rate)
 
     # Early stopping setup
@@ -247,53 +248,31 @@ def run(cfg_dot):
 
     # Training and validation loop
     for epoch in range(cfg_dot.linear_probing_params.num_epochs):
-        model.train()
-        total_loss = 0.0
-
-        for idx, data in enumerate(train_loader):
-            inputs, labels = data
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-
-            # Forward pass
-            outputs = model(inputs)
-
-            # Compute loss
-            loss = criterion(outputs, labels.float() if not cfg_dot.linear_probing_params.use_binary_classification else labels)
-
-            # Backward pass and optimization
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss.item()
-            if idx % cfg_dot.linear_probing_params.progress_window == 0:
-                print(f"Epoch [{epoch}/{cfg_dot.linear_probing_params.num_epochs}], Batch [{idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
-
-        print(f"Epoch {epoch+1}/{cfg_dot.linear_probing_params.num_epochs}, Training Loss: {total_loss/len(train_loader):.4f}")
+        
+        # train loop
+        train_params = {
+            'train_loader': train_loader,
+            'device': device,
+            'model': model,
+            'criterion': criterion,
+            'optimizer': optimizer,
+            'epoch': epoch,
+            'train_size': train_size,
+            'progress_window': cfg_dot.linear_probing_params.progress_window,
+            'num_epochs': cfg_dot.linear_probing_params.num_epochs
+        }
+        train_loop(train_params)
 
         # Validation loop
-        model.eval()
-        val_loss = 0.0
-        with torch.no_grad():
-            for inputs, labels in val_loader:
-                inputs = inputs.to(device)
-                labels = labels.to(device)
+        val_params = {
+            'val_loader': val_loader,
+            'device': device,
+            'model': model,
+            'criterion': criterion,
+        }
+        val_loss = validation_loop(val_params)
 
-                # Forward pass
-                outputs = model(inputs)
-
-                # Compute loss
-                loss = criterion(outputs, labels.float() if not cfg_dot.linear_probing_params.use_binary_classification else labels)
-                val_loss += loss.item()
-
-            if idx % cfg_dot.linear_probing_params.progress_window == 0:
-                print(f"Epoch [{epoch}/{cfg_dot.linear_probing_params.num_epochs}], Batch [{idx}/{val_size}] in training split, Validation Loss: {loss.item():.4f}")
-
-        val_loss /= len(test_loader)
-        print(f"Validation Loss: {val_loss:.4f}")
-
-        # Early stopping check
+        # early stopping mechanism
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
@@ -307,24 +286,126 @@ def run(cfg_dot):
             print("Early stopping triggered.")
             break
 
-    print("Finetuning the XRay encoder complete. ==> perform internal testing")
+    print("Finetuning the Xray encoder completed ==> perform internal testing")
 
-    #TODO: evaluate the model on the test set to find the auc, recall, and precision metrics
+    # testing
+    test_params = {
+        'test_loader': test_loader,
+        'device': device,
+        'model': model
+    }
+    test_loop(test_params)
 
-# def parse_args():
-#     parser = argparse.ArgumentParser(description="Train Vision Model Wrapper")
-#     parser.add_argument("--use_binary_classification", type=bool, default=False,  help="Toggle for binary classification")
-#     parser.add_argument("--is_linear_probe_eval", type=bool, default=True, help="linear probing evaluation or full model finetuning")
-#     parser.add_argument("--is_evaluate_our_model", type=bool, default=True, help="whether evalute our model or the one from cxr_clip")
-#     parser.add_argument("--num_epochs", type=int, default=200, help="Number of epochs")
-#     parser.add_argument("--patience", type=int, default=20, help="Early stopping patience")
-#     parser.add_argument("--batch_size", type=int, default=8, help="Batch size")
-#     parser.add_argument("--learning_rate", type=float, default=1e-4, help="Learning rate")
-#     parser.add_argument("--progress_window", type=int, default=2, help="show progress every progress window elapsed")
-#     parser.add_argument('--cpt_dest', type=str, default='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation', help='destinatin folder for the weights')
-#     args = parser.parse_args()
 
-#     return args
+def test_loop(params):
+    test_loader = params['test_loader']
+    device = params['device']
+    model = params['model']
+    
+    model.eval()
+    all_labels = []
+    all_preds = []
+    all_probs = []
+
+    print('Performing testing...')
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            # Forward pass
+            outputs = model(inputs)
+
+            # For multilabel classification, apply sigmoid and threshold at 0.5
+            probs = torch.sigmoid(outputs)
+            preds = (probs > 0.5).int()
+
+            all_labels.extend(labels.cpu().numpy())
+            all_preds.extend(preds.cpu().numpy())
+            all_probs.extend(probs.cpu().numpy())
+
+    # Convert to numpy arrays for metric computation
+    all_labels = np.array(all_labels)
+    all_preds = np.array(all_preds)
+    all_probs = np.array(all_probs)
+
+    # Calculate metrics for multilabel classification
+    # NOTE: might use the same one from the training file instead of using the sklearn one.
+    precision_micro, recall_micro, f1_micro, _ = precision_recall_fscore_support(all_labels, all_preds, average='micro')
+    precision_weighted, recall_weighted, f1_weighted, _ = precision_recall_fscore_support(all_labels, all_preds, average='weighted')
+    precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
+
+    auc_micro = roc_auc_score(all_labels, all_probs, average='micro', multi_class='ovr')
+    auc_weighted = roc_auc_score(all_labels, all_probs, average='weighted', multi_class='ovr')
+    auc_macro = roc_auc_score(all_labels, all_probs, average='macro', multi_class='ovr')
+
+    print(f"Test Results for micro average: Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1 Score: {f1_micro:.4f}, AUC: {auc_micro:.4f}")
+    print(f"Test Results for weighted average: Precision: {precision_weighted:.4f}, Recall: {recall_weighted:.4f}, F1 Score: {f1_weighted:.4f}, AUC: {auc_weighted:.4f}")
+    print(f"Test Results for macro average: Precision: {precision_macro:.4f}, Recall: {recall_macro:.4f}, F1 Score: {f1_macro:.4f}, AUC: {auc_macro:.4f}")
+
+
+
+def validation_loop(params):
+    val_loader = params['val_loader']
+    device = params['device']
+    model = params['model']
+    criterion = params['criterion']
+
+    model.eval()
+    val_loss = 0.0
+    print('Performing validation...')
+    with torch.no_grad():
+        for inputs, labels in val_loader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            # Forward pass
+            outputs = model(inputs)
+
+            # Compute loss
+            loss = criterion(outputs, labels.float())
+            val_loss += loss.item()
+
+    val_loss /= len(val_loader)
+    print(f"Validation Loss: {val_loss:.4f}")
+
+    return val_loss
+
+def train_loop(params):
+    train_loader = params['train_loader']
+    device = params['device']
+    model = params['model']
+    criterion = params['criterion']
+    optimizer = params['optimizer']
+    epoch = params['epoch']
+    train_size = params['train_size']
+    progress_window = params['progress_window']
+    num_epochs = params['num_epochs']
+    
+    model.train()
+    total_loss = 0.0
+    for idx, data in enumerate(train_loader):
+        inputs, labels = data
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        # Forward pass
+        outputs = model(inputs)
+
+        # Compute loss
+        loss = criterion(outputs, labels.float())
+
+        # Backward pass and optimization
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+        if idx % progress_window == 0:
+            print(f"Epoch [{epoch}/{num_epochs}], Batch [{idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
+
+    print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {total_loss/len(train_loader):.4f}")
+
 
 # Example usage
 if __name__ == "__main__":
