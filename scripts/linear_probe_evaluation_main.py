@@ -118,7 +118,6 @@ def run(cfg_dot):
         cfg=cfg
     )
 
-    #TODO: uncomment this when not testing.
     if cfg_dot.linear_probing_params.is_evaluate_our_model:
         ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
         clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
@@ -167,7 +166,6 @@ def run(cfg_dot):
     print(f'Number of learnable parameters: {learnable_params}') # should be the same of a single linear layer
 
     # Set up the dataset and data loaders
-    #TODO: allow only train with a percentage of data, changes the .sample in the dataset and put that back in.
     train_data_splitter = CTReportDataSplitter(
         csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
@@ -326,6 +324,7 @@ def test_loop(params):
             outputs = model(inputs)
 
             # For multilabel classification, apply sigmoid and threshold at 0.5
+            # TODO: double check this.
             probs = torch.sigmoid(outputs)
             preds = (probs > 0.5).int()
 
@@ -362,7 +361,7 @@ def test_loop(params):
 
     metrics_df = pd.DataFrame(metrics_data)
     metrics_df.to_excel(metric_saving_path, index=False)
-    print(f"Metrics saved to {metric_saving_path}")
+    print(f"Metric results saved to {metric_saving_path}")
 
 
 def validation_loop(params):
