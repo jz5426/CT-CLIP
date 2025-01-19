@@ -10,6 +10,7 @@ stratification for multilabel dataset:
 - follow the "make the most of the text semantics to improve biomedical VLP", try percentage 0, 1, 10, 100 percent of data during linear probing
 # TODO: do the following
     - performance in auroc, f1, flat acc, precision for 0, 1, 10, 100 during linear probe in multilabel classification. 
+    - NOTE this script is missing zero-shot performance evaluation.
 """
 
 import torch
@@ -33,7 +34,6 @@ import numpy as np
 from torch.utils.data import DataLoader
 from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
 import pandas as pd
-
 
 @hydra.main(
         version_base=None,
