@@ -45,10 +45,11 @@ linear_probing_params:
   is_evaluate_our_model: True
   num_epochs: 200
   patience: 20
-  batch_size: 8
-  learning_rate: 1e-4
-  progress_window: 10
+  batch_size: 1024
+  learning_rate: 1e-3
+  progress_window: 5
   percentage_of_train_data: 1.0
+  num_workers: 10
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation'
 
 hydra:

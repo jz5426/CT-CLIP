@@ -119,7 +119,8 @@ def run(cfg_dot):
     )
 
     if cfg_dot.linear_probing_params.is_evaluate_our_model:
-        ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+        # ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+        ckp_name = cfg_dot.linear_probing_params.ckpt_name #TODO:
         clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
         pth_base_name = f'{ckp_name}_pretrained_xray_encoder_features'
     else:
@@ -227,9 +228,9 @@ def run(cfg_dot):
     )
 
     #load the data
-    train_loader = DataLoader(train_dataset, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
-    val_loader = DataLoader(internal_val_dataset, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=False)
+    train_loader = DataLoader(train_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
+    val_loader = DataLoader(internal_val_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
+    test_loader = DataLoader(test_dataset,num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=False)
     train_size, val_size, test_size = len(train_loader), len(val_loader), len(test_loader)
 
     # Training loop configuration
@@ -293,7 +294,7 @@ def run(cfg_dot):
         'device': device,
         'model': model,
         'pretrained_cpt_dest': os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth'),
-        'metric_saving_path': f'./{pth_base_name}_internal_test_metrics_results.xlsx'
+        'metric_saving_path': f'./lp_evaluation_results/{pth_base_name}_internal_test_metrics_results.xlsx'
     }
     test_loop(test_params)
 
@@ -311,7 +312,7 @@ def test_loop(params):
     all_preds = []
     all_probs = []
 
-    # load the pretrained model
+    # load the pretrained model TODO: uncomment when finished testing
     model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
 
     print(f'Performing testing with size (in unit batch) {len(test_loader)}')
@@ -360,6 +361,7 @@ def test_loop(params):
     }
 
     metrics_df = pd.DataFrame(metrics_data)
+    os.makedirs(os.path.dirname(metric_saving_path), exist_ok=True)
     metrics_df.to_excel(metric_saving_path, index=False)
     print(f"Metric results saved to {metric_saving_path}")
 

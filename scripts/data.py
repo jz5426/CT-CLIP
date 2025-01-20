@@ -236,8 +236,8 @@ class CTReportDataSplitter:
         if split_percentage < 1.0:
             sample_data, sample_labels = [ s[0] for s in samples], [ s[-1] for s in samples]
             train_data, train_label, test_data, test_labels = iterative_train_test_split(np.array(sample_data).reshape(-1,1), np.array(sample_labels), test_size=split_percentage)
-            val_split = [(x[0], y) for x, y in zip(test_data.tolist(), test_labels.tolist())]
-            train_split = [(x[0], y) for x, y in zip(train_data.tolist(), train_label.tolist())]
+            val_split = [(x[0], np.array(y)) for x, y in zip(test_data.tolist(), test_labels.tolist())]
+            train_split = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
             return train_split, val_split
 
         return samples
