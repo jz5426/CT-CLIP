@@ -87,9 +87,9 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
     return clip_xray, pth_name
 
 def map_retrieval_evaluation(
-        xray_latents, # dictionary of the xray latents
+        query_latents, # dictionary of the xray latents
         target_latents, # xray or CT feature dictionary
-        data_folder = "./retrieval_results/",
+        data_folder = "./retrieval_results2/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
         k_list=[1,5,10,50],
         batch_size=1024,
@@ -99,8 +99,8 @@ def map_retrieval_evaluation(
     # convert the xray key as the accession to access the label later on.
     image_data_list = []
     accs = []
-    for xray_file_key in tqdm.tqdm(xray_latents.keys()):
-        image_data_list.append(xray_latents[xray_file_key]) # insert the embeddings
+    for xray_file_key in tqdm.tqdm(query_latents.keys()):
+        image_data_list.append(query_latents[xray_file_key]) # insert the embeddings
         accs.append(xray_file_key+'.nii.gz')  # Use the filename without the extension as the accession number
 
     # Concatenate all loaded image data
@@ -190,7 +190,7 @@ def recall_retrieval_evaluation(
         query_latents, 
         target_latents, 
         list_ks=[5, 10, 50], 
-        data_folder = "./retrieval_results/",
+        data_folder = "./retrieval_results2/",
         file_name='xray2ct',
         batch_size=1024):
 
@@ -335,6 +335,27 @@ def run(cfg):
     #     target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
     #     file_name='ct2report_recall')
 
+    print('evaluating ct 2 report in MAP')
+    map_retrieval_evaluation(
+        image_features,
+        target_latents=text_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name='ct2report_map')
+    
+    print('evaluating report 2 ct in MAP')
+    map_retrieval_evaluation(
+        text_features,
+        target_latents=image_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name='report2ct_map')
+    
+    print('evaluating report 2 report in MAP')
+    map_retrieval_evaluation(
+        text_features,
+        target_latents=text_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name='report2report_map')
+
     print('Starting Xray related retrieval experiments')
 
     # windows wsl from local files
@@ -383,19 +404,10 @@ def run(cfg):
 
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip
     ckpt_names = [
-        None, # random weights
         'cxr_clip', # xray encoder weights from cxr_clip
-        # # our pretrained model
+        #our pretrained model
         'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.2__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.9__ctcl_0.1__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.9__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.9__pretrained_True_50_epoch'
-        # TODO: add more here: the following and resnet 
         'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
         'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
         'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch',
@@ -454,15 +466,47 @@ def run(cfg):
         #     predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
         #     file_name=f'{ckpt_name}_synxray2synxray_map')
 
-        print('evaluating xray 2 ct_report MAP')
+        # print('evaluating xray 2 ct_report MAP')
+        # map_retrieval_evaluation(
+        #     xray_features,
+        #     target_latents=text_features,
+        #     predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        #     file_name=f'{ckpt_name}_synxray2report_map')
+
+        print('evaluating ct 2 xray MAP')
         map_retrieval_evaluation(
-            xray_features,
-            target_latents=text_features,
+            image_features,
+            target_latents=xray_features,
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{ckpt_name}_synxray2report_map')
+            file_name=f'{ckpt_name}_ct2synxray_map')
+
+        print('evaluating report 2 xray MAP')
+        map_retrieval_evaluation(
+            text_features,
+            target_latents=xray_features,
+            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            file_name=f'{ckpt_name}_report2synxray_map')
 
         # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
-        # triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
+        triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
+
+        print('evaluating xray 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[-1] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{ckpt_name}_synxray2synxray_recall')
+
+        print('evaluating ct 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[0] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{ckpt_name}_ct2synxray_recall')
+
+        print('evaluating report 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[1] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{ckpt_name}_report2synxray_recall')
 
         # xray2image retrival evaluation with recall
         # print('evaluating xray 2 ct images recall')

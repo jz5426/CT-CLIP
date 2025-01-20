@@ -37,7 +37,7 @@ training_params:
   learning_rate: 5e-5
   weight_decay: 1e-4
   epochs: 250
-  min_epochs: 51
+  min_epochs: 201
   use_pretrained_xray_encoder: true
 
 linear_probing_params:
