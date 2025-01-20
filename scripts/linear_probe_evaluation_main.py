@@ -38,7 +38,6 @@ import pandas as pd
 @hydra.main(
         version_base=None,
         config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
-        # config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/configs",
         config_name="train")
 def main(cfg: DictConfig):
 
@@ -80,16 +79,16 @@ def run(cfg_dot):
     print(f"learning_rate: {cfg_dot.linear_probing_params.learning_rate}")
     print(f"progress_window: {cfg_dot.linear_probing_params.progress_window}")
     print(f"cpt_dest: {cfg_dot.linear_probing_params.cpt_dest}")
+    print(f"train data portion: {cfg_dot.linear_probing_params.train_data_portion}")
 
     # convert the config file to dictionary
     cfg = convert_dictconfig_to_dict(cfg_dot)
 
     torch.cuda.empty_cache()
-    # text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
     text_encoder = BertModel.from_pretrained(
         '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
         local_files_only=True
-    ) #TODO: uncomment this when not testing
+    )
     image_encoder = CTViT(
         dim = 512,
         codebook_size = 8192,
@@ -120,17 +119,20 @@ def run(cfg_dot):
 
     if cfg_dot.linear_probing_params.is_evaluate_our_model:
         # ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
-        ckp_name = cfg_dot.linear_probing_params.ckpt_name #TODO:
-        clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckp_name}.pt')
-        pth_base_name = f'{ckp_name}_pretrained_xray_encoder_features'
+        ckpt_name = cfg_dot.linear_probing_params.ckpt_name
+        clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
+        pth_base_name = f'{ckpt_name}_pretrained_xray_encoder_features'
+
+        print(f'loaded checkpoints: {ckpt_name}')
     else:
         # evalute the model from cxr_clip
-        ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar'
+        ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
         clip_xray.load_xray_encoder(
-            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}'.format(ckpt_name), # cxr-clip pretrained
+            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
             freeze_weights=True
         )
-        pth_base_name = 'cxr_clip_pretrained_xray_encoder_features'
+        pth_base_name = f'cxr_clip_{ckpt_name}_pretrained_xray_encoder_features'
+        print(f'loaded checkpoints: {ckpt_name}')
 
     # modify the base file name
 
@@ -172,7 +174,10 @@ def run(cfg_dot):
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
         data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
     )
-    train_sample, internal_val_samples = train_data_splitter.prepare_samples(split_percentage=0.2)
+    train_sample, internal_val_samples = train_data_splitter.prepare_samples(
+        train_split=cfg_dot.linear_probing_params.train_data_portion,
+        val_split=0.2
+    ) # validation split is always, train_split is controlable
 
     # sanity check
     # Extract multi-hot label vectors from the samples
@@ -185,53 +190,21 @@ def run(cfg_dot):
     # print(val_label_distribution/train_label_distribution)
 
     train_dataset = CTReportXRayClassificationDataset(
-        # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha', # data path for the xray train
-        # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        # labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv' # path for train xray data label
-        # data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
-        # report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        # labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
         cfg=cfg,
         data=train_sample, # actual data
         split='train'
     )
 
     internal_val_dataset = CTReportXRayClassificationDataset(
-        # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha', # data path for the xray train
-        # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        # labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv' # path for train xray data label
-        # data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
-        # report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        # labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
         cfg=cfg,
         data=internal_val_samples, # actual data
         split='train'
     )
 
-    test_data_splitter = CTReportDataSplitter(
-        csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
-    )
-    test_samples = test_data_splitter.prepare_samples(split_percentage=1.) # no splitting
-
-    test_dataset = CTReportXRayClassificationDataset(
-        # data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha', # data path for the xray val
-        # report_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-        # labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv' # path for val xray data label
-        # data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
-        # report_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-        # labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        cfg=cfg,
-        data=test_samples,
-        split='valid'
-    )
-
     #load the data
     train_loader = DataLoader(train_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
     val_loader = DataLoader(internal_val_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
-    test_loader = DataLoader(test_dataset,num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=False)
-    train_size, val_size, test_size = len(train_loader), len(val_loader), len(test_loader)
+    train_size = len(train_loader)
 
     # Training loop configuration
     criterion = nn.BCEWithLogitsLoss()
@@ -289,6 +262,22 @@ def run(cfg_dot):
     print("Finetuning the Xray encoder completed ==> perform internal testing")
 
     # testing
+
+    # use all the data for internal validation
+    test_data_splitter = CTReportDataSplitter(
+        csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
+        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
+    )
+    test_samples = test_data_splitter.prepare_samples(train_split=1.) # no splitting
+
+    test_dataset = CTReportXRayClassificationDataset(
+        cfg=cfg,
+        data=test_samples,
+        split='valid'
+    )
+    test_loader = DataLoader(test_dataset,num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=False)
+
     test_params = {
         'test_loader': test_loader,
         'device': device,

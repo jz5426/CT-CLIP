@@ -42,14 +42,15 @@ training_params:
 
 linear_probing_params:
   is_linear_probe_eval: true
-  is_evaluate_our_model: True
+  is_evaluate_our_model: true
   num_epochs: 200
   patience: 20
   batch_size: 1024
   learning_rate: 1e-3
   progress_window: 5
-  percentage_of_train_data: 1.0
   num_workers: 10
+  ckpt_name: ''
+  train_data_portion: 1.
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation'
 
 hydra:

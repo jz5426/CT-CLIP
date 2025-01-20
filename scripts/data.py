@@ -201,10 +201,12 @@ class CTReportDataSplitter:
             accession_to_text[row['VolumeName']] = row["Findings_EN"],row['Impressions_EN']
         return accession_to_text
     
-    def prepare_samples(self, split_percentage=1.):
+    def prepare_samples(self, train_split=1., val_split=0):
         """
         this prepare the xray data in a dictionary format
         """
+        if train_split == 1.:
+            assert val_split == 0
 
         # Read labels once outside the loop
         label_df = pd.read_csv(self.labels)
@@ -229,18 +231,50 @@ class CTReportDataSplitter:
                     if len(onehotlabels) == 0:
                         continue
                     
-                    # TODO: allow for binary classification task or multilabel task.
                     samples.append((xray_file, onehotlabels[0]))
 
-        # keep the percentage of data here before combine the xray files and the labels TODO: test it.
-        if split_percentage < 1.0:
-            sample_data, sample_labels = [ s[0] for s in samples], [ s[-1] for s in samples]
-            train_data, train_label, test_data, test_labels = iterative_train_test_split(np.array(sample_data).reshape(-1,1), np.array(sample_labels), test_size=split_percentage)
-            val_split = [(x[0], np.array(y)) for x, y in zip(test_data.tolist(), test_labels.tolist())]
-            train_split = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
-            return train_split, val_split
+        # Split the data based on train_split
+        if train_split < 1.0:
 
+            sample_data, sample_labels = [s[0] for s in samples], [s[-1] for s in samples]
+            # First split to retain `train_split` amount of data
+            train_data, train_label, _, _ = iterative_train_test_split(
+                np.array(sample_data).reshape(-1, 1), 
+                np.array(sample_labels), 
+                test_size=(1.0 - train_split)
+            )
+            
+
+            # Further split train_samples into train and validation using val_split
+            if val_split > 0.0:
+                train_data, train_label, val_data, val_label = iterative_train_test_split(
+                    np.array(train_data).reshape(-1, 1), 
+                    np.array(train_label), 
+                    test_size=val_split
+                )
+                
+                train_split_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+                val_split_samples = [(x[0], np.array(y)) for x, y in zip(val_data.tolist(), val_label.tolist())]
+                
+                return train_split_samples, val_split_samples
+
+            # If no val_split is desired, return the train samples
+            train_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+            return train_samples
+
+        # Return the full samples if no splitting is required
         return samples
+
+        # NOTE: original implementation
+        # keep the percentage of data here before combine the xray files and the labels TODO: test it.
+        # if train_split < 1.0:
+        #     sample_data, sample_labels = [ s[0] for s in samples], [ s[-1] for s in samples]
+        #     train_data, train_label, test_data, test_labels = iterative_train_test_split(np.array(sample_data).reshape(-1,1), np.array(sample_labels), test_size=train_split)
+        #     val_split = [(x[0], np.array(y)) for x, y in zip(test_data.tolist(), test_labels.tolist())]
+        #     train_split = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+        #     return train_split, val_split
+
+        # return samples
 
 class CTReportXRayClassificationDataset:
 
