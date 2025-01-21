@@ -7,7 +7,7 @@ main script to process the mimic data so that it matches the style of the ctrate
 import os
 import pandas as pd
 
-##%%combine all the patholgies csv file into a single file
+#%%combine all the patholgies csv file into a single file
 def merge_labels():
     # find all the relevant csv files
     labels_dir = "/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/CT"
@@ -173,104 +173,155 @@ def merge_labels():
 
 #%% find the intersection the two csv files based on the hadm_id and discharge_hadm_id
 # Read the CSV files into DataFrames
-predicted_labels_file_path = "/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_predicted_labels.csv"
-base_file_path = '/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/final_mimiccxr-meta_with_view_total_df_with_cxr_path.csv'
-labels_df = pd.read_csv(predicted_labels_file_path)
-base_df = pd.read_csv(base_file_path)
+# predicted_labels_file_path = "/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_predicted_labels.csv"
+# base_file_path = '/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/final_mimiccxr-meta_with_view_total_df_with_cxr_path.csv'
+# labels_df = pd.read_csv(predicted_labels_file_path)
+# base_df = pd.read_csv(base_file_path)
 
-# Drop rows with empty 'discharge_hadm_id' in csv2
-base_df = base_df[base_df['discharge_hadm_id'].notna()]
+# # Drop rows with empty 'discharge_hadm_id' in csv2
+# base_df = base_df[base_df['discharge_hadm_id'].notna()]
 
-# Ensure 'hadm_id' in csv1 has no empty values
-if labels_df['hadm_id'].isna().any():
-    raise ValueError("The 'hadm_id' column in csv1 contains empty values.")
+# # Ensure 'hadm_id' in csv1 has no empty values
+# if labels_df['hadm_id'].isna().any():
+#     raise ValueError("The 'hadm_id' column in csv1 contains empty values.")
 
-# Print the number of rows in csv1 with non-empty 'discharge_hadm_id'
-non_empty_rows_base_df = len(base_df[base_df['discharge_hadm_id'].notna()])
-print(f"Number of rows in base csv file with non-empty 'discharge_hadm_id': {non_empty_rows_base_df}")
+# # Print the number of rows in csv1 with non-empty 'discharge_hadm_id'
+# non_empty_rows_base_df = len(base_df[base_df['discharge_hadm_id'].notna()])
+# print(f"Number of rows in base csv file with non-empty 'discharge_hadm_id': {non_empty_rows_base_df}")
 
-# Print the number of unique discharge_hadm_id
-unique_discharge_hadm_id = base_df['discharge_hadm_id'].nunique()
-print(f'Number of unique discharge_hadm_id: {unique_discharge_hadm_id}')
+# # Print the number of unique discharge_hadm_id
+# unique_discharge_hadm_id = base_df['discharge_hadm_id'].nunique()
+# print(f'Number of unique discharge_hadm_id: {unique_discharge_hadm_id}')
 
-#NOTE: unique_discharge_hadm_id is smaller than non_empty_rows_base_df => multiple cxr for one hadm_id 1925 vs 3562
+# #NOTE: unique_discharge_hadm_id is smaller than non_empty_rows_base_df => multiple cxr for one hadm_id 1925 vs 3562
 
-# Perform the inner join
-result = pd.merge(labels_df, base_df, left_on='hadm_id', right_on='discharge_hadm_id', how='inner').sort_values(by=['hadm_id', 'discharge_hadm_id'])
+# # Perform the inner join
+# result = pd.merge(labels_df, base_df, left_on='hadm_id', right_on='discharge_hadm_id', how='inner').sort_values(by=['hadm_id', 'discharge_hadm_id'])
 
-print('size for unique (hadm_id and discharge_hadm_id): ', result[['hadm_id', 'discharge_hadm_id']].drop_duplicates().shape[0])
+# print('size for unique (hadm_id and discharge_hadm_id): ', result[['hadm_id', 'discharge_hadm_id']].drop_duplicates().shape[0])
 
-# Save the result to a new CSV file
-paired_mimic_ct_report_file = "/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_report_paired.csv"
+# # Save the result to a new CSV file
+# paired_mimic_ct_report_file = "/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_report_paired.csv"
 
-result.to_csv(paired_mimic_ct_report_file, index=False)
+# result.to_csv(paired_mimic_ct_report_file, index=False)
 
-# Print the number of rows in the resulting CSV file
-print(f"Inner join complete. Result saved to 'inner_join_result.csv'. Number of rows: {len(result)}")
+# # Print the number of rows in the resulting CSV file
+# print(f"Inner join complete. Result saved to 'inner_join_result.csv'. Number of rows: {len(result)}")
 
 #%% drop the labels for the training and validation split on the ct rate dataset and save as a new file..
-dropping_pathos = ['Medical material',
-                'Cardiomegaly', 
-                'Lung nodule',
-                'Lung opacity', 
-                'Pulmonary fibrotic sequela', 
-                'Pleural effusion', 
-                'Consolidation']
+# dropping_pathos = ['Medical material',
+#                 'Cardiomegaly', 
+#                 'Lung nodule',
+#                 'Lung opacity', 
+#                 'Pulmonary fibrotic sequela', 
+#                 'Pleural effusion', 
+#                 'Consolidation']
 
-# Path to the CSV file
-# input_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv"  # Replace with your actual file path
-# output_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv"  # Replace with the desired output file path
-input_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv"  # Replace with your actual file path
-output_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_mimic_labels.csv"  # Replace with the desired output file path
+# # Path to the CSV file
+# # input_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv"  # Replace with your actual file path
+# # output_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv"  # Replace with the desired output file path
+# input_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv"  # Replace with your actual file path
+# output_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_mimic_labels.csv"  # Replace with the desired output file path
 
-# Load the CSV file into a DataFrame
-df = pd.read_csv(input_csv_path)
+# # Load the CSV file into a DataFrame
+# df = pd.read_csv(input_csv_path)
 
-# Remove the specified columns
-updated_df = df.drop(columns=dropping_pathos, errors='ignore')
+# # Remove the specified columns
+# updated_df = df.drop(columns=dropping_pathos, errors='ignore')
 
-# Save the updated DataFrame to a new CSV file
-updated_df.to_csv(output_csv_path, index=False)
+# # Save the updated DataFrame to a new CSV file
+# updated_df.to_csv(output_csv_path, index=False)
 
-print(f"Updated CSV saved to {output_csv_path}.")
+# print(f"Updated CSV saved to {output_csv_path}.")
 
 #%% rearrange the csv column so that it matches the following order
-# should be the intersection of the following labels, the one labeled with # means the intersection
-pathologies = ['Arterial wall calcification', #
-                'Pericardial effusion', #
-                'Coronary artery wall calcification', #
-                'Hiatal hernia', #
-                'Lymphadenopathy', #
-                'Emphysema', #
-                'Atelectasis', #
-                'Mosaic attenuation pattern',#
-                'Peribronchial thickening', #
-                'Bronchiectasis', #
-                'Interlobular septal thickening']#
+# # should be the intersection of the following labels, the one labeled with # means the intersection
+# pathologies = ['Arterial wall calcification', #
+#                 'Pericardial effusion', #
+#                 'Coronary artery wall calcification', #
+#                 'Hiatal hernia', #
+#                 'Lymphadenopathy', #
+#                 'Emphysema', #
+#                 'Atelectasis', #
+#                 'Mosaic attenuation pattern',#
+#                 'Peribronchial thickening', #
+#                 'Bronchiectasis', #
+#                 'Interlobular septal thickening']#
 
-input_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_report_paired.csv'
-output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv'
-label_only_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv'
-df = pd.read_csv(input_csv_path)
+# input_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_report_paired.csv'
 
-# Arrange columns as per the given order, and append the rest of the columns
-ordered_columns = [col for col in pathologies if col in df.columns]  # Retain only columns that exist in the DataFrame
-assert len(ordered_columns) == len(pathologies)
+# output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv' # NOTE: this is the ultimate file.
+# label_only_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv'
+# df = pd.read_csv(input_csv_path)
 
-remaining_columns = [col for col in df.columns if col not in ordered_columns]
-final_columns = ordered_columns + remaining_columns
+# # Arrange columns as per the given order, and append the rest of the columns
+# ordered_columns = [col for col in pathologies if col in df.columns]  # Retain only columns that exist in the DataFrame
+# assert len(ordered_columns) == len(pathologies)
+
+# remaining_columns = [col for col in df.columns if col not in ordered_columns]
+# final_columns = ordered_columns + remaining_columns
+
+def resolve_duplicate_hadm_ids(df, output_path):
+    # Ensure the column exists
+    if 'hadm_id' not in df.columns:
+        raise ValueError("The input CSV file does not contain a 'hadm_id' column.")
+
+    # Create a dictionary to count occurrences of each hadm_id
+    hadm_id_counts = {}
+
+    # List to store the new hadm_id values
+    new_hadm_ids = []
+
+    # Iterate over the hadm_id column
+    for hadm_id in df['hadm_id']:
+        if hadm_id not in hadm_id_counts:
+            hadm_id_counts[hadm_id] = 0
+        
+        hadm_id_counts[hadm_id] += 1
+        
+        # Append the suffix for all hadm_id values
+        new_hadm_ids.append(f"{hadm_id}.{hadm_id_counts[hadm_id]}")
+
+    # Replace the hadm_id column with the updated values
+    df['hadm_id'] = new_hadm_ids
+
+    # Save the updated DataFrame to a new CSV file
+    df.to_csv(output_path, index=False)
+
+    print(f"Processed file saved to {output_path}")
+# apply the above function for the following files.
 
 # Reorder the DataFrame
-df = df[final_columns]
 
 # Save the updated DataFrame to a new CSV file
-df.to_csv(output_csv_path, index=False)
+# df = df[final_columns]
+# resolve_duplicate_hadm_ids(df, output_csv_path) # NOTE: should apply only once.
+# # df.to_csv(output_csv_path, index=False)
+# print(f"Columns rearranged and updated CSV saved to {output_csv_path}.")
 
-print(f"Columns rearranged and updated CSV saved to {output_csv_path}.")
+#%% get the label files
+# NOTE: double check this, the duplicate should be resolved.
+# output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv'
+# df = pd.read_csv(output_csv_path)
+# selected_columns = ['hadm_id'] + [col for col in pathologies if col in df.columns]
+# pathologies_df = df[selected_columns]
+# pathologies_df.to_csv(label_only_csv_path, index=False)
+# print(f"Pathologies and 'hadm_id' columns saved to {label_only_csv_path} as a label csv file.")
 
-selected_columns = ['hadm_id'] + [col for col in pathologies if col in df.columns]
-pathologies_df = df[selected_columns]
-pathologies_df.to_csv(label_only_csv_path, index=False)
-print(f"Pathologies and 'hadm_id' columns saved to {label_only_csv_path} as a label csv file.")
 
-## generate a report csv file following the same format as the ctrate report csv file
+#%% generate a report csv file following the same format as the ctrate report csv file
+# CLINICAL_INFORMATION = 'ClinicalInformation_EN'
+# TECHNIQUE = 'Technique_EN'
+# FINIDNGS = 'Findings_EN'
+# IMPRESSIONS = 'Impressions_EN'
+# HADM_ID = 'hadm_id'
+
+# report_cols = [HADM_ID, CLINICAL_INFORMATION, TECHNIQUE, FINIDNGS, IMPRESSIONS]
+# input_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv'
+# output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv'
+# df = pd.read_csv(input_csv_path)
+
+# selected_report = df[report_cols]
+# selected_report.to_csv(output_csv_path, index=False)
+# print(f"report CSV saved to {output_csv_path}.")
+
