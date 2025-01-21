@@ -114,7 +114,7 @@ def process_file(file_path, shared_dst_dir='F:\\Chris\\dataset'):
     if img_data is None:
         print(f"Read {file_path} unsuccessful. Passing")
         return
-
+    # parameters for the CT, not XRAY
     row = df[df['VolumeName'] == original_file_name]
     slope = float(row["RescaleSlope"].iloc[0])
     intercept = float(row["RescaleIntercept"].iloc[0])
