@@ -62,7 +62,7 @@ def merge_labels():
         
         # count number of cases that are 1 and number of rows for each csv file
         infected_counts[disease_name] = df[disease_name].value_counts().get(1, 0).item()
-        csv_file_row_counts[disease_name] = len(df)
+        csv_file_row_counts[disease_name] = df.drop_duplicates().shape[0]
 
         # Drop the original CTscan_labeldict column
         df = df.drop(columns=['CTscan_labeldict'])
@@ -72,6 +72,7 @@ def merge_labels():
             combined_df = df
         else:
             # TODO: double check this.
+            # note that 'text' is part of the key to join the table => there won't be duplicated text column in the final combined_df
             combined_df = pd.merge(combined_df, df, on=['hadm_id', 'text'], how='outer') # this should take care of multiple texts for the same hadm_id
 
     # print label counts
@@ -84,8 +85,9 @@ def merge_labels():
     print('number of nan after merge: ', combined_df.isna().sum().sum())
     print('number of unique hadm_id: ', combined_df['hadm_id'].nunique())
 
+    # note that unique_hadm_id_text = 7488 as well => indicate that each file has the same set of hadm_id, no filtered applied.
     unique_hadm_id_text = df[['hadm_id', 'text']].drop_duplicates().shape[0]
-    print('number of unique [hadm_id,text]: ', unique_hadm_id_text)
+    print('number of unique [hadm_id,text]: ', unique_hadm_id_text) # note that each file has duplicate so after removing the duplicate, there are 7488 in each file.
 
 
     # if the following is true => label is consistent with different report
@@ -170,6 +172,8 @@ def merge_labels():
 
     print(f"Combined CSV file saved as {output_file}")
     print('DONE')
+
+merge_labels()
 
 #%% find the INTERSECTION the two csv files based on the hadm_id and discharge_hadm_id
 
@@ -302,27 +306,27 @@ print(f"Columns rearranged and updated CSV saved to {output_csv_path}.")
 
 #%% get the label files
 # NOTE: double check this, the duplicate should be resolved.
-# output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv'
-# df = pd.read_csv(output_csv_path)
-# selected_columns = ['hadm_id'] + [col for col in pathologies if col in df.columns]
-# pathologies_df = df[selected_columns]
-# pathologies_df.to_csv(label_only_csv_path, index=False)
-# print(f"Pathologies and 'hadm_id' columns saved to {label_only_csv_path} as a label csv file.")
+output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv'
+df = pd.read_csv(output_csv_path)
+selected_columns = ['hadm_id'] + [col for col in pathologies if col in df.columns]
+pathologies_df = df[selected_columns]
+pathologies_df.to_csv(label_only_csv_path, index=False)
+print(f"Pathologies and 'hadm_id' columns saved to {label_only_csv_path} as a label csv file.")
 
 
 #%% generate a report csv file following the same format as the ctrate report csv file
-# CLINICAL_INFORMATION = 'ClinicalInformation_EN'
-# TECHNIQUE = 'Technique_EN'
-# FINIDNGS = 'Findings_EN'
-# IMPRESSIONS = 'Impressions_EN'
-# HADM_ID = 'hadm_id'
+CLINICAL_INFORMATION = 'ClinicalInformation_EN'
+TECHNIQUE = 'Technique_EN'
+FINIDNGS = 'Findings_EN'
+IMPRESSIONS = 'Impressions_EN'
+HADM_ID = 'hadm_id'
 
-# report_cols = [HADM_ID, CLINICAL_INFORMATION, TECHNIQUE, FINIDNGS, IMPRESSIONS]
-# input_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv'
-# output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv'
-# df = pd.read_csv(input_csv_path)
+report_cols = [HADM_ID, CLINICAL_INFORMATION, TECHNIQUE, FINIDNGS, IMPRESSIONS]
+input_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv'
+output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv'
+df = pd.read_csv(input_csv_path)
 
-# selected_report = df[report_cols]
-# selected_report.to_csv(output_csv_path, index=False)
-# print(f"report CSV saved to {output_csv_path}.")
+selected_report = df[report_cols]
+selected_report.to_csv(output_csv_path, index=False)
+print(f"report CSV saved to {output_csv_path}.")
 
