@@ -201,12 +201,10 @@ class CTReportDataSplitter:
             accession_to_text[row['VolumeName']] = row["Findings_EN"],row['Impressions_EN']
         return accession_to_text
     
-    def prepare_samples(self, train_split=1., val_split=0):
+    def prepare_samples(self, train_split=1., val_split=0.2):
         """
         this prepare the xray data in a dictionary format
         """
-        if train_split == 1.:
-            assert val_split == 0
 
         # Read labels once outside the loop
         label_df = pd.read_csv(self.labels)
@@ -233,9 +231,9 @@ class CTReportDataSplitter:
                     
                     samples.append((xray_file, onehotlabels[0]))
 
-        # Split the data based on train_split
+        # if the training size is smaller than 1, the internal validation should be extracted based on the splitted training set
         if train_split < 1.0:
-
+            assert(val_split > 0)
             sample_data, sample_labels = [s[0] for s in samples], [s[-1] for s in samples]
             # First split to retain `train_split` amount of data
             train_data, train_label, _, _ = iterative_train_test_split(
@@ -244,25 +242,34 @@ class CTReportDataSplitter:
                 test_size=(1.0 - train_split)
             )
             
-
             # Further split train_samples into train and validation using val_split
-            if val_split > 0.0:
-                train_data, train_label, val_data, val_label = iterative_train_test_split(
-                    np.array(train_data).reshape(-1, 1), 
-                    np.array(train_label), 
-                    test_size=val_split
-                )
-                
-                train_split_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
-                val_split_samples = [(x[0], np.array(y)) for x, y in zip(val_data.tolist(), val_label.tolist())]
-                
-                return train_split_samples, val_split_samples
+            train_data, train_label, val_data, val_label = iterative_train_test_split(
+                np.array(train_data).reshape(-1, 1), 
+                np.array(train_label), 
+                test_size=val_split
+            )
+            
+            train_split_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+            val_split_samples = [(x[0], np.array(y)) for x, y in zip(val_data.tolist(), val_label.tolist())]
 
-            # If no val_split is desired, return the train samples
-            train_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
-            return train_samples
-        # TODO: handle defect when train_split = 1.
-        # Return the full samples if no splitting is required
+            print(f'training size: {len(train_split_samples)} validation size: {len(val_split_samples)}')
+            return train_split_samples, val_split_samples
+
+            # # If no val_split is desired, return the train samples
+            # train_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+            # return train_samples
+
+        elif train_split == 1. and val_split > 0.:
+            sample_data, sample_labels = [ s[0] for s in samples], [ s[-1] for s in samples]
+            train_data, train_label, test_data, test_labels = iterative_train_test_split(np.array(sample_data).reshape(-1,1), np.array(sample_labels), test_size=val_split)
+            val_split = [(x[0], np.array(y)) for x, y in zip(test_data.tolist(), test_labels.tolist())]
+            train_split = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+
+            print(f'training size: {len(train_split)} validation size: {len(val_split)}')
+            return train_split, val_split
+
+        # return full results
+        print(f'internal test size: {len(samples)}')
         return samples
 
         # NOTE: original implementation

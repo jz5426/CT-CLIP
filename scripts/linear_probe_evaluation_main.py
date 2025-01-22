@@ -118,7 +118,6 @@ def run(cfg_dot):
     )
 
     if cfg_dot.linear_probing_params.is_evaluate_our_model:
-        # ckp_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
         ckpt_name = cfg_dot.linear_probing_params.ckpt_name
         clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
         pth_base_name = f'{ckpt_name}_pretrained_xray_encoder_features'
@@ -265,14 +264,13 @@ def run(cfg_dot):
     print("Finetuning the Xray encoder completed ==> perform internal testing")
 
     # testing
-
     # use all the data for internal validation
     test_data_splitter = CTReportDataSplitter(
         csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
     )
-    test_samples = test_data_splitter.prepare_samples(train_split=1.) # no splitting
+    test_samples = test_data_splitter.prepare_samples(train_split=1., val_split=0.) # no splitting
 
     test_dataset = CTReportXRayClassificationDataset(
         cfg=cfg,
