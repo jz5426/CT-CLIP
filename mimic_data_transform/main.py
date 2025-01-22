@@ -210,57 +210,57 @@ result.to_csv(paired_mimic_ct_report_file, index=False)
 print(f"Inner join complete. Result saved to 'inner_join_result.csv'. Number of rows: {len(result)}")
 
 #%% drop the labels for the training and validation split on the ct rate dataset and save as a new file..
-# dropping_pathos = ['Medical material',
-#                 'Cardiomegaly', 
-#                 'Lung nodule',
-#                 'Lung opacity', 
-#                 'Pulmonary fibrotic sequela', 
-#                 'Pleural effusion', 
-#                 'Consolidation']
+dropping_pathos = ['Medical material',
+                'Cardiomegaly', 
+                'Lung nodule',
+                'Lung opacity', 
+                'Pulmonary fibrotic sequela', 
+                'Pleural effusion', 
+                'Consolidation']
 
-# # Path to the CSV file
-# # input_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv"  # Replace with your actual file path
-# # output_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv"  # Replace with the desired output file path
-# input_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv"  # Replace with your actual file path
-# output_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_mimic_labels.csv"  # Replace with the desired output file path
+# Path to the CSV file
+# input_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv"  # Replace with your actual file path
+# output_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv"  # Replace with the desired output file path
+input_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv"  # Replace with your actual file path
+output_csv_path = "/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_mimic_labels.csv"  # Replace with the desired output file path
 
-# # Load the CSV file into a DataFrame
-# df = pd.read_csv(input_csv_path)
+# Load the CSV file into a DataFrame
+df = pd.read_csv(input_csv_path)
 
-# # Remove the specified columns
-# updated_df = df.drop(columns=dropping_pathos, errors='ignore')
+# Remove the specified columns
+updated_df = df.drop(columns=dropping_pathos, errors='ignore')
 
-# # Save the updated DataFrame to a new CSV file
-# updated_df.to_csv(output_csv_path, index=False)
+# Save the updated DataFrame to a new CSV file
+updated_df.to_csv(output_csv_path, index=False)
 
-# print(f"Updated CSV saved to {output_csv_path}.")
+print(f"Updated CSV saved to {output_csv_path}.")
 
 #%% rearrange the csv column so that it matches the following order
-# # should be the intersection of the following labels, the one labeled with # means the intersection
-# pathologies = ['Arterial wall calcification', #
-#                 'Pericardial effusion', #
-#                 'Coronary artery wall calcification', #
-#                 'Hiatal hernia', #
-#                 'Lymphadenopathy', #
-#                 'Emphysema', #
-#                 'Atelectasis', #
-#                 'Mosaic attenuation pattern',#
-#                 'Peribronchial thickening', #
-#                 'Bronchiectasis', #
-#                 'Interlobular septal thickening']#
+# should be the intersection of the following labels, the one labeled with # means the intersection
+pathologies = ['Arterial wall calcification', #
+                'Pericardial effusion', #
+                'Coronary artery wall calcification', #
+                'Hiatal hernia', #
+                'Lymphadenopathy', #
+                'Emphysema', #
+                'Atelectasis', #
+                'Mosaic attenuation pattern',#
+                'Peribronchial thickening', #
+                'Bronchiectasis', #
+                'Interlobular septal thickening']#
 
-# input_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_report_paired.csv'
+input_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_report_paired.csv'
 
-# output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv' # NOTE: this is the ultimate file.
-# label_only_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv'
-# df = pd.read_csv(input_csv_path)
+output_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv' # NOTE: this is the ultimate file.
+label_only_csv_path = '/Users/maxxyouu/Desktop/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv'
+df = pd.read_csv(input_csv_path)
 
-# # Arrange columns as per the given order, and append the rest of the columns
-# ordered_columns = [col for col in pathologies if col in df.columns]  # Retain only columns that exist in the DataFrame
-# assert len(ordered_columns) == len(pathologies)
+# Arrange columns as per the given order, and append the rest of the columns
+ordered_columns = [col for col in pathologies if col in df.columns]  # Retain only columns that exist in the DataFrame
+assert len(ordered_columns) == len(pathologies)
 
-# remaining_columns = [col for col in df.columns if col not in ordered_columns]
-# final_columns = ordered_columns + remaining_columns
+remaining_columns = [col for col in df.columns if col not in ordered_columns]
+final_columns = ordered_columns + remaining_columns
 
 def resolve_duplicate_hadm_ids(df, output_path):
     # Ensure the column exists
@@ -290,15 +290,15 @@ def resolve_duplicate_hadm_ids(df, output_path):
     df.to_csv(output_path, index=False)
 
     print(f"Processed file saved to {output_path}")
+
 # apply the above function for the following files.
 
 # Reorder the DataFrame
-
+df = df[final_columns]
 # Save the updated DataFrame to a new CSV file
-# df = df[final_columns]
-# resolve_duplicate_hadm_ids(df, output_csv_path) # NOTE: should apply only once.
-# # df.to_csv(output_csv_path, index=False)
-# print(f"Columns rearranged and updated CSV saved to {output_csv_path}.")
+resolve_duplicate_hadm_ids(df, output_csv_path) # NOTE: should apply only once.
+# df.to_csv(output_csv_path, index=False)
+print(f"Columns rearranged and updated CSV saved to {output_csv_path}.")
 
 #%% get the label files
 # NOTE: double check this, the duplicate should be resolved.
