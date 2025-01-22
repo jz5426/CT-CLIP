@@ -43,10 +43,10 @@ training_params:
 linear_probing_params:
   is_linear_probe_eval: true
   is_evaluate_our_model: true
-  num_epochs: 200
+  num_epochs: 500 # 200
   patience: 20
   batch_size: 1024
-  learning_rate: 1e-3
+  learning_rate: 1e-3 # 1e-3
   progress_window: 5
   num_workers: 10
   ckpt_name: ''
