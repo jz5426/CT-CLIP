@@ -3,7 +3,7 @@ from shutil import rmtree
 from transformer_maskgit.optimizer import get_optimizer
 from transformers import BertTokenizer, BertModel
 
-from data import CTReportDataset, CTReportXRayDataset
+from data import CTReportDataset, CTReportXRayDataset, MimicCTReportXRayDataset
 from eval import evaluate_internal, plot_roc, accuracy, sigmoid, bootstrap, compute_cis
 
 from sklearn.metrics import classification_report, confusion_matrix, multilabel_confusion_matrix, f1_score, accuracy_score
@@ -28,7 +28,7 @@ from accelerate import Accelerator
 from accelerate import DistributedDataParallelKwargs
 import math
 import torch.optim.lr_scheduler as lr_scheduler
-from ct_clip import CTCLIP
+from ct_clip import CTCLIP, CTCLIPwithXray
 import os
 
 from CTCLIPTrainer import UniqueLevelSampler
@@ -139,6 +139,138 @@ class CosineAnnealingWarmUpRestarts(lr_scheduler._LRScheduler):
             self.iteration = 0
             self.T_0 *= self.T_mult
             self.eta_max *= self.gamma
+
+class MimicCTClipInference(nn.Module):
+    """
+    use the MimicCTReportXRayDataset class from data.py
+
+    only care about ct report and the xray, no ct available.
+    """
+    def __init__(
+        self,
+        CTClip: CTCLIPwithXray,
+        *,
+        tokenizer,
+        batch_size,
+        cfg=None,
+        num_workers = 1,
+        feature_extraction_mode = True,
+        data_folder = "external_valid",
+        reports_file = "data_reports.xslx",
+        save_results_every = 100,
+        save_model_every = 2000,
+        results_folder = './results',
+        labels = "labels.csv",
+        accelerate_kwargs: dict = dict()
+        ):
+        super().__init__()
+        assert 'mimic' in labels
+        assert 'mimic' in data_folder
+        assert 'mimic' in reports_file
+
+        ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+        self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], **accelerate_kwargs)
+        self.CTClip = CTClip
+        self.tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized', do_lower_case=True) if not tokenizer else tokenizer
+        self.results_folder = results_folder
+        self.register_buffer('steps', torch.Tensor([0]))
+        self.batch_size = batch_size
+
+        # Load the pre-trained weights
+        self.ds = MimicCTReportXRayDataset(
+            cfg=cfg,
+            data_folder=data_folder,
+            csv_file=reports_file,
+            labels=labels, 
+            split='valid')
+
+        # Split dataset into train and validation sets
+        self.dl = DataLoader(
+            self.ds,
+            num_workers=num_workers,
+            batch_size=batch_size,
+            shuffle = True,
+        )
+
+        self.split = 'valid' # default
+        self.feature_extraction_mode = feature_extraction_mode
+        # prepare with accelerator
+        self.dl_iter=cycle(self.dl)
+        self.device = self.accelerator.device
+        self.CTClip.to(self.device)
+
+        self.save_model_every = save_model_every
+        self.save_results_every = save_results_every
+        self.result_folder_txt = self.results_folder
+        self.results_folder = Path(results_folder)
+
+        self.results_folder.mkdir(parents=True, exist_ok=True)
+
+    @property
+    def is_main(self):
+        return self.accelerator.is_main_process
+
+    def save(self, path):
+        if not self.accelerator.is_local_main_process:
+            return
+
+        pkg = dict(
+            model=self.accelerator.get_state_dict(self.CTClip),
+            optim=self.optim.state_dict(),
+        )
+        torch.save(pkg, path)
+
+    def load(self, path):
+        path = Path(path)
+        assert path.exists()
+        pkg = torch.load(path)
+
+        CTClip = self.accelerator.unwrap_model(self.CTClip)
+        CTClip.load_state_dict(pkg['model'])
+
+        self.optim.load_state_dict(pkg['optim'])
+
+    def extract_report_features(self):
+        device = self.device
+        report_features = {}
+        with torch.no_grad():
+            self.CTClip.eval()
+            for batch_data in tqdm.tqdm(self.dl, desc="Report Feature Extraction", leave=False):
+                _, report, _, instance_name = batch_data
+
+                # Tokenize and forward pass
+                text_tokens = self.tokenizer(
+                    report, return_tensors="pt", padding="max_length", truncation=True, max_length=512
+                ).to(device)
+
+                # forward the input
+                text_features = self.CTClip.get_report_latent(text_tokens)
+                text_features = text_features.cpu().numpy()
+
+                # Assign the features to the respective dictionaries
+                for i, key in enumerate(instance_name):
+                    report_features[key] = text_features[i, :]
+
+        return report_features
+    
+    def extract_xray_features(self):
+        xray_features = {}
+        device = self.device
+        with torch.no_grad():
+            self.CTClip.eval()
+            for batch_data in tqdm.tqdm(self.dl, desc="Xray Feature Extraction", leave=False):
+                xrays, _, _, instance_name = batch_data
+
+                # forward the input
+                xrays = xrays.to(device)
+                xray_latents = self.CTClip.get_xray_latents(xrays)
+                xray_latents = xray_latents.cpu().numpy()
+
+                # Assign the features to the respective dictionaries
+                for i, key in enumerate(instance_name):
+                    xray_features[key] = xray_latents[i, :]
+
+        return xray_features
 
 class CTClipInference(nn.Module):
     def __init__(
@@ -294,81 +426,6 @@ class CTClipInference(nn.Module):
     @property
     def is_main(self):
         return self.accelerator.is_main_process
-
-    # def train_step(self):
-    #     device = self.device
-
-    #     steps = int(self.steps.item())
-
-    #     # logs
-    #     logs = {}
-
-    #     if True:
-    #         with torch.no_grad():
-
-    #             models_to_evaluate = ((self.CTClip, str(steps)),)
-
-    #             for model, filename in models_to_evaluate:
-    #                 model.eval()
-    #                 predictedall=[]
-    #                 realall=[]
-    #                 logits = []
-
-    #                 text_latent_list = []
-    #                 image_latent_list = []
-    #                 accession_names=[]
-    #                 pathologies = ['Medical material','Arterial wall calcification', 'Cardiomegaly', 'Pericardial effusion','Coronary artery wall calcification', 'Hiatal hernia','Lymphadenopathy', 'Emphysema', 'Atelectasis', 'Lung nodule','Lung opacity', 'Pulmonary fibrotic sequela', 'Pleural effusion', 'Mosaic attenuation pattern','Peribronchial thickening', 'Consolidation', 'Bronchiectasis','Interlobular septal thickening']
-    #                 for i in tqdm.tqdm(range(len(self.ds))):
-    #                     valid_data, text, onehotlabels, acc_name, instance_name, nii_file = next(self.dl_iter)
-
-    #                     plotdir = self.result_folder_txt
-    #                     Path(plotdir).mkdir(parents=True, exist_ok=True)
-
-    #                     predictedlabels=[]
-    #                     onehotlabels_append=[]
-    #                     for pathology in pathologies:
-    #                         text = [f"{pathology} is present.", f"{pathology} is not present."]
-    #                         text_tokens=self.tokenizer(
-    #                                         text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-
-    #                         output = model(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
-
-    #                         output = apply_softmax(output)
-
-    #                         append_out=output.detach().cpu().numpy()
-    #                         predictedlabels.append(append_out[0])
-
-    #                     predictedall.append(predictedlabels)
-    #                     realall.append(onehotlabels.detach().cpu().numpy()[0])
-    #                     accession_names.append(acc_name[0])
-
-    #                 realall=np.array(realall)
-    #                 predictedall=np.array(predictedall)
-
-    #                 np.savez(f"{plotdir}labels_weights.npz", data=realall)
-    #                 np.savez(f"{plotdir}predicted_weights.npz", data=predictedall)
-    #                 with open(f"{plotdir}accessions.txt", "w") as file:
-    #                     for item in accession_names:
-    #                         file.write(item + "\n")
-
-    #                 dfs=evaluate_internal(predictedall,realall,pathologies, plotdir)
-
-    #                 writer = pd.ExcelWriter(f'{plotdir}aurocs.xlsx', engine='xlsxwriter')
-
-    #                 dfs.to_excel(writer, sheet_name='Sheet1', index=False)
-
-    #                 writer.close()
-    #     self.steps += 1
-    #     return logs
-
-    # def infer(self, log_fn=noop):
-    #     device = next(self.CTClip.parameters()).device
-    #     device=torch.device('cuda')
-    #     while self.steps < self.num_train_steps:
-    #         logs = self.train_step()
-    #         log_fn(logs)
-
-    #     self.print('Inference complete')
 
     def ctclip_feature_extraction(self, directory, split='valid', append=True):
         # load the .pth object if exists

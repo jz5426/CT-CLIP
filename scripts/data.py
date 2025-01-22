@@ -342,6 +342,115 @@ class CTReportXRayClassificationDataset:
 
     def __len__(self):
         return len(self.samples)
+    
+class MimicCTReportXRayDataset:
+    def __init__(self,
+                 cfg, 
+                 data_folder, # list of data processed from the prepare_sample
+                 csv_file,
+                 labels,
+                 split='valid'):
+        self.file_extension = 'mha'
+        self.xray_paths = []
+        self.cfg = cfg
+        self.labels = labels
+        self.accession_to_text = self.load_accession_text(csv_file)
+        self.samples = self.prepare_samples(data_folder)
+        self.normalize = "huggingface" # when use swin or non-resnet architecture
+        if cfg["model"]["image_encoder"]["name"] == "resnet":
+            self.normalize = "imagenet" # only for resnet architecture
+
+        self.xray_transform = load_transform(split=split, transform_config=cfg['transform'])
+            # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
+            # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
+        self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
+
+    def load_accession_text(self, csv_file):
+        df = pd.read_csv(csv_file)
+        accession_to_text = {}
+        for index, row in df.iterrows():
+            accession_to_text[row['hadm_id']] = row["Findings_EN"],row['Impressions_EN']
+        return accession_to_text
+
+    def xray_mha_to_rgb(self, path, transform):
+        """
+        assume the path to the xray is mha format
+        """
+        
+        # Step 1: Read the .mha file using SimpleITK
+        itk_image = sitk.ReadImage(path)
+        
+        # Step 2: Convert to a NumPy array
+        np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
+
+        np_image = (np_image - np_image.min()) / (np_image.max() - np_image.min()) * 255
+        np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
+
+        rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
+        rgb_image = Image.fromarray(rgb_image, mode="RGB")
+
+        return rgb_image
+    
+    def prepare_samples(self, data_folder):
+        """
+        this prepare the xray data in a dictionary format
+        """
+        # Read labels once outside the loop
+        # NOTE: inside the label file, no extension is used for the hadm_id column
+        label_df = pd.read_csv(self.labels)
+        test_label_cols = list(label_df.columns[1:])
+        label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
+
+        # based on the xray files and retrieve the corresponding report and labels
+        samples = []
+        for xray_file in tqdm.tqdm(glob.glob(os.path.join(data_folder, f'*.{self.file_extension}'))):
+            # xray_file is the xray file path
+
+            accession_number = os.path.basename(xray_file) # hadm_id.mha with extension
+            accession_number = accession_number[:-len(f'.{self.file_extension}')] # hadm_id
+            if accession_number not in self.accession_to_text:
+                assert False
+                continue
+
+            impression_text = self.accession_to_text[accession_number] # finding + impresion
+            text_final = ""
+            for text in list(impression_text):
+                text = str(text)
+                if text == "Not given.":
+                    text = ""
+                text_final = text_final + ' ' + text
+
+            # TODO: double check this.
+            # get the filename without extension
+            onehotlabels = label_df[label_df["hadm_id"] == accession_number]["one_hot_labels"].values
+            if len(onehotlabels) == 0:
+                assert False
+                continue
+            samples.append((xray_file, text_final, onehotlabels[0], accession_number))
+
+        return samples
+
+
+    def __getitem__(self, idx):
+
+        selected_sample = self.samples[idx] # based on index
+        xray_file, report, label, accession_number = selected_sample
+
+        # check the CTReportDatasetinfer class
+        report = report.replace('"', '')  
+        report = report.replace('\'', '')  
+        report = report.replace('(', '')  
+        report = report.replace(')', '')
+        # report = report.replace('_', '') # customly added
+
+        # transformation borrowed from cxr_clip
+        xray_image = self.xray_to_rgb(xray_file)
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+        label = torch.from_numpy(label)
+        return xray_image, report, label, accession_number # the instance_name
+
+    def __len__(self):
+        return len(self.samples)
 
 class CTReportXRayDataset(CTReportDataset):
 

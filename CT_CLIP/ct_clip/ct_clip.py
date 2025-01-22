@@ -1023,7 +1023,7 @@ class CTCLIPwithXray(nn.Module):
             """
             b, device = text.input_ids.shape[0], device # batch size, device
             
-            text_embeddings = self.CTCLIP.text_transformer(text.input_ids, attention_mask = text.attention_mask )
+            text_embeddings = self.CTCLIP.text_transformer(text.input_ids, attention_mask = text.attention_mask)
             enc_text = text_embeddings[0] # [0] are the tokens feature, [1] is the pooled features
 
             # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
@@ -1091,6 +1091,21 @@ class CTCLIPwithXray(nn.Module):
         xray_latents = l2norm(xray_latents)
 
         return xray_latents
+
+    def get_report_latent(self, text):
+        text_embeddings = self.CTCLIP.text_transformer(text.input_ids, attention_mask = text.attention_mask)
+        enc_text = text_embeddings[0] # [0] are the tokens feature, [1] is the pooled features
+
+        # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
+        text_embeds = enc_text[:, :] if enc_text.ndim == 3 else enc_text
+        
+        # project to latents for the text modality
+        text_embeds = text_embeds[:,0,:]  # NOTE: Take the `[CLS]` token from the seq dimension
+        text_latents = self.CTCLIP.to_text_latent(text_embeds) #NOTE bxd
+
+        # normalize the features for both text and image
+        text_latents = l2norm(text_latents)
+        return text_latents
 
     def cl_loss(self, m1_latent, m2_latent, temp):
         """

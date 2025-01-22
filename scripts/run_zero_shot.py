@@ -1,3 +1,7 @@
+"""
+this script mainly for extracting the ct report and ct features.
+"""
+
 import torch
 from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
