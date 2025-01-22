@@ -171,42 +171,43 @@ def merge_labels():
     print(f"Combined CSV file saved as {output_file}")
     print('DONE')
 
-#%% find the intersection the two csv files based on the hadm_id and discharge_hadm_id
+#%% find the INTERSECTION the two csv files based on the hadm_id and discharge_hadm_id
+
 # Read the CSV files into DataFrames
-# predicted_labels_file_path = "/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_predicted_labels.csv"
-# base_file_path = '/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/final_mimiccxr-meta_with_view_total_df_with_cxr_path.csv'
-# labels_df = pd.read_csv(predicted_labels_file_path)
-# base_df = pd.read_csv(base_file_path)
+predicted_labels_file_path = "/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_predicted_labels.csv"
+base_file_path = '/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/final_mimiccxr-meta_with_view_total_df_with_cxr_path.csv'
+labels_df = pd.read_csv(predicted_labels_file_path)
+base_df = pd.read_csv(base_file_path)
 
-# # Drop rows with empty 'discharge_hadm_id' in csv2
-# base_df = base_df[base_df['discharge_hadm_id'].notna()]
+# Drop rows with empty 'discharge_hadm_id' in csv2
+base_df = base_df[base_df['discharge_hadm_id'].notna()]
 
-# # Ensure 'hadm_id' in csv1 has no empty values
-# if labels_df['hadm_id'].isna().any():
-#     raise ValueError("The 'hadm_id' column in csv1 contains empty values.")
+# Ensure 'hadm_id' in csv1 has no empty values (SANITY CHECK)
+if labels_df['hadm_id'].isna().any():
+    raise ValueError("The 'hadm_id' column in csv1 contains empty values.")
 
-# # Print the number of rows in csv1 with non-empty 'discharge_hadm_id'
-# non_empty_rows_base_df = len(base_df[base_df['discharge_hadm_id'].notna()])
-# print(f"Number of rows in base csv file with non-empty 'discharge_hadm_id': {non_empty_rows_base_df}")
+# Print the number of rows in csv1 with non-empty 'discharge_hadm_id'
+non_empty_rows_base_df = len(base_df[base_df['discharge_hadm_id'].notna()])
+print(f"Number of rows in base csv file with non-empty 'discharge_hadm_id': {non_empty_rows_base_df}")
 
-# # Print the number of unique discharge_hadm_id
-# unique_discharge_hadm_id = base_df['discharge_hadm_id'].nunique()
-# print(f'Number of unique discharge_hadm_id: {unique_discharge_hadm_id}')
+# Print the number of unique discharge_hadm_id
+unique_discharge_hadm_id = base_df['discharge_hadm_id'].nunique()
+print(f'Number of unique discharge_hadm_id: {unique_discharge_hadm_id}')
 
-# #NOTE: unique_discharge_hadm_id is smaller than non_empty_rows_base_df => multiple cxr for one hadm_id 1925 vs 3562
+#NOTE: unique_discharge_hadm_id is smaller than non_empty_rows_base_df => multiple cxr for one hadm_id 1925 vs 3562
 
-# # Perform the inner join
-# result = pd.merge(labels_df, base_df, left_on='hadm_id', right_on='discharge_hadm_id', how='inner').sort_values(by=['hadm_id', 'discharge_hadm_id'])
+# Perform the inner join to pair up the predicted labels and the ct report
+result = pd.merge(labels_df, base_df, left_on='hadm_id', right_on='discharge_hadm_id', how='inner').sort_values(by=['hadm_id', 'discharge_hadm_id'])
 
-# print('size for unique (hadm_id and discharge_hadm_id): ', result[['hadm_id', 'discharge_hadm_id']].drop_duplicates().shape[0])
+print('size for unique (hadm_id and discharge_hadm_id): ', result[['hadm_id', 'discharge_hadm_id']].drop_duplicates().shape[0])
 
-# # Save the result to a new CSV file
-# paired_mimic_ct_report_file = "/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_report_paired.csv"
+# Save the result to a new CSV file
+paired_mimic_ct_report_file = "/Users/maxxyouu/Desktop/CT-CLIP/mimic-ct-raw/mimic_ct_report_paired.csv"
 
-# result.to_csv(paired_mimic_ct_report_file, index=False)
+result.to_csv(paired_mimic_ct_report_file, index=False)
 
-# # Print the number of rows in the resulting CSV file
-# print(f"Inner join complete. Result saved to 'inner_join_result.csv'. Number of rows: {len(result)}")
+# Print the number of rows in the resulting CSV file
+print(f"Inner join complete. Result saved to 'inner_join_result.csv'. Number of rows: {len(result)}")
 
 #%% drop the labels for the training and validation split on the ct rate dataset and save as a new file..
 # dropping_pathos = ['Medical material',
