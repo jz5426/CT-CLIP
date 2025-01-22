@@ -181,7 +181,7 @@ class CTReportDataset(Dataset):
         input_text = input_text.replace(')', '')
 
         return video_tensor, input_text
-    
+
 class CTReportDataSplitter:
     """mainly for the evaluation experiment"""
     def __init__(self, csv_file, labels, data_folder):
@@ -342,8 +342,9 @@ class CTReportXRayClassificationDataset:
 
     def __len__(self):
         return len(self.samples)
-    
+
 class MimicCTReportXRayDataset:
+    """mainly used in retrieval evaluation and linear probe evaluation in the MimicCTClipInference class"""
     def __init__(self,
                  cfg, 
                  data_folder, # list of data processed from the prepare_sample

@@ -217,6 +217,7 @@ def map_retrieval_evaluation(
             row_first = row_first.iloc[:, 1:].values[0]
 
             # # remove the same patient related images from the sample space.
+            # # NOTE: uncomment the following to remove the same patient related images for each query image. 
             # running_ratios_external = []
             # image_data_for_second = []
             # accs_for_second = []
