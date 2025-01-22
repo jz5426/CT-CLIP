@@ -5,18 +5,13 @@ mainly this is for mimic xray data
 """
 
 import os
-import nibabel as nib
 import pandas as pd
 import numpy as np
-import torch
-import torch.nn.functional as F
 from multiprocessing import Pool
 from tqdm import tqdm
 import SimpleITK as sitk
 from PIL import Image
-import math
 from functools import partial
-import shutil
 import pydicom
 
 def read_dcm_files(csv_file_path):
@@ -56,12 +51,12 @@ def read_dcm_data(file_path):
 def process_file(file_instance_tuple, shared_dst_dir):
     hadm_id, file_path = file_instance_tuple
 
-    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_mha')
+    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_mha_mirrored')
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = hadm_id + '.mha'
     xray_mha_save_path = os.path.join(xray_folder_path_new, file_name)
 
-    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_rgb')
+    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_rgb_mirrored')
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = hadm_id + '.png'
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
@@ -71,8 +66,10 @@ def process_file(file_instance_tuple, shared_dst_dir):
         print(f"Read {file_path} unsuccessful. Passing")
         return
     
-    # TODO: rotate it?
-    # xray_array = np.rot90(np.squeeze(xray_array)) # make the image upright but NOTE that it is flipped with respect to the y-axis
+    if 'mirror' in xray_folder_path_new: # rotate the image?
+        xray_array = np.flip(np.squeeze(xray_array), axis=-1)
+    else:
+        assert False
     np_image = (xray_array - xray_array.min()) / (xray_array.max() - xray_array.min()) * 255
     np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
 
@@ -85,15 +82,15 @@ def process_file(file_instance_tuple, shared_dst_dir):
     xray_image.SetOrigin((0.0, 0.0))   # Example origin
 
     # save the xray as a .mha image
-    # sitk.WriteImage(xray_image, xray_mha_save_path)
+    sitk.WriteImage(xray_image, xray_mha_save_path)
 
     # save the xray image as .png image
     rgb_image.save(xray_rgb_save_path)
 
 
 if __name__ == "__main__":
-    num_workers = 1
-    csv_file_path = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label.csv'
+    num_workers = 20
+    csv_file_path = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label_pa_ap.csv'
     dcm_files = read_dcm_files(csv_file_path)
 
     with Pool(num_workers) as pool:
