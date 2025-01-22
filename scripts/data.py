@@ -261,7 +261,7 @@ class CTReportDataSplitter:
             # If no val_split is desired, return the train samples
             train_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
             return train_samples
-
+        # TODO: handle defect when train_split = 1.
         # Return the full samples if no splitting is required
         return samples
 

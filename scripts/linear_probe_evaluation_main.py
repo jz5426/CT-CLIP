@@ -134,6 +134,9 @@ def run(cfg_dot):
         pth_base_name = f'cxr_clip_{ckpt_name}_pretrained_xray_encoder_features'
         print(f'loaded checkpoints: {ckpt_name}')
 
+    # use the data portion to differentiate
+    pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
+
     # modify the base file name
 
     pathologies = ['Medical material',
