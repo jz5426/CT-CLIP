@@ -77,6 +77,7 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
         )
         pth_name = 'cxr_xray_features.pth'
         print('Loaded weights from cxr_clip')
+    #TODO: add more baseline here
     else:
         # NOTE: our weights
         # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
@@ -91,7 +92,7 @@ def map_retrieval_evaluation(
         target_latents, # xray or CT feature dictionary
         data_folder = "./retrieval_results2/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
-        k_list=[1,5,10,50],
+        k_list=[1,5,10,50, 100],
         batch_size=1024,
         file_name='xray2ct',
     ):
@@ -189,7 +190,7 @@ def map_retrieval_evaluation(
 def recall_retrieval_evaluation(
         query_latents, 
         target_latents, 
-        list_ks=[5, 10, 50], 
+        list_ks=[5, 10, 50, 100], 
         data_folder = "./retrieval_results2/",
         file_name='xray2ct',
         batch_size=1024):
@@ -335,26 +336,26 @@ def run(cfg):
     #     target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
     #     file_name='ct2report_recall')
 
-    print('evaluating ct 2 report in MAP')
-    map_retrieval_evaluation(
-        image_features,
-        target_latents=text_features,
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='ct2report_map')
+    # print('evaluating ct 2 report in MAP')
+    # map_retrieval_evaluation(
+    #     image_features,
+    #     target_latents=text_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name='ct2report_map')
     
-    print('evaluating report 2 ct in MAP')
-    map_retrieval_evaluation(
-        text_features,
-        target_latents=image_features,
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='report2ct_map')
+    # print('evaluating report 2 ct in MAP')
+    # map_retrieval_evaluation(
+    #     text_features,
+    #     target_latents=image_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name='report2ct_map')
     
-    print('evaluating report 2 report in MAP')
-    map_retrieval_evaluation(
-        text_features,
-        target_latents=text_features,
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='report2report_map')
+    # print('evaluating report 2 report in MAP')
+    # map_retrieval_evaluation(
+    #     text_features,
+    #     target_latents=text_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name='report2report_map')
 
     print('Starting Xray related retrieval experiments')
 
@@ -407,11 +408,11 @@ def run(cfg):
         'cxr_clip', # xray encoder weights from cxr_clip
         #our pretrained model
         'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch'
+        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch',
+        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch'
     ]
     for ckpt_name in ckpt_names:
         # NOTE: load the pretrained backbones

@@ -53,6 +53,9 @@ linear_probing_params:
   train_data_portion: 1.
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation'
 
+retrieval_params:
+  filter_patient_instances: true
+
 hydra:
   run:
     dir: ./outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}

@@ -51,12 +51,12 @@ def read_dcm_data(file_path):
 def process_file(file_instance_tuple, shared_dst_dir):
     hadm_id, file_path = file_instance_tuple
 
-    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_mha_mirrored')
+    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_mha')
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = hadm_id + '.mha'
     xray_mha_save_path = os.path.join(xray_folder_path_new, file_name)
 
-    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_rgb_mirrored')
+    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_rgb')
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = hadm_id + '.png'
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
@@ -67,9 +67,8 @@ def process_file(file_instance_tuple, shared_dst_dir):
         return
     
     if 'mirror' in xray_folder_path_new: # rotate the image?
+        print('mirroring the xray')
         xray_array = np.flip(np.squeeze(xray_array), axis=-1)
-    else:
-        assert False
     np_image = (xray_array - xray_array.min()) / (xray_array.max() - xray_array.min()) * 255
     np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
 

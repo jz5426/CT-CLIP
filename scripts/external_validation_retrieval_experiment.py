@@ -14,7 +14,7 @@ import random
 import numpy as np
 import tqdm
 from torch.utils.data import DataLoader, TensorDataset
-from zero_shot import CTClipInference, MimicCTClipInference
+from zero_shot import MimicCTClipInference
 import pandas as pd
 
 def find_top_k_indices(values, k):
@@ -77,6 +77,7 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
         )
         pth_name = 'cxr_xray_features.pth'
         print('Loaded weights from cxr_clip')
+    #TODO: add more baseline here
     else:
         # NOTE: our weights
         # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
@@ -159,6 +160,7 @@ def recall_retrieval_evaluation(
 
 
 def map_retrieval_evaluation(
+        cfg_dot,
         query_latents, # dictionary of the xray latents
         target_latents, # xray or CT feature dictionary
         data_folder = "./retrieval_results2/",
@@ -183,11 +185,10 @@ def map_retrieval_evaluation(
     # mainly for reading the file labels.
     df = pd.read_csv(predicted_label_csv_path)
 
+    # Filter the image data based on the condition in the validation labels
     running_ratios_external = []
     image_data_for_second = []
     accs_for_second = []
-
-    # Filter the image data based on the condition in the validation labels
     for target_key in tqdm.tqdm(target_latents.keys()):
 
         acc_second = target_key
@@ -201,13 +202,10 @@ def map_retrieval_evaluation(
             accs_for_second.append(acc_second)
         # else:
         #     print(f'this instance {target_key} is healthy {row_second.iloc[:, 1:].values[0].tolist()}')
-    
-    # one huge matrix
-    image_data_for_second = np.array(image_data_for_second)
+    image_data_for_second = np.array(image_data_for_second) # one huge matrix
     print(image_data_for_second.shape)
 
     list_outs = []
-
     # Calculate the similarity for each image in the dataset
     for return_n in k_list:
         ratios_external = [] # take note for this one.
@@ -218,9 +216,37 @@ def map_retrieval_evaluation(
             row_first = df[df['hadm_id'] == acc_first]
             row_first = row_first.iloc[:, 1:].values[0]
 
+            # # remove the same patient related images from the sample space.
+            # running_ratios_external = []
+            # image_data_for_second = []
+            # accs_for_second = []
+            # repeated_instances = 0
+            # for target_key in tqdm.tqdm(target_latents.keys()):
+
+            #     acc_second = target_key
+            #     row_second = df[df['hadm_id'] == acc_second]
+            #     num_path = np.sum(row_second.iloc[:, 1:].values[0]) # check if multilabel
+            #     query_patient_prefix = '.'.join(acc_first.split('.')[:2])
+
+            #     # removing the same patient instances
+            #     if cfg_dot.retrieval_params.filter_patient_instances and query_patient_prefix in acc_second:
+            #         repeated_instances += 1
+            #         continue
+
+            #     # if there are any labels (multihot or onehot) for this, save the embeddings and the file name NOTE: do we need this?
+            #     if num_path != 0:
+            #         target_latent = target_latents[target_key]
+            #         image_data_for_second.append(target_latent)
+            #         accs_for_second.append(acc_second)
+            #     # else:
+            #     #     print(f'this instance {target_key} is healthy {row_second.iloc[:, 1:].values[0].tolist()}')
+            # image_data_for_second = np.array(image_data_for_second) # one huge matrix
+            # print(f'number of repeated instances removed: {repeated_instances}\n')
+            # print(image_data_for_second.shape)
+
             # Create a DataLoader for batching processing, with respect to each row_first
             dataset = TensorDataset(torch.tensor(image_data_for_second))
-            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False) # NOTE: shuffle is False is mandatory
 
             crosses = []
             ratios_internal = []
@@ -284,7 +310,6 @@ def main(cfg: DictConfig):
     # torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
 
-    cfg = convert_dictconfig_to_dict(cfg)
 
     # seed everything
     seed = 1024
@@ -297,13 +322,11 @@ def main(cfg: DictConfig):
     run(cfg)
 
 
-def run(cfg):
+def run(cfg_dot):
     torch.cuda.empty_cache()
 
-    split = 'valid'
-    embedding_directory = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings_mimic/'
-
     print('Starting Xray related retrieval experiments')
+    cfg = convert_dictconfig_to_dict(cfg_dot)
 
     # windows wsl from local files
     tokenizer = BertTokenizer.from_pretrained(
@@ -363,7 +386,7 @@ def run(cfg):
         # ct_clip_trainable = sum(p.numel() for p in clip_xray.CTCLIP.parameters() if p.requires_grad)
         # assert(xray_encoder_trainable == 0)
         # assert(ct_clip_trainable == 0)
-
+        
         retrival_evaluator = MimicCTClipInference(
             clip_xray,
             cfg=cfg,
@@ -383,44 +406,39 @@ def run(cfg):
         # get text features from the model.
         text_features = retrival_evaluator.extract_report_features()
 
+        print('evaluating xray 2 ct_report MAP')
+        map_retrieval_evaluation(
+            cfg_dot,
+            xray_features,
+            target_latents=text_features,
+            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            file_name=f'{ckpt_name}_mimic_xray2report_map')
 
-        # print('evaluating xray 2 ct_report MAP')
-        # map_retrieval_evaluation(
-        #     xray_features,
-        #     target_latents=text_features,
-        #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
-        #     file_name=f'{ckpt_name}_mimic_xray2report_map')
-
-        # print('evaluating report 2 xray MAP')
-        # map_retrieval_evaluation(
-        #     text_features,
-        #     target_latents=xray_features,
-        #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
-        #     file_name=f'{ckpt_name}_report2mimic_xray_map')
+        print('evaluating report 2 xray MAP')
+        map_retrieval_evaluation(
+            cfg_dot,
+            text_features,
+            target_latents=xray_features,
+            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            file_name=f'{ckpt_name}_report2mimic_xray_map')
 
         # xray2xray retrieval evaluation with mean average precision metric
-        # print('evaluating xray 2 xray MAP')
-        # map_retrieval_evaluation(
-        #     xray_features,
-        #     target_latents=xray_features,
-        #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
-        #     file_name=f'{ckpt_name}_mimic_xray2mimic_xray_map')
+        print('evaluating xray 2 xray MAP')
+        map_retrieval_evaluation(
+            cfg_dot,
+            xray_features,
+            target_latents=xray_features,
+            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            file_name=f'{ckpt_name}_mimic_xray2mimic_xray_map')
 
         # # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
         triplet_embeddings = [('', text_features[key], xray_features[key]) for key in xray_features.keys()]
 
-        # NOTE: this one is unnecessary
-        # print('evaluating xray 2 xray recall')
-        # recall_retrieval_evaluation(
-        #     query_latents=[triple[-1] for triple in triplet_embeddings],
-        #     target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-        #     file_name=f'{ckpt_name}_mimic_xray2mimic_xray_recall')
-
-        # print('evaluating report 2 xray recall')
-        # recall_retrieval_evaluation(
-        #     query_latents=[triple[1] for triple in triplet_embeddings],
-        #     target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-        #     file_name=f'{ckpt_name}_report2mimic_xray_recall')
+        print('evaluating report 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[1] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{ckpt_name}_report2mimic_xray_recall')
 
         print('evaluating xray 2 ct reports recall')
         recall_retrieval_evaluation(
