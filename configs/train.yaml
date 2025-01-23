@@ -9,7 +9,7 @@ defaults:
   - dataloader: dataloader_128
   - tokenizer: clinical_bert
   - transform: clahe
-  - model: clip_resnet_clinical # clip_resnet_clinical #
+  - model: clip_swin_clinical # clip_resnet_clinical #
   - optimizer: adamw
   - scheduler: cosine_epoch15_warmup1
   - loss: cxr_clip
@@ -38,8 +38,8 @@ training_params:
   ct_cl_weight: 1.0
   learning_rate: 5e-5
   weight_decay: 1e-4
-  epochs: 250
-  min_epochs: 201
+  epochs: 52
+  min_epochs: 51
   use_pretrained_xray_encoder: true
 
 linear_probing_params:

@@ -1,0 +1,422 @@
+"""
+do the same thing as in internal_linear_probe_evaluation_main and take that to evaluate on the mimic dataset.
+"""
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset
+from eval_utils import XrayClassificationModel
+
+import os
+from cxr_clip_utils import convert_dictconfig_to_dict
+import hydra
+from omegaconf import DictConfig, OmegaConf
+import torch
+from transformer_maskgit import CTViT
+from transformers import BertModel
+from ct_clip import CTCLIPwithXray
+import random
+import numpy as np
+from torch.utils.data import DataLoader
+from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
+import pandas as pd
+
+@hydra.main(
+        version_base=None,
+        config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
+        config_name="train")
+def main(cfg: DictConfig):
+
+    OmegaConf.resolve(cfg)
+
+    if "LOCAL_RANK" in os.environ:
+        # for ddp
+        # passed by torchrun or torch.distributed.launch
+        local_rank = int(os.environ["LOCAL_RANK"])
+    else:
+        # for debugging
+        local_rank = -1
+
+    if local_rank < 1:
+        print(f"Configurations:\n{OmegaConf.to_yaml(cfg)}")
+
+    # seed_everything(1234)
+    # torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = True # efficient performance optimization.
+
+    # seed everything
+    seed = 1024
+    random.seed(seed)    
+    np.random.seed(seed)    
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # If using multiple GPUs
+
+    run(cfg)
+
+def run(cfg_dot):
+
+    # print custom script argument
+    print(f"is_linear_probe_eval: {cfg_dot.linear_probing_params.is_linear_probe_eval}")
+    print(f"is_evaluate_our_model: {cfg_dot.linear_probing_params.is_evaluate_our_model}")
+    print(f"num_epochs: {cfg_dot.linear_probing_params.num_epochs}")
+    print(f"patience: {cfg_dot.linear_probing_params.patience}")
+    print(f"batch_size: {cfg_dot.linear_probing_params.batch_size}")
+    print(f"learning_rate: {cfg_dot.linear_probing_params.learning_rate}")
+    print(f"progress_window: {cfg_dot.linear_probing_params.progress_window}")
+    print(f"cpt_dest: {cfg_dot.linear_probing_params.cpt_dest}")
+    print(f"train data portion: {cfg_dot.linear_probing_params.train_data_portion}")
+
+    # convert the config file to dictionary
+    cfg = convert_dictconfig_to_dict(cfg_dot)
+
+    torch.cuda.empty_cache()
+    text_encoder = BertModel.from_pretrained(
+        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+        local_files_only=True
+    )
+    image_encoder = CTViT(
+        dim = 512,
+        codebook_size = 8192,
+        image_size = 480,
+        patch_size = 20,
+        temporal_patch_size = 10,
+        spatial_depth = 4,
+        temporal_depth = 4,
+        dim_head = 32,
+        heads = 8
+    )
+
+    latent_size = 512
+    clip_xray = CTCLIPwithXray(
+        image_encoder = image_encoder,
+        text_encoder = text_encoder,
+        dim_text = 768,
+        dim_image = 294912,
+        xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet',
+        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048, # output size of the xray feature extractor
+        dim_latent = latent_size, # latent size that match the CT vision encoder and the text encoder.
+        extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+        use_mlm=False,
+        downsample_image_embeds = False,
+        use_all_token_embeds = False,
+        cfg=cfg
+    )
+
+    if cfg_dot.linear_probing_params.is_evaluate_our_model:
+        ckpt_name = cfg_dot.linear_probing_params.ckpt_name
+        clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
+        pth_base_name = f'{ckpt_name}_pretrained_xray_encoder_features'
+
+        print(f'loaded checkpoints: {ckpt_name}')
+    else:
+        # evalute the model from cxr_clip
+        ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
+        clip_xray.load_xray_encoder(
+            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
+            freeze_weights=True
+        )
+        pth_base_name = f'cxr_clip_{ckpt_name}_pretrained_xray_encoder_features'
+        print(f'loaded checkpoints: {ckpt_name}')
+
+    # use the data portion to differentiate
+    pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
+
+    # modify the base file name
+    # pathologies = ['Medical material',
+    #                 'Arterial wall calcification', 
+    #                 'Cardiomegaly', 
+    #                 'Pericardial effusion',
+    #                 'Coronary artery wall calcification', 
+    #                 'Hiatal hernia',
+    #                 'Lymphadenopathy', 
+    #                 'Emphysema', 
+    #                 'Atelectasis', 
+    #                 'Lung nodule',
+    #                 'Lung opacity', 
+    #                 'Pulmonary fibrotic sequela', 
+    #                 'Pleural effusion', 
+    #                 'Mosaic attenuation pattern',
+    #                 'Peribronchial thickening', 
+    #                 'Consolidation', 
+    #                 'Bronchiectasis',
+    #                 'Interlobular septal thickening']
+
+    pathologies = ['Arterial wall calcification', #
+                    'Pericardial effusion', #
+                    'Coronary artery wall calcification', #
+                    'Hiatal hernia', #
+                    'Lymphadenopathy', #
+                    'Emphysema', #
+                    'Atelectasis', #
+                    'Mosaic attenuation pattern',#
+                    'Peribronchial thickening', #
+                    'Bronchiectasis', #
+                    'Interlobular septal thickening']#
+
+    # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
+    num_classes = len(pathologies)
+    model = XrayClassificationModel(
+        vision_model=clip_xray.xray_encoder, 
+        feature_projector=clip_xray.to_xray_latent, 
+        isLinearProbe=cfg_dot.linear_probing_params.is_linear_probe_eval, 
+        in_features=latent_size, 
+        num_classes=num_classes)
+
+    # sanity check the trainable parameters
+    learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f'Number of learnable parameters: {learnable_params}') # should be the same of a single linear layer
+
+    # Set up the dataset and data loaders
+    #TODO: change the path to mimic version
+    train_data_splitter = CTReportDataSplitter(
+        csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
+        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+    )
+    train_sample, internal_val_samples = train_data_splitter.prepare_samples(
+        train_split=cfg_dot.linear_probing_params.train_data_portion,
+        val_split=0.2
+    ) # validation split is always, train_split is controlable
+
+    # sanity check
+    # Extract multi-hot label vectors from the samples
+    # train_labels = np.array([label for _, label in train_sample])
+    # val_labels = np.array([label for _, label in internal_val_samples])
+    # train_label_distribution = train_labels.sum(axis=0)
+    # val_label_distribution = val_labels.sum(axis=0)
+    # print(train_label_distribution)
+    # print(val_label_distribution)
+    # print(val_label_distribution/train_label_distribution)
+
+    train_dataset = CTReportXRayClassificationDataset(
+        cfg=cfg,
+        data=train_sample, # actual data
+        split='train'
+    )
+
+    internal_val_dataset = CTReportXRayClassificationDataset(
+        cfg=cfg,
+        data=internal_val_samples, # actual data
+        split='train'
+    )
+
+    #load the data
+    train_loader = DataLoader(train_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
+    val_loader = DataLoader(internal_val_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
+    train_size = len(train_loader)
+
+    # Training loop configuration
+    criterion = nn.BCEWithLogitsLoss()
+    optimizer = optim.AdamW(model.parameters(), lr=cfg_dot.linear_probing_params.learning_rate)
+
+    # Early stopping setup
+    patience = cfg_dot.linear_probing_params.patience
+    best_val_loss = float('inf')
+    patience_counter = 0
+
+    # Device setup
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+
+    # Training and validation loop
+    for epoch in range(cfg_dot.linear_probing_params.num_epochs):
+        
+        # train loop
+        train_params = {
+            'train_loader': train_loader,
+            'device': device,
+            'model': model,
+            'criterion': criterion,
+            'optimizer': optimizer,
+            'epoch': epoch,
+            'train_size': train_size,
+            'progress_window': cfg_dot.linear_probing_params.progress_window,
+            'num_epochs': cfg_dot.linear_probing_params.num_epochs
+        }
+        train_loop(train_params)
+
+        # Validation loop
+        val_params = {
+            'val_loader': val_loader,
+            'device': device,
+            'model': model,
+            'criterion': criterion,
+        }
+        val_loss = validation_loop(val_params)
+
+        # early stopping mechanism
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            patience_counter = 0
+            os.makedirs(cfg_dot.linear_probing_params.cpt_dest, exist_ok=True)
+            dest = os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth')
+            torch.save(model.state_dict(), dest)
+        else:
+            patience_counter += 1
+
+        if patience_counter >= patience:
+            print("Early stopping triggered.")
+            break
+
+    print("Finetuning the Xray encoder completed ==> perform internal testing")
+
+    # testing
+    test_dataset = MimicCTReportXRayDataset(
+        cfg=cfg,
+        data_folder='/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
+        csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
+        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
+        split='valid'
+    )
+    print(f'size of the external test data: {len(test_dataset)}')
+    
+    test_loader = DataLoader(
+        test_dataset, 
+        num_workers=cfg_dot.linear_probing_params.num_workers, 
+        batch_size=cfg_dot.linear_probing_params.batch_size, 
+        shuffle=False)
+
+    test_params = {
+        'test_loader': test_loader,
+        'device': device,
+        'model': model,
+        'pretrained_cpt_dest': os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth'),
+        'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx'
+    }
+    test_loop(test_params)
+
+    print('Finished probing evaluation without error :)')
+
+
+def test_loop(params):
+    test_loader = params['test_loader']
+    device = params['device']
+    model = params['model']
+    metric_saving_path = params['metric_saving_path']
+    
+    model.eval()
+    all_labels = []
+    all_preds = []
+    all_probs = []
+
+    # load the pretrained model TODO: uncomment when finished testing
+    model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
+
+    print(f'Performing testing with size (in unit batch) {len(test_loader)}')
+    with torch.no_grad():
+        for data in test_loader:
+            inputs, _, labels, _ = data
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            # Forward pass
+            outputs = model(inputs)
+
+            # For multilabel classification, apply sigmoid and threshold at 0.5
+            probs = torch.sigmoid(outputs)
+            preds = (probs > 0.5).int()
+
+            all_labels.extend(labels.cpu().numpy())
+            all_preds.extend(preds.cpu().numpy())
+            all_probs.extend(probs.cpu().numpy())
+
+    # Convert to numpy arrays for metric computation
+    all_labels = np.array(all_labels)
+    all_preds = np.array(all_preds)
+    all_probs = np.array(all_probs)
+
+    # Calculate metrics for multilabel classification
+    # NOTE: might use the same one from the training file instead of using the sklearn one.
+    precision_micro, recall_micro, f1_micro, _ = precision_recall_fscore_support(all_labels, all_preds, average='micro')
+    precision_weighted, recall_weighted, f1_weighted, _ = precision_recall_fscore_support(all_labels, all_preds, average='weighted')
+    precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
+
+    auc_micro = roc_auc_score(all_labels, all_probs, average='micro', multi_class='ovr')
+
+    print(f"Test Results for micro average: Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1 Score: {f1_micro:.4f}, AUC: {auc_micro:.4f}")
+    print(f"Test Results for weighted average: Precision: {precision_weighted:.4f}, Recall: {recall_weighted:.4f}, F1 Score: {f1_weighted:.4f}")
+    print(f"Test Results for macro average: Precision: {precision_macro:.4f}, Recall: {recall_macro:.4f}, F1 Score: {f1_macro:.4f}")
+
+    print('Saving the metrics results')
+    metrics_data = {
+        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC'],
+        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro],
+        'Weighted': [precision_weighted, recall_weighted, f1_weighted, -1],
+        'Macro': [precision_macro, recall_macro, f1_macro, -1]
+    }
+
+    metrics_df = pd.DataFrame(metrics_data)
+    os.makedirs(os.path.dirname(metric_saving_path), exist_ok=True)
+    metrics_df.to_excel(metric_saving_path, index=False)
+    print(f"Metric results saved to {metric_saving_path}")
+
+
+def validation_loop(params):
+    val_loader = params['val_loader']
+    device = params['device']
+    model = params['model']
+    criterion = params['criterion']
+
+    model.eval()
+    val_loss = 0.0
+    print(f'Performing validation with size (in unit batch) {len(val_loader)}')
+    with torch.no_grad():
+        for inputs, labels in val_loader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            # Forward pass
+            outputs = model(inputs)
+
+            # Compute loss
+            loss = criterion(outputs, labels.float())
+            val_loss += loss.item()
+
+    val_loss /= len(val_loader)
+    print(f"Validation Loss: {val_loss:.4f}")
+
+    return val_loss
+
+def train_loop(params):
+    train_loader = params['train_loader']
+    device = params['device']
+    model = params['model']
+    criterion = params['criterion']
+    optimizer = params['optimizer']
+    epoch = params['epoch']
+    train_size = params['train_size']
+    progress_window = params['progress_window']
+    num_epochs = params['num_epochs']
+    
+    model.train()
+    total_loss = 0.0
+    for idx, data in enumerate(train_loader):
+        inputs, labels = data
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        # Forward pass
+        outputs = model(inputs)
+
+        # Compute loss
+        loss = criterion(outputs, labels.float())
+
+        # Backward pass and optimization
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        total_loss += loss.item()
+        if idx % progress_window == 0:
+            print(f"Epoch [{epoch}/{num_epochs}], Batch [{idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
+
+    print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {total_loss/len(train_loader):.4f}")
+
+
+# Example usage
+if __name__ == "__main__":
+    main()
