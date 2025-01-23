@@ -598,7 +598,7 @@ class CTCLIP(nn.Module):
         path = Path(path)
         assert path.exists()
         pt = torch.load(str(path))
-        self.load_state_dict(pt)
+        self.load_state_dict(pt, strict=True)
 
     # def tokenize(self, prompt):
     #     text_tokens=self.tokenizer(prompt, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(torch.cuda)
@@ -1168,7 +1168,7 @@ class CTCLIPwithXray(nn.Module):
         #NOTE: this is strict loading => promised the weights are loaded. including the latent projection layer.
 
         weights = torch.load(weight_path, weights_only=True)
-        self.load_state_dict(weights)
+        self.load_state_dict(weights, strict=True)
 
         if freeze_weights:
             # NOTE: this freezed everything including the the latent layer.
@@ -1196,7 +1196,7 @@ class CTCLIPwithXray(nn.Module):
                 param.requires_grad = False
     
     def load_xray_encoder(self, cxr_path, freeze_weights=False):
-        """handle only loading the cxr_clip based xray encoder only -- need special handling of the dictionary keys like below"""
+        """handle only loading the cxr_clip based xray encoder and its (not ours) projection layer only -- need special handling of the dictionary keys like below"""
         warnings.filterwarnings('ignore')
         ckpt = torch.load(cxr_path, map_location="cpu")
 
