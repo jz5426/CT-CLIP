@@ -166,6 +166,7 @@ def run(cfg_dot):
     #             "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
 
     # uhn cluster
+    #NOTE: if cfg_dot.training_params.use_pretrained_xray_encoder is true => xray encoder and the projection layer is loaded with pretrained cxr_clip weights
     clip_xray.load(
         "/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
         f"/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{ckpt_name}" if cfg_dot.training_params.use_pretrained_xray_encoder else None

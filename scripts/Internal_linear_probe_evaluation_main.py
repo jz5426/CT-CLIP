@@ -119,14 +119,14 @@ def run(cfg_dot):
 
     if cfg_dot.linear_probing_params.is_evaluate_our_model:
         ckpt_name = cfg_dot.linear_probing_params.ckpt_name
-        clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
+        clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
         pth_base_name = f'{ckpt_name}_pretrained_xray_encoder_features'
 
         print(f'loaded checkpoints: {ckpt_name}')
     else:
         # evalute the model from cxr_clip
         ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
-        clip_xray.load_xray_encoder(
+        clip_xray.load_cxr_clip_xray_encoder(
             '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
             freeze_weights=True
         )

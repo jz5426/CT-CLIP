@@ -1163,12 +1163,12 @@ class CTCLIPwithXray(nn.Module):
 
         return loss
 
-    def load_pretrained_ct_xray_clip(self, weight_path, freeze_weights=True):
+    def load_our_pretrained_weights(self, weight_path, freeze_weights=True):
         """load the pretrained model from our own pretrained modified ct-clip model"""
         #NOTE: this is strict loading => promised the weights are loaded. including the latent projection layer.
 
         weights = torch.load(weight_path, weights_only=True)
-        self.load_state_dict(weights, strict=True)
+        self.load_state_dict(weights, strict=True) # load everything that is previously saved
 
         if freeze_weights:
             # NOTE: this freezed everything including the the latent layer.
@@ -1179,9 +1179,10 @@ class CTCLIPwithXray(nn.Module):
     def load(self, ctclip_path, cxr_path):
         self.load_ctclip(ctclip_path, freeze_weights=True)
         if cxr_path: # if false, implies randomly initialized
-            self.load_xray_encoder(cxr_path, False)
+            self.load_cxr_clip_xray_encoder(cxr_path, False)
     
     def load_ctclip(self, ctclip_path, freeze_weights=True):
+        """this only load the CT-CLIP model (the original model from the CT-CLIP paper)"""
         warnings.filterwarnings('ignore')
         #NOTE: this is strict loading => promised the weights are loaded. including the latent projection layer.
 
@@ -1195,7 +1196,7 @@ class CTCLIPwithXray(nn.Module):
             for param in self.CTCLIP.parameters():
                 param.requires_grad = False
     
-    def load_xray_encoder(self, cxr_path, freeze_weights=False):
+    def load_cxr_clip_xray_encoder(self, cxr_path, freeze_weights=False):
         """handle only loading the cxr_clip based xray encoder and its (not ours) projection layer only -- need special handling of the dictionary keys like below"""
         warnings.filterwarnings('ignore')
         ckpt = torch.load(cxr_path, map_location="cpu")
@@ -1216,8 +1217,7 @@ class CTCLIPwithXray(nn.Module):
         loaded_keys = ckpt_keys.intersection(model_keys) - set(missing_keys)
         assert (len(self.xray_encoder.state_dict().keys()) + 1) == len(loaded_keys)
 
-        #TODO: check other model
-        print(f'    finished loading the checkpoint for xray encoder: {cxr_path}')
+        print(f'    finished loading the weights of the xray encoder from cxr_clip: {cxr_path}')
 
         #NOTE: freeze the image and text backbones
         if freeze_weights:

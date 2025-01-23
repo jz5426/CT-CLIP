@@ -70,9 +70,10 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
         print(f'number of randomly initialized layers {rand_layers}')
 
     elif ckpt_name == 'cxr_clip_vit':
+        #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by load_cxr_clip_xray_encoder
         assert cfg['model']['image_encoder']['model_type'] == 'swin' # make sure no conflict of expectation
         ckpt_file_name = 'swint_mcc'
-        clip_xray.load_xray_encoder(
+        clip_xray.load_cxr_clip_xray_encoder(
             '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
             freeze_weights=True
         )
@@ -80,9 +81,10 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
         print('Loaded weights from cxr_clip swin variant')
     
     elif ckpt_name == 'cxr_clip_resnet':
+        #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by load_cxr_clip_xray_encoder
         assert cfg['model']['image_encoder']['name'] == 'resnet' # make sure no conflict of expectation
         ckpt_file_name = 'r50_mcc'
-        clip_xray.load_xray_encoder(
+        clip_xray.load_cxr_clip_xray_encoder(
             '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
             freeze_weights=True
         )
@@ -101,10 +103,11 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
     elif ckpt_name == 'gloria_resnet':
         pass
 
-    else:
-        # NOTE: our weights
+    else: # NOTE: our weights
+        #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by strict=True
+
         # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
-        clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
+        clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
         pth_name = f'{ckpt_name}_xray_features.pth'
         print(f'Loaded weights from {ckpt_name}')
 
@@ -115,7 +118,7 @@ def recall_retrieval_evaluation(
         query_latents, 
         target_latents, 
         list_ks=[5, 10, 50], 
-        data_folder = "./retrieval_results2/",
+        data_folder = "./retrieval_results_mimc_validation_recall/",
         file_name='xray2ct',
         batch_size=1024):
 
@@ -186,7 +189,7 @@ def map_retrieval_evaluation(
         cfg_dot,
         query_latents, # dictionary of the xray latents
         target_latents, # xray or CT feature dictionary
-        data_folder = "./retrieval_results2/",
+        data_folder = "./retrieval_results_mimc_validation_map/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
         k_list=[1,5,10,50],
         batch_size=1024,
@@ -415,6 +418,11 @@ def run(cfg_dot):
         # get text features from the model.
         text_features = retrival_evaluator.extract_report_features()
 
+        # # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
+        triplet_embeddings = [('', text_features[key], xray_features[key]) for key in xray_features.keys()]
+
+        # the experiment is in the same order as the table listed in external_validation document in notion.
+
         print('evaluating xray 2 ct_report MAP')
         map_retrieval_evaluation(
             cfg_dot,
@@ -423,15 +431,12 @@ def run(cfg_dot):
             predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
             file_name=f'{ckpt_name}_mimic_xray2report_map')
 
-        print('evaluating report 2 xray MAP')
-        map_retrieval_evaluation(
-            cfg_dot,
-            text_features,
-            target_latents=xray_features,
-            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
-            file_name=f'{ckpt_name}_report2mimic_xray_map')
+        print('evaluating xray 2 ct reports recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[-1] for triple in triplet_embeddings],
+            target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{ckpt_name}_mimic_xray2report_recall')
 
-        # xray2xray retrieval evaluation with mean average precision metric
         print('evaluating xray 2 xray MAP')
         map_retrieval_evaluation(
             cfg_dot,
@@ -440,20 +445,19 @@ def run(cfg_dot):
             predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
             file_name=f'{ckpt_name}_mimic_xray2mimic_xray_map')
 
-        # # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
-        triplet_embeddings = [('', text_features[key], xray_features[key]) for key in xray_features.keys()]
-
         print('evaluating report 2 xray recall')
         recall_retrieval_evaluation(
             query_latents=[triple[1] for triple in triplet_embeddings],
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
             file_name=f'{ckpt_name}_report2mimic_xray_recall')
 
-        print('evaluating xray 2 ct reports recall')
-        recall_retrieval_evaluation(
-            query_latents=[triple[-1] for triple in triplet_embeddings],
-            target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-            file_name=f'{ckpt_name}_mimic_xray2report_recall')
+        print('evaluating report 2 xray MAP')
+        map_retrieval_evaluation(
+            cfg_dot,
+            text_features,
+            target_latents=xray_features,
+            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            file_name=f'{ckpt_name}_report2mimic_xray_map')
 
 if __name__ == '__main__':
     main()

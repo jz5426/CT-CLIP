@@ -71,7 +71,7 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
     elif ckpt_name == 'cxr_clip':
         # NOTE: cxr-clip pretrained weights
         ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
-        clip_xray.load_xray_encoder(
+        clip_xray.load_cxr_clip_xray_encoder(
             '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
             freeze_weights=True
         )
@@ -81,7 +81,7 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
     else:
         # NOTE: our weights
         # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
-        clip_xray.load_pretrained_ct_xray_clip(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
+        clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
         pth_name = f'{ckpt_name}_xray_features.pth'
         print(f'Loaded weights from {ckpt_name}')
 
