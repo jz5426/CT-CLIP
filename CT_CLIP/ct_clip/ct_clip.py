@@ -1176,7 +1176,7 @@ class CTCLIPwithXray(nn.Module):
                 param.requires_grad = False
     
     def load_xray_encoder(self, cxr_path, freeze_weights=False):
-        """handle only loading the cxr_clip based xray encoder only -- need special handling of the dictionary keys like below"""
+        """handle only loading the cxr_clip based xray encoder and its (not ours) projection layer only -- need special handling of the dictionary keys like below"""
         warnings.filterwarnings('ignore')
         ckpt = torch.load(cxr_path, map_location="cpu")
 
