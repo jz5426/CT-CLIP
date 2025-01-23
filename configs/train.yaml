@@ -38,7 +38,7 @@ training_params:
   weight_decay: 1e-4
   epochs: 52
   min_epochs: 51
-  use_pretrained_xray_encoder: true
+  use_pretrained_xray_encoder: false
 
 linear_probing_params:
   is_linear_probe_eval: true
