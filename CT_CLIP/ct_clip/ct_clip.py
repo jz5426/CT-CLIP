@@ -1145,10 +1145,13 @@ class CTCLIPwithXray(nn.Module):
 
     def load_pretrained_ct_xray_clip(self, weight_path, freeze_weights=True):
         """load the pretrained model from our own pretrained modified ct-clip model"""
+        #NOTE: this is strict loading => promised the weights are loaded. including the latent projection layer.
+
         weights = torch.load(weight_path, weights_only=True)
         self.load_state_dict(weights)
 
         if freeze_weights:
+            # NOTE: this freezed everything including the the latent layer.
             print("    freezing weights in XRAY_CTCLIP")
             for param in self.parameters():
                 param.requires_grad = False
@@ -1160,6 +1163,8 @@ class CTCLIPwithXray(nn.Module):
     
     def load_ctclip(self, ctclip_path, freeze_weights=True):
         warnings.filterwarnings('ignore')
+        #NOTE: this is strict loading => promised the weights are loaded. including the latent projection layer.
+
         # load the pretrained model for the ctclip
         self.CTCLIP.load(ctclip_path)
         print('    finished loading the checkpoint for ct clip encoders')
@@ -1171,13 +1176,33 @@ class CTCLIPwithXray(nn.Module):
                 param.requires_grad = False
     
     def load_xray_encoder(self, cxr_path, freeze_weights=False):
+        """handle only loading the cxr_clip based xray encoder only -- need special handling of the dictionary keys like below"""
         warnings.filterwarnings('ignore')
         ckpt = torch.load(cxr_path, map_location="cpu")
-        self.xray_encoder.load_state_dict(ckpt["model"], strict=False)
+
+        # NOTE: the following only valid for swinT in the cxr_clip
+        # [key for key in ckpt["model"].keys() if 'image_encoder' in key] # NOTE this is the way to check the keys
+        saved_state_dict = ckpt["model"]
+        new_state_dict = {}
+        for key in saved_state_dict.keys():
+            if 'image_encoder.' in key:
+                new_state_dict[key.replace("image_encoder.", "xray_encoder.", 1)] = saved_state_dict[key]
+            if 'image_projection.projection.weight' in key:
+                new_state_dict[key.replace("image_projection.projection.weight", "to_xray_latent.weight", 1)] = saved_state_dict[key]
+
+        missing_keys, _ = self.load_state_dict(new_state_dict, strict=False)
+        model_keys = set(self.state_dict().keys())
+        ckpt_keys = set(new_state_dict.keys())
+        loaded_keys = ckpt_keys.intersection(model_keys) - set(missing_keys)
+        assert (len(self.xray_encoder.state_dict().keys()) + 1) == len(loaded_keys)
+
+        #TODO: check other model
         print(f'    finished loading the checkpoint for xray encoder: {cxr_path}')
 
         #NOTE: freeze the image and text backbones
         if freeze_weights:
-            print("    freezing weights in XRay encoder")
+            print("    freezing weights in XRay encoder including the projection layer")
             for param in self.xray_encoder.parameters():
+                param.requires_grad = False
+            for param in self.to_xray_latent.parameters():
                 param.requires_grad = False

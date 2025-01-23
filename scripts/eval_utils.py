@@ -18,13 +18,14 @@ class XrayClassificationModel(nn.Module):
         # Add a fully connected layer
         self.to_xray_latent=feature_projector
         
-        # Freeze the vision model if isLinearProbe is True
+        # Freeze the vision model and the projection layerif isLinearProbe is True
         if isLinearProbe:
             for param in self.vision_model.parameters():
                 param.requires_grad = False
             for param in self.to_xray_latent.parameters():
                 param.requires_grad = False
 
+        # note that this probing layer is deliberately in additional to the to_xray_latent during pretraining.
         self.fc = nn.Linear(in_features, num_classes)
 
     def forward(self, x):
@@ -43,10 +44,11 @@ class XrayClassificationModel(nn.Module):
         xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
 
         # projection and normalize the features, exactly the way during pretraining
-        xray_latents = self.to_xray_latent(xray_embeds) # [8, 512]
+        xray_latents = self.to_xray_latent(xray_embeds) # [8, 512] # NOTE: assume this is pretrained.
         xray_latents = F.normalize(xray_latents, dim = -1)
 
         # Forward through the fully connected layer and output logits
+        # this is the extra layer to learn
         output = self.fc(xray_latents)
         
         return output
