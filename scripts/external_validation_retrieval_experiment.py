@@ -385,11 +385,6 @@ def run(cfg_dot):
         'cxr_clip_vit', # xray encoder weights from cxr_clip
         #our pretrained model
         'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch'
     ]
     for ckpt_name in ckpt_names:
         # NOTE: load the pretrained backbones
