@@ -4,8 +4,9 @@ import torch
 from torch import nn
 import torchvision
 from transformers import AutoModel
+import zipfile
 
-class MedCLIPVisionModel(nn.Module):
+class MedCLIPVisionModelResNet(nn.Module):
     '''
     take resnet50 as backbone.
     '''
@@ -60,7 +61,7 @@ class MedCLIPVisionModelViT(nn.Module):
         super().__init__()
         self.vit_type = 'microsoft/swin-tiny-patch4-window7-224' # constants.VIT_TYPE
         self.model = AutoModel.from_pretrained(self.vit_type)
-        # self.projection_head = nn.Linear(768, 512, bias=False)
+        # self.projection_head = nn.Linear(768, 512, bias=False) #NOTE: no projection head.
         self.WEIGHTS_NAME = 'pytorch_model.bin'
         if checkpoint is not None:
             state_dict = torch.load(os.path.join(checkpoint, self.WEIGHTS_NAME))
@@ -94,3 +95,37 @@ class MedCLIPVisionModelViT(nn.Module):
         # if project:
         #     img_embeds = self.projection_head(img_embeds)
         return img_embeds
+
+
+class MedCLIPVisionModel(nn.Module):
+    def __init__(self,
+        vision_cls=MedCLIPVisionModelResNet,
+        checkpoint_dir=None,
+        vision_checkpoint=None
+        ) -> None:
+        super().__init__()
+        assert vision_cls in [MedCLIPVisionModelResNet, MedCLIPVisionModelViT], 'vision_cls should be one of [MedCLIPVisionModel, MedCLIPVisionModelViT]'
+
+        self.vision_model = vision_cls(checkpoint=vision_checkpoint)
+
+        self.WEIGHTS_NAME = 'pytorch_model.bin'
+        if checkpoint_dir is not None:
+            zipf = zipfile.ZipFile(checkpoint_dir)
+            zipf.extractall(checkpoint_dir)
+            zipf.close()
+            state_dict = torch.load(os.path.join(checkpoint_dir, self.WEIGHTS_NAME))
+            self.load_state_dict(state_dict)
+            print('load model weight from:', checkpoint_dir)
+
+    # def from_pretrained(self, input_dir=None):
+    #     '''
+    #     If input_dir is None, download pretrained weight from google cloud and load.
+    #     input_dir should be the directory of the zipped file
+    #     '''
+    #     # unzip
+    #     zipf = zipfile.ZipFile(input_dir)
+    #     zipf.extractall(input_dir)
+    #     zipf.close()
+    #     state_dict = torch.load(os.path.join(input_dir, self.WEIGHTS_NAME))
+    #     self.load_state_dict(state_dict)
+    #     print('load model weight from:', input_dir)

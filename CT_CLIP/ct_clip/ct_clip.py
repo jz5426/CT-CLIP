@@ -1018,7 +1018,6 @@ class CTCLIPwithXray(nn.Module):
 
         self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
-
     def forward(
             self,
             text,
@@ -1109,7 +1108,6 @@ class CTCLIPwithXray(nn.Module):
             #TODO: double check for other baseline.
             enc_xray = enc_xray.view(enc_xray.shape[0], 1, -1)
 
-        #TODO: also experiment with the 1st token.
         enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features [batch size, patches, features] => [batch size, features]
         enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch of shape [batch size, features]
         xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
