@@ -43,15 +43,29 @@ training_params:
 linear_probing_params:
   is_linear_probe_eval: true
   is_evaluate_our_model: true
-  num_epochs: 500 # 200
+  num_epochs: 500 # 500
   patience: 20
   batch_size: 1024
   learning_rate: 1e-3 # 1e-3
   progress_window: 5
   num_workers: 10
-  ckpt_name: 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+  ckpt_name: '' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
   train_data_portion: 1.
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation'
+
+# for testing
+# external_linear_probing_params:
+#   is_linear_probe_eval: true
+#   is_evaluate_our_model: true
+#   num_epochs: 200 # 200
+#   patience: 20
+#   batch_size: 1024
+#   learning_rate: 1e-3 # 1e-3
+#   progress_window: 5
+#   num_workers: 10
+#   ckpt_name: 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+#   train_data_portion: .2
+#   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/classification_evaluation_mimic'
 
 retrieval_params:
   filter_patient_instances: true
