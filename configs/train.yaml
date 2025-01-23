@@ -25,6 +25,8 @@ base:
     checkpoint: ${hydra:run.dir}/checkpoints/
     tensorboard: ${hydra:run.dir}/tensorboard/
   
+baseline_type: 'cxr_clip'
+  
 training_params:
   batch_size: 360
   num_workers: 10

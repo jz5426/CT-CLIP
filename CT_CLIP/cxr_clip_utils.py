@@ -231,7 +231,7 @@ def convert_dictconfig_to_dict(cfg):
         return cfg
     
 
-def load_image_encoder(config_image_encoder: Dict):
+def load_cxr_clip_image_encoder(config_image_encoder: Dict):
     if config_image_encoder["source"].lower() == "huggingface":
         cache_dir = config_image_encoder["cache_dir"] if "cache_dir" in config_image_encoder else "~/.cache/huggingface/hub"
         gradient_checkpointing = (
@@ -310,7 +310,7 @@ class CXRClip(nn.Module):
     def __init__(self, model_config: Dict, all_loss_config: Dict, tokenizer: PreTrainedTokenizer = None):
         super().__init__()
         self.tokenizer = tokenizer
-        self.image_encoder = load_image_encoder(model_config["image_encoder"])
+        self.image_encoder = load_cxr_clip_image_encoder(model_config["image_encoder"])
         self.text_encoder = load_text_encoder(model_config["text_encoder"], vocab_size=tokenizer.vocab_size)
         self.text_pooling = model_config["text_encoder"]["pooling"]
 
@@ -408,7 +408,7 @@ class CXRClassification(nn.Module):
         self.model_type = model_type
         self.model_config = model_config
         if model_config["load_backbone_weights"] is None:
-            self.image_encoder = load_image_encoder(model_config["image_encoder"])
+            self.image_encoder = load_cxr_clip_image_encoder(model_config["image_encoder"])
         else:
             #NOTE: sample code to load the backbone weights
             # log.info("    loading pre-trained image encoder for fine-tuning")
@@ -417,7 +417,7 @@ class CXRClassification(nn.Module):
                 raise ValueError(f"Cannot find a weight file: {model_config['load_backbone_weights']}")
             ckpt = torch.load(model_config["load_backbone_weights"], map_location="cpu")
             print(ckpt["config"]["model"]["image_encoder"])
-            self.image_encoder = load_image_encoder(ckpt["config"]["model"]["image_encoder"])
+            self.image_encoder = load_cxr_clip_image_encoder(ckpt["config"]["model"]["image_encoder"])
             image_encoder_weights = {}
             for k in ckpt["model"].keys():
                 if k.startswith("image_encoder."):

@@ -68,16 +68,39 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
                     layer.bias.data = torch.randn_like(layer.bias)
         print('Loaded ramdom weights')
         print(f'number of randomly initialized layers {rand_layers}')
-    elif ckpt_name == 'cxr_clip':
-        # NOTE: cxr-clip pretrained weights
-        ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
+
+    elif ckpt_name == 'cxr_clip_vit':
+        assert cfg['model']['image_encoder']['model_type'] == 'swin' # make sure no conflict of expectation
+        ckpt_file_name = 'swint_mcc'
         clip_xray.load_xray_encoder(
-            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
+            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
             freeze_weights=True
         )
-        pth_name = 'cxr_xray_features.pth'
-        print('Loaded weights from cxr_clip')
-    #TODO: add more baseline here
+        pth_name = 'cxr_xray_swin_features.pth'
+        print('Loaded weights from cxr_clip swin variant')
+    
+    elif ckpt_name == 'cxr_clip_resnet':
+        assert cfg['model']['image_encoder']['name'] == 'resnet' # make sure no conflict of expectation
+        ckpt_file_name = 'r50_mcc'
+        clip_xray.load_xray_encoder(
+            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
+            freeze_weights=True
+        )
+        pth_name = 'cxr_xray_resnet_features.pth'
+        print('Loaded weights from cxr_clip resnet variant')
+
+    elif ckpt_name == 'medclip_resnet':
+        pass
+    
+    elif ckpt_name == 'medclip_vit':
+        pass
+
+    elif ckpt_name == 'gloria_densenet':
+        pass
+
+    elif ckpt_name == 'gloria_resnet':
+        pass
+
     else:
         # NOTE: our weights
         # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
@@ -216,35 +239,6 @@ def map_retrieval_evaluation(
             row_first = df[df['hadm_id'] == acc_first]
             row_first = row_first.iloc[:, 1:].values[0]
 
-            # # remove the same patient related images from the sample space.
-            # # NOTE: uncomment the following to remove the same patient related images for each query image. 
-            # running_ratios_external = []
-            # image_data_for_second = []
-            # accs_for_second = []
-            # repeated_instances = 0
-            # for target_key in tqdm.tqdm(target_latents.keys()):
-
-            #     acc_second = target_key
-            #     row_second = df[df['hadm_id'] == acc_second]
-            #     num_path = np.sum(row_second.iloc[:, 1:].values[0]) # check if multilabel
-            #     query_patient_prefix = '.'.join(acc_first.split('.')[:2])
-
-            #     # removing the same patient instances
-            #     if cfg_dot.retrieval_params.filter_patient_instances and query_patient_prefix in acc_second:
-            #         repeated_instances += 1
-            #         continue
-
-            #     # if there are any labels (multihot or onehot) for this, save the embeddings and the file name NOTE: do we need this?
-            #     if num_path != 0:
-            #         target_latent = target_latents[target_key]
-            #         image_data_for_second.append(target_latent)
-            #         accs_for_second.append(acc_second)
-            #     # else:
-            #     #     print(f'this instance {target_key} is healthy {row_second.iloc[:, 1:].values[0].tolist()}')
-            # image_data_for_second = np.array(image_data_for_second) # one huge matrix
-            # print(f'number of repeated instances removed: {repeated_instances}\n')
-            # print(image_data_for_second.shape)
-
             # Create a DataLoader for batching processing, with respect to each row_first
             dataset = TensorDataset(torch.tensor(image_data_for_second))
             dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False) # NOTE: shuffle is False is mandatory
@@ -352,24 +346,43 @@ def run(cfg_dot):
     )
     #dim_image = 131072,
 
+    #NOTE cfg is mainly for cxr_clip
+    if cfg_dot.baseline_type == 'cxr_clip':
+        xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
+    elif cfg_dot.baseline_type == 'medclip_resnet':
+        xray_model_type = cfg_dot.baseline_type
+        dim_xray = 2048
+        # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
+    elif cfg_dot.baseline_type == 'medclip_vit':
+        xray_model_type = cfg_dot.baseline_type
+        dim_xray = 768
+    elif cfg_dot.baseline_type == 'gloria_densenet':
+        xray_model_type = cfg_dot.baseline_type
+        dim_xray = 1024 #TODO: double check this.
+    elif cfg_dot.baseline_type == 'gloria_resnet':
+        xray_model_type = cfg_dot.baseline_type
+        dim_xray = 2048
+
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
-        dim_text = 768,
-        dim_image = 294912,
-        xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet',
-        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048,
-        dim_latent = 512,
+        dim_text = 768, # for ct-clip
+        dim_image = 294912, # for ct-clip
+        xray_model_type = xray_model_type,
+        dim_xray = dim_xray,
+        dim_latent = 512, # the target output latent dimension
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
         use_mlm=False,
         downsample_image_embeds = False,
         use_all_token_embeds = False,
-        cfg=cfg
+        cfg=cfg,
+        baseline_type=cfg_dot.baseline_type # this dictate how the xray encoder is loaded to the model
     )
 
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip
     ckpt_names = [
-        'cxr_clip', # xray encoder weights from cxr_clip
+        'cxr_clip_vit', # xray encoder weights from cxr_clip
         #our pretrained model
         'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
@@ -380,7 +393,7 @@ def run(cfg_dot):
     ]
     for ckpt_name in ckpt_names:
         # NOTE: load the pretrained backbones
-        clip_xray, pth_name = load_model_weights(clip_xray, cfg, ckpt_name)
+        clip_xray, _ = load_model_weights(clip_xray, cfg, ckpt_name)
 
         # check the trainable parameters
         # xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)

@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import partial, wraps
 from pathlib import Path
 
-from cxr_clip_utils import build_model, load_image_encoder
+from cxr_clip_utils import build_model, load_cxr_clip_image_encoder
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
@@ -16,6 +16,7 @@ from ct_clip.mlm import MLM
 from ct_clip.visual_ssl import SimSiam, SimCLR
 
 from transformers import BertTokenizer, BertModel
+import torchvision
 import warnings
 # helper functions
 
@@ -907,7 +908,7 @@ class CTCLIPwithXray(nn.Module):
             image_encoder = None,
             text_encoder = None,
             tokenizer = None,
-            xray_model_type = 'swin', # any vit based
+            xray_model_type = 'cxr_clip_swin', # any vit based
             dim_text = 512,
             dim_image = 512,
             dim_xray = 512,
@@ -946,6 +947,7 @@ class CTCLIPwithXray(nn.Module):
             multiview_loss_weight = 0.1,
             checkpoint_during_training = False,
             cfg=None,
+            baseline_type='cxr_clip',
             **kwargs
     ):
         super().__init__()
@@ -994,9 +996,28 @@ class CTCLIPwithXray(nn.Module):
 
         #NOTE: with the xray encoder
         self.cfg = cfg
-        self.xray_encoder = load_image_encoder(cfg["model"]["image_encoder"])
         self.xray_model_type = xray_model_type
+
+        if baseline_type == 'cxr_clip':
+            self.xray_encoder = load_cxr_clip_image_encoder(cfg["model"]["image_encoder"])
+
+        elif baseline_type == 'medclip_resnet':
+            #TODO: for other baseline
+            pass
+        elif baseline_type == 'medclip_vit':
+            #TODO: for other baseline
+            pass
+
+        elif baseline_type == 'gloria_densenet':
+            #TODO: for other baseline
+            pass
+
+        elif baseline_type == 'gloria_densenet':
+            #TODO: for other baseline
+            pass
+
         self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
+
 
     def forward(
             self,
@@ -1084,7 +1105,8 @@ class CTCLIPwithXray(nn.Module):
         # always extract xray feature representation
         enc_xray = self.xray_encoder(xray)
 
-        if self.xray_model_type == 'resnet':
+        if self.xray_model_type == 'cxr_clip_resnet':
+            #TODO: double check for other baseline.
             enc_xray = enc_xray.view(enc_xray.shape[0], 1, -1)
 
         #TODO: also experiment with the 1st token.
