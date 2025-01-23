@@ -1083,9 +1083,13 @@ class CTCLIPwithXray(nn.Module):
     def get_xray_latents(self, xray):
         # always extract xray feature representation
         enc_xray = self.xray_encoder(xray)
+
+        if self.xray_model_type == 'resnet':
+            enc_xray = enc_xray.view(enc_xray.shape[0], 1, -1)
+
         #TODO: also experiment with the 1st token.
-        enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features
-        enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch
+        enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features [batch size, patches, features] => [batch size, features]
+        enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch of shape [batch size, features]
         xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
         xray_latents = self.to_xray_latent(xray_embeds)
         xray_latents = l2norm(xray_latents)
@@ -1170,7 +1174,7 @@ class CTCLIPwithXray(nn.Module):
         warnings.filterwarnings('ignore')
         ckpt = torch.load(cxr_path, map_location="cpu")
         self.xray_encoder.load_state_dict(ckpt["model"], strict=False)
-        print('    finished loading the checkpoint for xray encoder')
+        print(f'    finished loading the checkpoint for xray encoder: {cxr_path}')
 
         #NOTE: freeze the image and text backbones
         if freeze_weights:

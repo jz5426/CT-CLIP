@@ -9,7 +9,7 @@ defaults:
   - dataloader: dataloader_128
   - tokenizer: clinical_bert
   - transform: clahe
-  - model: clip_swin_clinical
+  - model: clip_resnet_clinical # clip_resnet_clinical #
   - optimizer: adamw
   - scheduler: cosine_epoch15_warmup1
   - loss: cxr_clip
@@ -28,7 +28,7 @@ base:
 training_params:
   batch_size: 360
   num_workers: 10
-  batch_style: instance
+  batch_style: experiment
   train_from_scratch: false
   epoch_based_patience: 25
   iteration_evaluate_frequency: 50

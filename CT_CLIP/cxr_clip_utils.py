@@ -111,10 +111,11 @@ class HuggingfaceImageEncoder(nn.Module):
 class ResNet50(nn.Module):
     def __init__(self, name: str = "resnet50", pretrained: bool = True):
         super().__init__()
-        if pretrained:
-            self.resnet = resnet50(pretrained=True)
-        else:
-            raise NotImplementedError(f"Not support training from scratch : {name}")
+        # if pretrained:
+        #     self.resnet = resnet50(pretrained=pretrained)
+        # else:
+        #     raise NotImplementedError(f"Not support training from scratch : {name}")
+        self.resnet = resnet50(pretrained=pretrained) # this eventually take the pretrained model from CXR-CLIP anyways
 
         self.out_dim = 2048
         del self.resnet.fc
@@ -246,7 +247,7 @@ def load_image_encoder(config_image_encoder: Dict):
             local_files_only=os.path.exists(os.path.join(cache_dir, f'models--{config_image_encoder["name"].replace("/", "--")}')),
         )
     elif config_image_encoder["name"] == "resnet":
-        _image_encoder = ResNet50()
+        _image_encoder = ResNet50(pretrained=False)
 
     else:
         raise KeyError(f"Not supported image encoder: {config_image_encoder}")

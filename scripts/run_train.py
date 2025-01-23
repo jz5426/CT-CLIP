@@ -137,13 +137,14 @@ def run(cfg_dot):
 
     # )
 
+    xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet'
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
         # tokenizer=tokenizer,
         dim_text = 768,
         dim_image = 294912,
-        xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet',
+        xray_model_type = xray_model_type,
         dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048,
         dim_latent = 512,
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
@@ -235,7 +236,7 @@ def run(cfg_dot):
         reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        results_folder='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS',
+        results_folder=f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{xray_model_type}',
         num_train_steps = 100001,
         batch_style=cfg_dot.training_params.batch_style,
         batch_size = cfg_dot.training_params.batch_size,
@@ -253,41 +254,6 @@ def run(cfg_dot):
     )
     trainer.train_by_epoch(cfg_dot.training_params.epochs)
 
-    # # uhn cluster #NOTE: backup code without arg base
-    # trainer = CTClipTrainer(
-    #     clip_xray,
-    #     cfg=cfg,
-    #     tokenizer=tokenizer,
-    #     batch_style='experiment',
-    #     data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
-    #     data_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
-    #     img_embedding_paths = {
-    #         'train': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/train/image_features.pth', 
-    #         'valid': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/valid/image_features.pth'
-    #     },
-    #     text_embedding_paths = {
-    #         'train': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/train/text_features.pth',
-    #         'valid': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/valid/text_features.pth'
-    #     },
-    #     reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-    #     reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-    #     labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     batch_size = 360,
-    #     results_folder='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS',
-    #     num_train_steps = 100001,
-    #     num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-    #     train_from_scratch = True,
-    #     epoch_based_patience = 100,
-    #     iteration_evaluate_frequency = 4,
-    #     text_cl_weight = 1.,
-    #     ct_cl_weight = 1., 
-    #     # lr = 5e-3
-    #     # cxr-clip parameters
-    #     wd = 1e-4,
-    #     lr = 5e-5
-    #     # TODO: interpolate the learing rate between ULIP and CXR-CLIP
-    # )
-    # trainer.train_by_epoch(1000)
     """
     TODO: check the performance when the xray encoder is initialized from scratch.
     TODO: brainstorm different approachs for the contrastive learning function.
