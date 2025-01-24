@@ -9,7 +9,7 @@ from torch.utils.data import DataLoader
 
 from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset
 from eval_utils import XrayClassificationModel
-
+from transformers import BertTokenizer, BertModel
 import os
 from cxr_clip_utils import convert_dictconfig_to_dict
 import hydra
@@ -23,6 +23,8 @@ import numpy as np
 from torch.utils.data import DataLoader
 from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
 import pandas as pd
+from zero_shot import MimicCTClipInference
+
 
 @hydra.main(
         version_base=None,
@@ -101,6 +103,11 @@ def run(cfg_dot):
         '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
         local_files_only=True
     )
+    tokenizer = BertTokenizer.from_pretrained(
+        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+        do_lower_case=True,
+        local_files_only=True)
+
     image_encoder = CTViT(
         dim = 512,
         codebook_size = 8192,
@@ -182,25 +189,33 @@ def run(cfg_dot):
     # use the data portion to differentiate
     pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
 
-    # modify the base file name
-    # pathologies = ['Medical material',
-    #                 'Arterial wall calcification', 
-    #                 'Cardiomegaly', 
-    #                 'Pericardial effusion',
-    #                 'Coronary artery wall calcification', 
-    #                 'Hiatal hernia',
-    #                 'Lymphadenopathy', 
-    #                 'Emphysema', 
-    #                 'Atelectasis', 
-    #                 'Lung nodule',
-    #                 'Lung opacity', 
-    #                 'Pulmonary fibrotic sequela', 
-    #                 'Pleural effusion', 
-    #                 'Mosaic attenuation pattern',
-    #                 'Peribronchial thickening', 
-    #                 'Consolidation', 
-    #                 'Bronchiectasis',
-    #                 'Interlobular septal thickening']
+    train_split_inference = MimicCTClipInference(
+        clip_xray,
+        cfg=cfg,
+        tokenizer=tokenizer,
+        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+        reports_file = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+        labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
+        results_folder="./inference_zeroshot_retrieval_mimic",
+        batch_size = 512,
+        num_workers = 2, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        feature_extraction_mode = True # might be optional
+    )  
+    train_xray_features = train_split_inference.extract_xray_features()
+
+    valid_split_inference = MimicCTClipInference(
+        clip_xray,
+        cfg=cfg,
+        tokenizer=tokenizer,
+        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
+        reports_file = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
+        labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        results_folder="./inference_zeroshot_retrieval_mimic",
+        batch_size = 512,
+        num_workers = 2, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        feature_extraction_mode = True # might be optional
+    )  
+    valid_xray_features = valid_split_inference.extract_xray_features()
 
     pathologies = ['Arterial wall calcification', #
                     'Pericardial effusion', #
@@ -220,7 +235,6 @@ def run(cfg_dot):
     model = XrayClassificationModel(
         vision_model=clip_xray.xray_encoder, 
         feature_projector=clip_xray.to_xray_latent, 
-        isLinearProbe=cfg_dot.linear_probing_params.is_linear_probe_eval, 
         in_features=latent_size, 
         num_classes=num_classes)
 

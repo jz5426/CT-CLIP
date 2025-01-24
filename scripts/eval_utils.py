@@ -2,8 +2,24 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class LinearProbeModel(nn.Module):
+    def __init__(self, linear_layer: nn.Module):
+        """
+        this model is used for during lp training
+            - this model is used with pre-extracted xray latents
+
+        XrayClassificationModel is used for testing and it need full forward pass of the xray encoder + latent projection + classifier
+            - the classifier layer should be the one trained with this class
+        """
+        super(LinearProbeModel, self).__init__()
+        # NOTE: the linear layer should be pretrained
+        self.classification_layer = linear_layer
+
+    def forward(self, x):
+        return self.classification_layer(x)
+
 class XrayClassificationModel(nn.Module):
-    def __init__(self, vision_model: nn.Module, feature_projector: nn.Module, isLinearProbe: bool, in_features: int, num_classes: int):
+    def __init__(self, vision_model: nn.Module, feature_projector: nn.Module, in_features: int, num_classes: int, pretrained_classifier: nn.Module = None):
         """
         Args:
             vision_model (nn.Module): Pretrained vision model.
@@ -18,15 +34,18 @@ class XrayClassificationModel(nn.Module):
         # Add a fully connected layer
         self.to_xray_latent=feature_projector
         
-        # Freeze the vision model and the projection layerif isLinearProbe is True
-        if isLinearProbe:
-            for param in self.vision_model.parameters():
-                param.requires_grad = False
-            for param in self.to_xray_latent.parameters():
-                param.requires_grad = False
+        # Freeze the vision model and the projection layer because this is linear probing
+        for param in self.vision_model.parameters():
+            param.requires_grad = False
+        for param in self.to_xray_latent.parameters():
+            param.requires_grad = False
 
         # note that this probing layer is deliberately in additional to the to_xray_latent during pretraining.
-        self.fc = nn.Linear(in_features, num_classes)
+        if pretrained_classifier:
+            self.fc = pretrained_classifier
+            print('Pretrained classifier is loaded.')
+        else:
+            self.fc = nn.Linear(in_features, num_classes)
 
     def forward(self, x):
         """
@@ -52,6 +71,9 @@ class XrayClassificationModel(nn.Module):
         output = self.fc(xray_latents)
         
         return output
+
+    def xray_feature_extraction(self):
+        
 
 # Example usage
 # if __name__ == "__main__":

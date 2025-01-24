@@ -5,6 +5,7 @@ retrieval experiment for mimic
 import os
 from cxr_clip_utils import convert_dictconfig_to_dict
 import hydra
+from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT
 from omegaconf import DictConfig, OmegaConf
 import torch
 from transformer_maskgit import CTViT
@@ -16,6 +17,7 @@ import tqdm
 from torch.utils.data import DataLoader, TensorDataset
 from zero_shot import MimicCTClipInference
 import pandas as pd
+import copy
 
 def find_top_k_indices(values, k):
     # Check if the list has at least 50 values
@@ -49,27 +51,30 @@ def calc_similarity(arr1, arr2):
 
 def load_model_weights(clip_xray, cfg, ckpt_name=None):
 
-    if ckpt_name == None: 
-        # NOTE: random weights
-        ckpt_name = 'random'
-        pth_name = 'random_xray_features.pth'
-        rand_layers = 0
-        for layer in clip_xray.xray_encoder.modules():
-            if hasattr(layer, 'reset_parameters'):
-                rand_layers += 1
-                layer.weight.data = torch.randn_like(layer.weight)
-                if layer.bias is not None:
-                    layer.bias.data = torch.randn_like(layer.bias)
-        for layer in clip_xray.to_xray_latent.modules():
-            if hasattr(layer, 'reset_parameters'):
-                rand_layers += 1
-                layer.weight.data = torch.randn_like(layer.weight)
-                if layer.bias is not None:
-                    layer.bias.data = torch.randn_like(layer.bias)
-        print('Loaded ramdom weights')
-        print(f'number of randomly initialized layers {rand_layers}')
+    # if ckpt_name == None: 
+    #     # NOTE: random weights
+    #     ckpt_name = 'random'
+    #     pth_name = 'random_xray_features.pth'
+    #     rand_layers = 0
+    #     for layer in clip_xray.xray_encoder.modules():
+    #         if hasattr(layer, 'reset_parameters'):
+    #             rand_layers += 1
+    #             layer.weight.data = torch.randn_like(layer.weight)
+    #             if layer.bias is not None:
+    #                 layer.bias.data = torch.randn_like(layer.bias)
+    #     for layer in clip_xray.to_xray_latent.modules():
+    #         if hasattr(layer, 'reset_parameters'):
+    #             rand_layers += 1
+    #             layer.weight.data = torch.randn_like(layer.weight)
+    #             if layer.bias is not None:
+    #                 layer.bias.data = torch.randn_like(layer.bias)
+    #     print('Loaded ramdom weights')
+    #     print(f'number of randomly initialized layers {rand_layers}')
 
-    elif ckpt_name == 'cxr_clip_vit':
+    # el
+    
+    if ckpt_name == 'cxr_clip_vit':
+        #NOTE: RESNET AND SWIN NEED TO MANUALLY DEFINED IN THE train.yaml file
         #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by load_cxr_clip_xray_encoder
         assert cfg['model']['image_encoder']['model_type'] == 'swin' # make sure no conflict of expectation
         ckpt_file_name = 'swint_mcc'
@@ -81,6 +86,7 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
         print('Loaded weights from cxr_clip swin variant')
     
     elif ckpt_name == 'cxr_clip_resnet':
+        #NOTE: RESNET AND SWIN NEED TO MANUALLY DEFINED IN THE train.yaml file
         #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by load_cxr_clip_xray_encoder
         assert cfg['model']['image_encoder']['name'] == 'resnet' # make sure no conflict of expectation
         ckpt_file_name = 'r50_mcc'
@@ -92,15 +98,29 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
         print('Loaded weights from cxr_clip resnet variant')
 
     elif ckpt_name == 'medclip_resnet':
-        pass
-    
-    elif ckpt_name == 'medclip_vit':
-        pass
+        # PAY ATTENTION TO THE PROJECTION HEAD, IT SHOULD ALWAYS LOADED WITH PRETRAINED WEIGHTS (LP OR RETRIEVAL)
+        medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelResNet, vision_checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/resnet/')
+        
+        clip_xray.to_xray_latent = copy.deepcopy(medclip_vision_encoder.model.fc)
+        del medclip_vision_encoder.model.fc
 
+        clip_xray.xray_encoder = copy.deepcopy(medclip_vision_encoder.model)
+        # TODO: double check if 1. the weights are loaded properly; 2. the projection layer is loaded properly
+
+    elif ckpt_name == 'medclip_vit':
+        # PAY ATTENTION TO THE PROJECTION HEAD, IT SHOULD ALWAYS LOADED WITH PRETRAINED WEIGHTS (LP OR RETRIEVAL)
+        medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelViT, vision_checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/resnet/')
+        clip_xray.to_xray_latent = copy.deepcopy(medclip_vision_encoder.projection_head)
+        clip_xray.xray_encoder = copy.deepcopy(medclip_vision_encoder.model)
+    
     elif ckpt_name == 'gloria_densenet':
+
+        # PAY ATTENTION TO THE PROJECTION HEAD, IT SHOULD ALWAYS LOADED WITH PRETRAINED WEIGHTS (LP OR RETRIEVAL)
         pass
 
     elif ckpt_name == 'gloria_resnet':
+
+        # PAY ATTENTION TO THE PROJECTION HEAD, IT SHOULD ALWAYS LOADED WITH PRETRAINED WEIGHTS (LP OR RETRIEVAL)
         pass
 
     else: # NOTE: our weights
@@ -112,7 +132,6 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
         print(f'Loaded weights from {ckpt_name}')
 
     return clip_xray, pth_name
-
 
 def recall_retrieval_evaluation(
         query_latents, 

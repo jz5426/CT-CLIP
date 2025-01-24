@@ -1226,8 +1226,9 @@ class CTCLIPwithXray(nn.Module):
         model_keys = set(self.state_dict().keys())
         ckpt_keys = set(new_state_dict.keys())
         loaded_keys = ckpt_keys.intersection(model_keys) - set(missing_keys)
-        assert (len(self.xray_encoder.state_dict().keys()) + 1) == len(loaded_keys)
 
+        # NOTE: this sanity check make sure the weights of the projection head is loaded. remember is it deleted in the custom RESNET class in cxr_clip_utils class
+        assert (len(self.xray_encoder.state_dict().keys()) + 1) == len(loaded_keys)
         print(f'    finished loading the weights of the xray encoder from cxr_clip: {cxr_path}')
 
         #NOTE: freeze the image and text backbones

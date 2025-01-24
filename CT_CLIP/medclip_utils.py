@@ -25,9 +25,6 @@ class MedCLIPVisionModelResNet(nn.Module):
         if medclip_checkpoint is not None:
             self.load_from_medclip(medclip_checkpoint)
         
-        # follow like cxr_clip
-        del self.model.fc
-
     def load_from_medclip(self, checkpoint):
         '''handle key mismatch of medclip and the vision encoder.
         '''
@@ -52,7 +49,7 @@ class MedCLIPVisionModelResNet(nn.Module):
 class MedCLIPVisionModelViT(nn.Module):
     '''take an VIT model as the backbone.
     '''
-    def __init__(self, checkpoint=None, medclip_checkpoint=None) -> None:
+    def __init__(self, vision_checkpoint=None, medclip_checkpoint=None) -> None:
         '''args:
         checkpoint: load from the vision encoder checkpoint
         medclip_checkpoint: load from the vision-text dual encoders checkpoint
@@ -60,14 +57,16 @@ class MedCLIPVisionModelViT(nn.Module):
         super().__init__()
         self.vit_type = 'microsoft/swin-tiny-patch4-window7-224' # constants.VIT_TYPE
         self.model = AutoModel.from_pretrained(self.vit_type)
-        # self.projection_head = nn.Linear(768, 512, bias=False) #NOTE: no projection head.
+        self.projection_head = nn.Linear(768, 512, bias=False) #NOTE: no projection head.
+
         self.WEIGHTS_NAME = 'pytorch_model.bin'
-        if checkpoint is not None:
-            state_dict = torch.load(os.path.join(checkpoint, self.WEIGHTS_NAME))
+        if vision_checkpoint is not None:
+            state_dict = torch.load(os.path.join(vision_checkpoint, self.WEIGHTS_NAME))
             missing_keys, unexpected_keys = self.load_state_dict(state_dict, strict=False)
             print('missing keys:', missing_keys)
             print('unexpected keys:', unexpected_keys)
-            print('load model weight from:', checkpoint)
+            print('load model weight from:', vision_checkpoint)
+
         if medclip_checkpoint is not None:
             self.load_from_medclip(medclip_checkpoint)
 
