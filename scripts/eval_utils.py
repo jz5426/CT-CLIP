@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class LinearProbeModel(nn.Module):
-    def __init__(self, linear_layer: nn.Module):
+    def __init__(self, in_features: int, num_classes: int):
         """
         this model is used for during lp training
             - this model is used with pre-extracted xray latents
@@ -13,13 +13,13 @@ class LinearProbeModel(nn.Module):
         """
         super(LinearProbeModel, self).__init__()
         # NOTE: the linear layer should be pretrained
-        self.classification_layer = linear_layer
+        self.fc = nn.Linear(in_features, num_classes)
 
     def forward(self, x):
-        return self.classification_layer(x)
+        return self.fc(x)
 
 class XrayClassificationModel(nn.Module):
-    def __init__(self, vision_model: nn.Module, feature_projector: nn.Module, in_features: int, num_classes: int, pretrained_classifier: nn.Module = None):
+    def __init__(self, vision_model: nn.Module, feature_projector: nn.Module, pretrained_classifier: nn.Module = None):
         """
         Args:
             vision_model (nn.Module): Pretrained vision model.
@@ -41,11 +41,10 @@ class XrayClassificationModel(nn.Module):
             param.requires_grad = False
 
         # note that this probing layer is deliberately in additional to the to_xray_latent during pretraining.
-        if pretrained_classifier:
-            self.fc = pretrained_classifier
-            print('Pretrained classifier is loaded.')
-        else:
-            self.fc = nn.Linear(in_features, num_classes)
+        self.fc = pretrained_classifier
+        for param in self.fc.parameters():
+            param.requires_grad = False
+        print('Pretrained classifier is loaded.')
 
     def forward(self, x):
         """
@@ -71,8 +70,6 @@ class XrayClassificationModel(nn.Module):
         output = self.fc(xray_latents)
         
         return output
-
-    def xray_feature_extraction(self):
         
 
 # Example usage

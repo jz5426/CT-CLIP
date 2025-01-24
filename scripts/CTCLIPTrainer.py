@@ -375,7 +375,7 @@ class CTClipTrainer(nn.Module):
 
                 data = next(self.dl_iter)
                 if self.triplet:
-                    video, text, xray = data
+                    video, text, _, xray, _, _ = data
                     xray=xray.to(device)
                     text=text.to(device)
                 else:

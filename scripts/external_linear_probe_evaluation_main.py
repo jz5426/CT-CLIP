@@ -8,7 +8,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset
-from eval_utils import XrayClassificationModel
+from eval_utils import LinearProbeModel, XrayClassificationModel
 from transformers import BertTokenizer, BertModel
 import os
 from cxr_clip_utils import convert_dictconfig_to_dict
@@ -23,8 +23,8 @@ import numpy as np
 from torch.utils.data import DataLoader
 from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
 import pandas as pd
-from zero_shot import MimicCTClipInference
-
+from zero_shot import CTClipInference, MimicCTClipInference
+import shutil
 
 @hydra.main(
         version_base=None,
@@ -189,33 +189,31 @@ def run(cfg_dot):
     # use the data portion to differentiate
     pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
 
-    train_split_inference = MimicCTClipInference(
-        clip_xray,
-        cfg=cfg,
-        tokenizer=tokenizer,
-        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
-        reports_file = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
-        results_folder="./inference_zeroshot_retrieval_mimic",
-        batch_size = 512,
-        num_workers = 2, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-        feature_extraction_mode = True # might be optional
+    split = 'train'
+    train_split_inference = CTClipInference(
+            clip_xray,
+            cfg=cfg,
+            tokenizer=tokenizer,
+            data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
+            # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
+            img_embedding_paths = {
+                f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
+            },
+            text_embedding_paths = {
+                f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
+            },
+            reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+            labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            results_folder="./inference_zeroshot_retrieval",
+            batch_size = 1024,
+            num_train_steps = -1, # placeholder
+            num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+            feature_extraction_mode = True # might be optional
     )  
-    train_xray_features = train_split_inference.extract_xray_features()
 
-    valid_split_inference = MimicCTClipInference(
-        clip_xray,
-        cfg=cfg,
-        tokenizer=tokenizer,
-        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
-        reports_file = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-        labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        results_folder="./inference_zeroshot_retrieval_mimic",
-        batch_size = 512,
-        num_workers = 2, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-        feature_extraction_mode = True # might be optional
-    )  
-    valid_xray_features = valid_split_inference.extract_xray_features()
+    # get xray latent features from this particularly baseline model
+    train_xray_features = train_split_inference.xray_feature_extraction('./', append=False)
+    print('Xray feature extraction completed')
 
     pathologies = ['Arterial wall calcification', #
                     'Pericardial effusion', #
@@ -232,18 +230,14 @@ def run(cfg_dot):
     # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
     # that is, add a additional fc layer on top of the vision model and the feature_projector
     num_classes = len(pathologies)
-    model = XrayClassificationModel(
-        vision_model=clip_xray.xray_encoder, 
-        feature_projector=clip_xray.to_xray_latent, 
-        in_features=latent_size, 
-        num_classes=num_classes)
+    model = LinearProbeModel(in_features=latent_size, num_classes=num_classes)
 
     # sanity check the trainable parameters
     learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Number of learnable parameters: {learnable_params}') # should be the same of a single linear layer
 
     # Set up the dataset and data loaders
-    #TODO: change the path to mimic version
+    #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
     train_data_splitter = CTReportDataSplitter(
         csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
@@ -267,12 +261,14 @@ def run(cfg_dot):
     train_dataset = CTReportXRayClassificationDataset(
         cfg=cfg,
         data=train_sample, # actual data potentially with the embeddings
+        data_embeddings=train_xray_features,
         split='train'
     )
 
     internal_val_dataset = CTReportXRayClassificationDataset(
         cfg=cfg,
         data=internal_val_samples, # actual data potentially with the embeddings
+        data_embeddings=train_xray_features,
         split='train'
     )
 
@@ -293,6 +289,9 @@ def run(cfg_dot):
     # Device setup
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
+
+    # remove the all files under the directory and resave it
+    shutil.rmtree(cfg_dot.linear_probing_params.cpt_dest, ignore_errors=True)
 
     # Training and validation loop
     for epoch in range(cfg_dot.linear_probing_params.num_epochs):
@@ -352,10 +351,17 @@ def run(cfg_dot):
         batch_size=cfg_dot.linear_probing_params.batch_size, 
         shuffle=False)
 
+    # define a full classifier with encoder and projection layer learnt from the CT-RATE training set
+    classification_model = XrayClassificationModel(
+        vision_model=clip_xray.xray_encoder, 
+        feature_projector=clip_xray.to_xray_latent, 
+        pretrained_classifier=model # load the classifier layer
+    )
+
     test_params = {
         'test_loader': test_loader,
         'device': device,
-        'model': model,
+        'model': classification_model,
         'pretrained_cpt_dest': os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth'), # where to retrieve the best checkpoint
         'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx' # where to save the files
     }
@@ -374,8 +380,8 @@ def test_loop(params):
     all_preds = []
     all_probs = []
 
-    # load the pretrained model TODO: uncomment when finished testing
-    model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
+    # only load the pretrained classifier
+    model.fc.load_state_dict(torch.load(params['pretrained_cpt_dest']))
 
     print(f'Performing testing with size (in unit batch) {len(test_loader)}')
     model.eval()

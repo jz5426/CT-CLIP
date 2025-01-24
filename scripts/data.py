@@ -295,10 +295,13 @@ class CTReportXRayClassificationDataset:
     def __init__(self,
                  cfg, 
                  data, # list of data processed from the prepare_sample
+                 data_embeddings=None,
                  split='train'):
+        self.file_extension = 'mha'
         self.xray_paths = []
         self.cfg = cfg
         self.samples = data
+        self.embeddings = data_embeddings
         self.normalize = "huggingface" # when use swin or non-resnet architecture
         if cfg["model"]["image_encoder"]["name"] == "resnet":
             self.normalize = "imagenet" # only for resnet architecture
@@ -341,11 +344,18 @@ class CTReportXRayClassificationDataset:
 
         selected_sample = self.samples[key_id] # based on index
         xray_file, label = selected_sample
+
+        # get the corresonding embeddings
+        name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
+        xray_embedding = self.embeddings[name_acc]
+
         # transformation borrowed from cxr_clip
-        xray_image = self.xray_to_rgb(xray_file)
-        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+        # xray_image = self.xray_to_rgb(xray_file)
+        # xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+        # return xray_image, label
+
         label = torch.from_numpy(label)
-        return xray_image, label
+        return xray_embedding, label
 
     def __len__(self):
         return len(self.samples)
@@ -586,7 +596,10 @@ class CTReportXRayDataset(CTReportDataset):
 
         img_embedding = torch.from_numpy(img_embedding.reshape(-1)).requires_grad_(False)
         text_embedding = torch.from_numpy(text_embedding.reshape(-1)).requires_grad_(False)
-        return  img_embedding, text_embedding, xray_image
+
+        name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
+
+        return  img_embedding, text_embedding, 'this is train', xray_image, name_acc, xray_file
 
     def prepare_samples(self):
         """

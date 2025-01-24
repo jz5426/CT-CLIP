@@ -180,21 +180,6 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
         return processed_embeddings
 
-    def __getitem__backup(self, index):
-        nii_file, input_text, onehotlabels, xray_file = self.samples[index]
-        video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
-
-        xray_image = self.xray_to_rgb(xray_file)
-        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
-
-        input_text = input_text.replace('"', '')  
-        input_text = input_text.replace('\'', '')  
-        input_text = input_text.replace('(', '')  
-        input_text = input_text.replace(')', '')  
-        name_acc = nii_file.split(os.sep)[-2]
-        return video_tensor, input_text, onehotlabels, xray_image, name_acc, nii_file # add the nii_file for xray projections
-
-
     def __getitem__(self, key_id):
 
         # Randomly select an random instance for this id (patient, experiment, instance)

@@ -528,7 +528,7 @@ class CTClipInference(nn.Module):
     def xray_feature_extraction(self, directory, pth_name='xray_features.pth', append=True):
 
         # sanity check
-        assert(self.split in ['valid']) # NOTE: for train to work, need to change the __get_item__ method in the class to output the instance name
+        # assert(self.split in ['valid']) # NOTE: for train to work, need to change the __get_item__ method in the class to output the instance name
         assert(self.triplet == True)
 
         print('Retrieval Evaluation Starts\n')
@@ -551,11 +551,7 @@ class CTClipInference(nn.Module):
             for data in tqdm.tqdm(self.dl, desc="XRay Feature Extraction", leave=False):
                 # data = next(data_iterator)
                 _, _, _, xray, instance_name, _ = data  # NOTE: double-check the instance name, depends on the custom data loader.
-                new_instance_indices = [i for i, key in enumerate(instance_name)]
-
-                # Select only the new xray data for processing
-                instance_name = [instance_name[i] for i in new_instance_indices]
-                xray = xray[new_instance_indices].to(device)
+                xray = xray.to(device)
 
                 # Forward pass for the new xray latents
                 batch_xray_latents = self.CTClip.get_xray_latents(xray)
