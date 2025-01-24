@@ -49,7 +49,6 @@ class MedCLIPVisionModelResNet(nn.Module):
         img_embeds = self.model(pixel_values)
         return img_embeds
 
-
 class MedCLIPVisionModelViT(nn.Module):
     '''take an VIT model as the backbone.
     '''

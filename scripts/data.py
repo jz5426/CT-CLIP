@@ -184,11 +184,16 @@ class CTReportDataset(Dataset):
 
 class CTReportDataSplitter:
     """mainly for the evaluation experiment"""
-    def __init__(self, csv_file, labels, data_folder):
+    def __init__(self, csv_file, labels, data_folder, xray_embeddings=None):
         self.labels = labels
         self.xray_paths = []
         self.data_folder = data_folder
         self.parent_folder = os.path.basename(data_folder)
+
+        # optionally have the text and ct embeddings
+        if xray_embeddings:
+            self.xray_embeddings = torch.load(xray_embeddings)
+
         self.file_extension = 'mha' # make sure the xray data file path are the .mha file
         assert self.file_extension in data_folder
         self.accession_to_text = self.load_accession_text(csv_file)
@@ -229,6 +234,8 @@ class CTReportDataSplitter:
                     if len(onehotlabels) == 0:
                         continue
                     
+                    # TODO: get the corresponding xray embeddings
+                    # instance_name = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
                     samples.append((xray_file, onehotlabels[0]))
 
         # if the training size is smaller than 1, the internal validation should be extracted based on the splitted training set

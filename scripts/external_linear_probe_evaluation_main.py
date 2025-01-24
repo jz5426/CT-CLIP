@@ -57,6 +57,29 @@ def main(cfg: DictConfig):
 
     run(cfg)
 
+# def load_model_weights(clip_xray, ckpt_name='ours'):
+                       
+#     if 
+    # # if cfg_dot.linear_probing_params.is_evaluate_our_model:
+    # if ckpt_name == 'ours':
+    #     ckpt_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+    #     filename = f'swin/{}'
+    #     clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{filename}.pt')
+    #     pth_base_name = f'{ckpt_name}_pretrained_xray_encoder_features'
+    #     print(f'loaded checkpoints: {ckpt_name}')
+    # else:
+    #     # evalute the pretrained model from cxr_clip
+    #     ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
+    #     clip_xray.load_cxr_clip_xray_encoder(
+    #         '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
+    #         freeze_weights=True
+    #     )
+    #     pth_base_name = f'cxr_clip_{ckpt_name}_pretrained_xray_encoder_features'
+    #     print(f'loaded checkpoints: {ckpt_name}')
+    
+    # return clip_xray
+
+
 def run(cfg_dot):
 
     # print custom script argument
@@ -90,30 +113,55 @@ def run(cfg_dot):
         heads = 8
     )
 
+    #NOTE cfg is mainly for cxr_clip
+    if cfg_dot.baseline_type == 'cxr_clip':
+        #TODO: NEED TO MANUALLY TOGGLE THE SWIN AND RESNET STATE
+        xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
+    elif cfg_dot.baseline_type == 'medclip_resnet':
+        xray_model_type = cfg_dot.baseline_type
+        dim_xray = 2048
+        # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
+    elif cfg_dot.baseline_type == 'medclip_vit':
+        xray_model_type = cfg_dot.baseline_type
+        dim_xray = 768
+    elif cfg_dot.baseline_type == 'gloria_densenet':
+        xray_model_type = cfg_dot.baseline_type
+        dim_xray = 1024 #TODO: double check this.
+    elif cfg_dot.baseline_type == 'gloria_resnet':
+        xray_model_type = cfg_dot.baseline_type
+        dim_xray = 2048
+    else:
+        assert 'Non supported baseline model type'
+
     latent_size = 512
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
         dim_text = 768,
         dim_image = 294912,
-        xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet',
-        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048, # output size of the xray feature extractor
+        xray_model_type = xray_model_type,
+        dim_xray = dim_xray, # output size of the xray feature extractor
         dim_latent = latent_size, # latent size that match the CT vision encoder and the text encoder.
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
         use_mlm=False,
         downsample_image_embeds = False,
         use_all_token_embeds = False,
-        cfg=cfg
+        cfg=cfg,
+        baseline_type=cfg_dot.baseline_type # this dictate how the xray encoder is loaded to the model
     )
 
     if cfg_dot.linear_probing_params.is_evaluate_our_model:
+        # this using our pretrained model => load the custom checkpoint name defined in ckpt_name parameters in traing.yaml file
         ckpt_name = cfg_dot.linear_probing_params.ckpt_name
         clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
         pth_base_name = f'{ckpt_name}_pretrained_xray_encoder_features'
 
         print(f'loaded checkpoints: {ckpt_name}')
-    else:
+    elif cfg_dot.baseline_type == 'cxr_clip':
         # evalute the pretrained model from cxr_clip
+
+        #TODO: requires manually differentiate swin and res in the train.yaml file.
         ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
         clip_xray.load_cxr_clip_xray_encoder(
             '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
@@ -121,7 +169,16 @@ def run(cfg_dot):
         )
         pth_base_name = f'cxr_clip_{ckpt_name}_pretrained_xray_encoder_features'
         print(f'loaded checkpoints: {ckpt_name}')
-
+    else:
+        assert 'NOT SUPPOSED TO BE HERE'
+    # elif cfg_dot.baseline_type == 'medclip_resnet':
+    #     pass
+    # elif cfg_dot.baseline_type == 'medclip_vit':
+    #     pass
+    # elif cfg_dot.baseline_type == 'gloria_densenet':
+    #     pass
+    # elif cfg_dot.baseline_type == 'gloria_resnet':
+    #     pass
     # use the data portion to differentiate
     pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
 
@@ -195,13 +252,13 @@ def run(cfg_dot):
 
     train_dataset = CTReportXRayClassificationDataset(
         cfg=cfg,
-        data=train_sample, # actual data
+        data=train_sample, # actual data potentially with the embeddings
         split='train'
     )
 
     internal_val_dataset = CTReportXRayClassificationDataset(
         cfg=cfg,
-        data=internal_val_samples, # actual data
+        data=internal_val_samples, # actual data potentially with the embeddings
         split='train'
     )
 
@@ -285,8 +342,8 @@ def run(cfg_dot):
         'test_loader': test_loader,
         'device': device,
         'model': model,
-        'pretrained_cpt_dest': os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth'),
-        'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx'
+        'pretrained_cpt_dest': os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth'), # where to retrieve the best checkpoint
+        'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx' # where to save the files
     }
     test_loop(test_params)
 

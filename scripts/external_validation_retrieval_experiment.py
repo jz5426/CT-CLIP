@@ -385,9 +385,9 @@ def run(cfg_dot):
 
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip
     ckpt_names = [
-        'cxr_clip_vit', # xray encoder weights from cxr_clip
+        # 'cxr_clip_vit', # xray encoder weights from cxr_clip
         #our pretrained model
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        'swin/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
     ]
     for ckpt_name in ckpt_names:
         # NOTE: load the pretrained backbones

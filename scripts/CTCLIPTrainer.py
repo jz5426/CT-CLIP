@@ -329,6 +329,7 @@ class CTClipTrainer(nn.Module):
         # base file name for the checkpoints
         model_type = 'Swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'Resnet'
         self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}'
+        print('base file name: ', self.base_file_name)
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:

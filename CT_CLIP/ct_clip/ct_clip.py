@@ -5,6 +5,7 @@ from functools import partial, wraps
 from pathlib import Path
 
 from cxr_clip_utils import build_model, load_cxr_clip_image_encoder
+from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
@@ -1000,21 +1001,23 @@ class CTCLIPwithXray(nn.Module):
 
         if baseline_type == 'cxr_clip':
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["model"]["image_encoder"])
-
+            print('loaded xray encoder from cxr_clip')
+        
+        # NOTE: the rest of the baseline always load the pretrained model including the projection layer
         elif baseline_type == 'medclip_resnet':
-            #TODO: for other baseline
-            pass
+            # MedCLIPVisionModel(MedCLIPVisionModelResNet, checkpoint='')
+            print('loaded xray encoder from medclip_resnet')
+            
         elif baseline_type == 'medclip_vit':
-            #TODO: for other baseline
-            pass
+            # MedCLIPVisionModel(MedCLIPVisionModelViT, checkpoint='')
 
+            print('loaded xray encoder from medclip_vit')
+            
         elif baseline_type == 'gloria_densenet':
-            #TODO: for other baseline
-            pass
+            print('loaded xray encoder from gloria_densenet')
 
-        elif baseline_type == 'gloria_densenet':
-            #TODO: for other baseline
-            pass
+        elif baseline_type == 'gloria_resnet':
+            print('loaded xray encoder from gloria_resnet')
 
         self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
@@ -1195,6 +1198,14 @@ class CTCLIPwithXray(nn.Module):
             print("    freezing weights in CTCLIP")
             for param in self.CTCLIP.parameters():
                 param.requires_grad = False
+    
+    def load_medclip_resnet_encoder(self, medclip_resnet_path, freeze_Weights=False):
+
+        return
+
+    def load_medclip_vit_encoder(self, medclip_vit_path, freeze_Weights=False):
+
+        return
     
     def load_cxr_clip_xray_encoder(self, cxr_path, freeze_weights=False):
         """handle only loading the cxr_clip based xray encoder and its (not ours) projection layer only -- need special handling of the dictionary keys like below"""
