@@ -38,21 +38,21 @@ training_params:
   ct_cl_weight: 1.0
   learning_rate: 5e-5
   weight_decay: 1e-4
-  epochs: 52
-  min_epochs: 51
+  epochs: 202
+  min_epochs: 202
   use_pretrained_xray_encoder: true
 
 linear_probing_params:
   is_linear_probe_eval: true
   is_evaluate_our_model: true
-  num_epochs: 1000 # 500
+  num_epochs: 2 # 1000
   patience: 20
   batch_size: 4096
-  learning_rate: 2e-3 # 1e-3
+  learning_rate: 1e-2 # 1e-3
   progress_window: 2
   num_workers: 10
   ckpt_name: 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
-  train_data_portion: 0.5
+  train_data_portion: 0.2
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
   # ckpt_name: 'cxr_clip_vit' # check the external_validation_retrieval_experiment.py   'ours' means our pretrained cxr_clip base xray encoder
 

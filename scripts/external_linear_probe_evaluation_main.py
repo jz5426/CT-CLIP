@@ -21,7 +21,7 @@ from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
 from torch.utils.data import DataLoader
-from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
+from sklearn.metrics import average_precision_score, precision_recall_fscore_support, roc_auc_score
 import pandas as pd
 from zero_shot import CTClipInference, MimicCTClipInference
 import shutil
@@ -414,17 +414,19 @@ def test_loop(params):
     precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
 
     auc_micro = roc_auc_score(all_labels, all_probs, average='micro', multi_class='ovr')
+    pr_auc_score = average_precision_score(all_labels, all_probs, average='micro')
 
+    print(f'Test results for micro average: PR_AUC: {pr_auc_score:.4f}')
     print(f"Test Results for micro average: Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1 Score: {f1_micro:.4f}, AUC: {auc_micro:.4f}")
     print(f"Test Results for weighted average: Precision: {precision_weighted:.4f}, Recall: {recall_weighted:.4f}, F1 Score: {f1_weighted:.4f}")
     print(f"Test Results for macro average: Precision: {precision_macro:.4f}, Recall: {recall_macro:.4f}, F1 Score: {f1_macro:.4f}")
 
     print('Saving the metrics results')
     metrics_data = {
-        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC'],
-        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro],
-        'Weighted': [precision_weighted, recall_weighted, f1_weighted, -1],
-        'Macro': [precision_macro, recall_macro, f1_macro, -1]
+        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC'],
+        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score],
+        'Weighted': [precision_weighted, recall_weighted, f1_weighted, -1, -1],
+        'Macro': [precision_macro, recall_macro, f1_macro, -1, -1]
     }
 
     metrics_df = pd.DataFrame(metrics_data)
