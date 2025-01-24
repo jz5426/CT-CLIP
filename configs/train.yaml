@@ -45,7 +45,7 @@ training_params:
 linear_probing_params:
   is_linear_probe_eval: true
   is_evaluate_our_model: true
-  num_epochs: 2 # 1000
+  num_epochs: 1000 # 1000
   patience: 20
   batch_size: 4096
   learning_rate: 1e-2 # 1e-3
