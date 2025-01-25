@@ -155,7 +155,7 @@ def run(cfg_dot):
         downsample_image_embeds = False,
         use_all_token_embeds = False,
         cfg=cfg,
-        baseline_type=cfg_dot.baseline_type # this dictate how the xray encoder is loaded to the model
+        model_family=cfg_dot.baseline_type # this dictate how the xray encoder is loaded to the model
     )
 
     if cfg_dot.linear_probing_params.is_evaluate_our_model:

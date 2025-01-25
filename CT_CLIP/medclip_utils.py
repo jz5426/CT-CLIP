@@ -10,18 +10,12 @@ class MedCLIPVisionModelResNet(nn.Module):
     '''
     take resnet50 as backbone.
     '''
-    def __init__(self, checkpoint=None, medclip_checkpoint=None):
+    def __init__(self, medclip_checkpoint=None):
         super().__init__()
-        self.model = torchvision.models.resnet50(pretrained=True)
+        self.model = torchvision.models.resnet50(pretrained=False) # prevent from download everything
         num_fts = self.model.fc.in_features
         self.model.fc = nn.Linear(num_fts, 512, bias=False) # projection head
         self.WEIGHTS_NAME = 'pytorch_model.bin'
-        if checkpoint is not None:
-            state_dict = torch.load(os.path.join(checkpoint, self.WEIGHTS_NAME))
-            missing_keys, unexpected_keys = self.load_state_dict(state_dict, strict=False)
-            print('missing keys:', missing_keys)
-            print('unexpected keys:', unexpected_keys)
-            print('load model weight from:', checkpoint)
         if medclip_checkpoint is not None:
             self.load_from_medclip(medclip_checkpoint)
         
@@ -34,8 +28,15 @@ class MedCLIPVisionModelResNet(nn.Module):
             if 'vision_model' in key:
                 new_state_dict[key.replace('vision_model.','')] = state_dict[key]
         missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
-        print('missing keys:', missing_keys)
-        print('unexpected keys:', unexpected_keys)
+
+        # find the intersection
+        model_keys = set(self.state_dict().keys()) # this model's own dictionary
+        ckpt_keys = set(new_state_dict.keys()) # the pretrained dictionary
+        loaded_keys = ckpt_keys.intersection(model_keys) - set(missing_keys)
+        assert (len(self.model.state_dict().keys())) == len(loaded_keys) # check the model is indeed successfully loaded.
+
+        # print('missing keys:', missing_keys)
+        # print('unexpected keys:', unexpected_keys)
         print('load model weight from:', checkpoint)
 
     def forward(self, pixel_values, **kwargs):
@@ -49,23 +50,19 @@ class MedCLIPVisionModelResNet(nn.Module):
 class MedCLIPVisionModelViT(nn.Module):
     '''take an VIT model as the backbone.
     '''
-    def __init__(self, vision_checkpoint=None, medclip_checkpoint=None) -> None:
+    def __init__(self, medclip_checkpoint=None) -> None:
         '''args:
         checkpoint: load from the vision encoder checkpoint
         medclip_checkpoint: load from the vision-text dual encoders checkpoint
         '''
         super().__init__()
-        self.vit_type = 'microsoft/swin-tiny-patch4-window7-224' # constants.VIT_TYPE
-        self.model = AutoModel.from_pretrained(self.vit_type)
-        self.projection_head = nn.Linear(768, 512, bias=False) #NOTE: no projection head.
-
         self.WEIGHTS_NAME = 'pytorch_model.bin'
-        if vision_checkpoint is not None:
-            state_dict = torch.load(os.path.join(vision_checkpoint, self.WEIGHTS_NAME))
-            missing_keys, unexpected_keys = self.load_state_dict(state_dict, strict=False)
-            print('missing keys:', missing_keys)
-            print('unexpected keys:', unexpected_keys)
-            print('load model weight from:', vision_checkpoint)
+        self.vit_type = 'microsoft/swin-tiny-patch4-window7-224' # constants.VIT_TYPE
+        self.cache_dir = '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/cxr-swinTiny/'
+        self.model = AutoModel.from_pretrained(
+            self.vit_type, add_pooling_layer=False, cache_dir=self.cache_dir, local_files_only=True
+        )
+        self.projection_head = nn.Linear(768, 512, bias=False)
 
         if medclip_checkpoint is not None:
             self.load_from_medclip(medclip_checkpoint)
@@ -78,10 +75,17 @@ class MedCLIPVisionModelViT(nn.Module):
         for key in state_dict.keys():
             if 'vision_model' in key:
                 new_state_dict[key.replace('vision_model.','')] = state_dict[key]
-        missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
-        print('missing keys:', missing_keys)
-        print('unexpected keys:', unexpected_keys)
-        print('load model weight from:', checkpoint)
+        missing_keys, _ = self.load_state_dict(new_state_dict, strict=False)
+
+        # find the intersection
+        model_keys = set(self.state_dict().keys()) # this model's own dictionary
+        ckpt_keys = set(new_state_dict.keys()) # the pretrained dictionary
+        loaded_keys = ckpt_keys.intersection(model_keys) - set(missing_keys)
+        assert (len(self.model.state_dict().keys()) + 1) == len(loaded_keys) # check the model is indeed successfully loaded.
+
+        # print('missing keys:', missing_keys)
+        # print('unexpected keys:', unexpected_keys)
+        print('medclip ViT loads model weight from:', checkpoint)
 
     def forward(self, pixel_values, project=True):
         '''args:
@@ -98,32 +102,8 @@ class MedCLIPVisionModelViT(nn.Module):
 class MedCLIPVisionModel(nn.Module):
     def __init__(self,
         vision_cls=MedCLIPVisionModelResNet,
-        checkpoint_dir=None,
-        vision_checkpoint=None
+        checkpoint=None,
         ) -> None:
         super().__init__()
         assert vision_cls in [MedCLIPVisionModelResNet, MedCLIPVisionModelViT], 'vision_cls should be one of [MedCLIPVisionModel, MedCLIPVisionModelViT]'
-
-        self.vision_model = vision_cls(checkpoint=vision_checkpoint)
-
-        self.WEIGHTS_NAME = 'pytorch_model.bin'
-        if checkpoint_dir is not None:
-            zipf = zipfile.ZipFile(checkpoint_dir)
-            zipf.extractall(checkpoint_dir)
-            zipf.close()
-            state_dict = torch.load(os.path.join(checkpoint_dir, self.WEIGHTS_NAME))
-            self.load_state_dict(state_dict)
-            print('load model weight from:', checkpoint_dir)
-
-    # def from_pretrained(self, input_dir=None):
-    #     '''
-    #     If input_dir is None, download pretrained weight from google cloud and load.
-    #     input_dir should be the directory of the zipped file
-    #     '''
-    #     # unzip
-    #     zipf = zipfile.ZipFile(input_dir)
-    #     zipf.extractall(input_dir)
-    #     zipf.close()
-    #     state_dict = torch.load(os.path.join(input_dir, self.WEIGHTS_NAME))
-    #     self.load_state_dict(state_dict)
-    #     print('load model weight from:', input_dir)
+        self.vision_model = vision_cls(medclip_checkpoint=checkpoint)

@@ -770,7 +770,6 @@ class CTCLIP(nn.Module):
         text_latents = self.to_text_latent(text_embeds) #NOTE bxd
         image_latents = self.to_visual_latent(image_embeds) #NOTE bxd
 
-
         # normalize the features for both text and image
         text_latents, image_latents = map(l2norm, (text_latents, image_latents))
 
@@ -948,7 +947,7 @@ class CTCLIPwithXray(nn.Module):
             multiview_loss_weight = 0.1,
             checkpoint_during_training = False,
             cfg=None,
-            baseline_type='cxr_clip',
+            model_family='cxr_clip',
             **kwargs
     ):
         super().__init__()
@@ -999,27 +998,75 @@ class CTCLIPwithXray(nn.Module):
         self.cfg = cfg
         self.xray_model_type = xray_model_type
 
-        if baseline_type == 'cxr_clip':
+        if xray_model_type == 'cxr_clip_swin':
+            # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["model"]["image_encoder"])
-            print('loaded xray encoder from cxr_clip')
-        
+            self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
+
+            # load the cxr_clip pretrained weights to the swin encoder as well as the to_xray_latent prejection layer
+            ckpt_file_name = 'swint_mcc'
+            self.load_cxr_clip_xray_encoder(
+                '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
+                freeze_weights=True
+            )
+
+            print('loaded xray encoder from cxr_clip SWIN')
+        elif xray_model_type == 'cxr_clip_resnet':
+            # load the plain image encoder
+            self.xray_encoder = load_cxr_clip_image_encoder(cfg["model2"]["image_encoder"])
+            self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
+
+            # load the cxr_clip pretrained weights to the resnet encoder as well as the to_xray_latent prejection layer
+            ckpt_file_name = 'r50_mcc'
+            self.load_cxr_clip_xray_encoder(
+                '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
+                freeze_weights=True
+            )
+            print('loaded xray encoder from cxr_clip RESNET')
+
         # NOTE: the rest of the baseline always load the pretrained model including the projection layer
-        elif baseline_type == 'medclip_resnet':
-            # MedCLIPVisionModel(MedCLIPVisionModelResNet, checkpoint='')
+        elif xray_model_type == 'medclip_resnet':
+            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelResNet, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/resnet')
+
+            self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.model.fc)
+            medclip_vision_encoder.vision_model.model.fc = nn.Identity() # delete the fc layer
+            self.xray_encoder = copy.deepcopy(medclip_vision_encoder.vision_model.model)
+
+            self.freeze_xray_encoder_weights()
             print('loaded xray encoder from medclip_resnet')
             
-        elif baseline_type == 'medclip_vit':
-            # MedCLIPVisionModel(MedCLIPVisionModelViT, checkpoint='')
+        elif xray_model_type == 'medclip_vit':
+            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelViT, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/vit')
+            self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
+            self.xray_encoder = copy.deepcopy(medclip_vision_encoder.vision_model.model)
 
+            self.freeze_xray_encoder_weights()
             print('loaded xray encoder from medclip_vit')
             
-        elif baseline_type == 'gloria_densenet':
+        elif xray_model_type == 'gloria_densenet':
+            # TODO:
+            # self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
+
             print('loaded xray encoder from gloria_densenet')
 
-        elif baseline_type == 'gloria_resnet':
-            print('loaded xray encoder from gloria_resnet')
+        elif xray_model_type == 'gloria_resnet':
+            # TODO:
+            # self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
 
-        self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
+            print('loaded xray encoder from gloria_resnet')
+        else: 
+            # our pretrained model
+            ckpt_name = xray_model_type
+            self.xray_encoder = load_cxr_clip_image_encoder(
+                cfg["model"]["image_encoder"] if 'swin' in ckpt_name.lower() else cfg["model2"]["image_encoder"]
+            )
+            self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
+
+            # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+            #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by strict=True
+            self.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt', freeze_weights=True)
+            print(f'Loaded custom pretrained weights from {ckpt_name}')
+
 
     def forward(
             self,
@@ -1107,9 +1154,10 @@ class CTCLIPwithXray(nn.Module):
         # always extract xray feature representation
         enc_xray = self.xray_encoder(xray)
 
-        if self.xray_model_type == 'cxr_clip_resnet':
-            #TODO: double check for other baseline.
+        if self.xray_model_type == 'cxr_clip_resnet' or self.xray_model_type == 'medclip_resnet':
             enc_xray = enc_xray.view(enc_xray.shape[0], 1, -1)
+        elif self.xray_model_type == 'medclip_vit':
+            enc_xray = enc_xray.last_hidden_state
 
         enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features [batch size, patches, features] => [batch size, features]
         enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch of shape [batch size, features]
@@ -1219,6 +1267,8 @@ class CTCLIPwithXray(nn.Module):
         for key in saved_state_dict.keys():
             if 'image_encoder.' in key:
                 new_state_dict[key.replace("image_encoder.", "xray_encoder.", 1)] = saved_state_dict[key]
+            
+            # check the CXRClip.forward method line 28 and line 79: https://github.dev/Soombit-ai/cxr-clip/blob/31188857cc5e892c22c731b176080eb5d4484cf2/cxrclip/model/clip.py#L79-L80
             if 'image_projection.projection.weight' in key:
                 new_state_dict[key.replace("image_projection.projection.weight", "to_xray_latent.weight", 1)] = saved_state_dict[key]
 
@@ -1233,8 +1283,11 @@ class CTCLIPwithXray(nn.Module):
 
         #NOTE: freeze the image and text backbones
         if freeze_weights:
-            print("    freezing weights in XRay encoder including the projection layer")
-            for param in self.xray_encoder.parameters():
-                param.requires_grad = False
-            for param in self.to_xray_latent.parameters():
-                param.requires_grad = False
+            self.freeze_xray_encoder_weights()
+        
+    def freeze_xray_encoder_weights(self):
+        print("    freezing weights in XRay encoder including the projection layer")
+        for param in self.xray_encoder.parameters():
+            param.requires_grad = False
+        for param in self.to_xray_latent.parameters():
+            param.requires_grad = False

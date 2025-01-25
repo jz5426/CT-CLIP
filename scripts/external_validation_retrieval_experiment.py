@@ -48,91 +48,6 @@ def calc_similarity(arr1, arr2):
 
     return (oneandone / (oneandone + oneorzero))
 
-
-def load_model_weights(clip_xray, cfg, ckpt_name=None):
-
-    # if ckpt_name == None: 
-    #     # NOTE: random weights
-    #     ckpt_name = 'random'
-    #     pth_name = 'random_xray_features.pth'
-    #     rand_layers = 0
-    #     for layer in clip_xray.xray_encoder.modules():
-    #         if hasattr(layer, 'reset_parameters'):
-    #             rand_layers += 1
-    #             layer.weight.data = torch.randn_like(layer.weight)
-    #             if layer.bias is not None:
-    #                 layer.bias.data = torch.randn_like(layer.bias)
-    #     for layer in clip_xray.to_xray_latent.modules():
-    #         if hasattr(layer, 'reset_parameters'):
-    #             rand_layers += 1
-    #             layer.weight.data = torch.randn_like(layer.weight)
-    #             if layer.bias is not None:
-    #                 layer.bias.data = torch.randn_like(layer.bias)
-    #     print('Loaded ramdom weights')
-    #     print(f'number of randomly initialized layers {rand_layers}')
-
-    # el
-    
-    if ckpt_name == 'cxr_clip_vit':
-        #NOTE: RESNET AND SWIN NEED TO MANUALLY DEFINED IN THE train.yaml file
-        #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by load_cxr_clip_xray_encoder
-        assert cfg['model']['image_encoder']['model_type'] == 'swin' # make sure no conflict of expectation
-        ckpt_file_name = 'swint_mcc'
-        clip_xray.load_cxr_clip_xray_encoder(
-            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
-            freeze_weights=True
-        )
-        pth_name = 'cxr_xray_swin_features.pth'
-        print('Loaded weights from cxr_clip swin variant')
-    
-    elif ckpt_name == 'cxr_clip_resnet':
-        #NOTE: RESNET AND SWIN NEED TO MANUALLY DEFINED IN THE train.yaml file
-        #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by load_cxr_clip_xray_encoder
-        assert cfg['model']['image_encoder']['name'] == 'resnet' # make sure no conflict of expectation
-        ckpt_file_name = 'r50_mcc'
-        clip_xray.load_cxr_clip_xray_encoder(
-            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
-            freeze_weights=True
-        )
-        pth_name = 'cxr_xray_resnet_features.pth'
-        print('Loaded weights from cxr_clip resnet variant')
-
-    elif ckpt_name == 'medclip_resnet':
-        # PAY ATTENTION TO THE PROJECTION HEAD, IT SHOULD ALWAYS LOADED WITH PRETRAINED WEIGHTS (LP OR RETRIEVAL)
-        medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelResNet, vision_checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/resnet/')
-        
-        clip_xray.to_xray_latent = copy.deepcopy(medclip_vision_encoder.model.fc)
-        del medclip_vision_encoder.model.fc
-
-        clip_xray.xray_encoder = copy.deepcopy(medclip_vision_encoder.model)
-        # TODO: double check if 1. the weights are loaded properly; 2. the projection layer is loaded properly
-
-    elif ckpt_name == 'medclip_vit':
-        # PAY ATTENTION TO THE PROJECTION HEAD, IT SHOULD ALWAYS LOADED WITH PRETRAINED WEIGHTS (LP OR RETRIEVAL)
-        medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelViT, vision_checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/resnet/')
-        clip_xray.to_xray_latent = copy.deepcopy(medclip_vision_encoder.projection_head)
-        clip_xray.xray_encoder = copy.deepcopy(medclip_vision_encoder.model)
-    
-    elif ckpt_name == 'gloria_densenet':
-
-        # PAY ATTENTION TO THE PROJECTION HEAD, IT SHOULD ALWAYS LOADED WITH PRETRAINED WEIGHTS (LP OR RETRIEVAL)
-        pass
-
-    elif ckpt_name == 'gloria_resnet':
-
-        # PAY ATTENTION TO THE PROJECTION HEAD, IT SHOULD ALWAYS LOADED WITH PRETRAINED WEIGHTS (LP OR RETRIEVAL)
-        pass
-
-    else: # NOTE: our weights
-        #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by strict=True
-
-        # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
-        clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
-        pth_name = f'{ckpt_name}_xray_features.pth'
-        print(f'Loaded weights from {ckpt_name}')
-
-    return clip_xray, pth_name
-
 def recall_retrieval_evaluation(
         query_latents, 
         target_latents, 
@@ -169,20 +84,6 @@ def recall_retrieval_evaluation(
             top_k_indices = find_top_k_indices(crosses, value)
             if i in top_k_indices:
                 num_is_in += 1
-
-            # this is the baseline performance on the random pairs.
-            # for _ in range(len(dataloader)): # number of batches
-            #     size = (512,)
-            #     target_batch = torch.rand((batch_size, *size)).to('cuda')
-            #     targets = torch.rand((batch_size, *size)).to('cuda')
-
-            #     # Compute similarity in batch
-            #     cross_batch = torch.matmul(target_batch, targets.T)
-            #     crosses_rands.extend(cross_batch.cpu().tolist())
-
-            # top_k_indices = find_top_k_indices(crosses_rands, value)
-            # if i in top_k_indices:
-            #     num_random += 1
 
         clip = num_is_in / target_latents.shape[0]
         # rand = num_random / target_latents.shape[0]
@@ -368,49 +269,55 @@ def run(cfg_dot):
     )
     #dim_image = 131072,
 
-    #NOTE cfg is mainly for cxr_clip
-    if cfg_dot.baseline_type == 'cxr_clip':
-        xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
-        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
-    elif cfg_dot.baseline_type == 'medclip_resnet':
-        xray_model_type = cfg_dot.baseline_type
-        dim_xray = 2048
-        # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
-    elif cfg_dot.baseline_type == 'medclip_vit':
-        xray_model_type = cfg_dot.baseline_type
-        dim_xray = 768
-    elif cfg_dot.baseline_type == 'gloria_densenet':
-        xray_model_type = cfg_dot.baseline_type
-        dim_xray = 1024 #TODO: double check this.
-    elif cfg_dot.baseline_type == 'gloria_resnet':
-        xray_model_type = cfg_dot.baseline_type
-        dim_xray = 2048
-
-    clip_xray = CTCLIPwithXray(
-        image_encoder = image_encoder,
-        text_encoder = text_encoder,
-        dim_text = 768, # for ct-clip
-        dim_image = 294912, # for ct-clip
-        xray_model_type = xray_model_type,
-        dim_xray = dim_xray,
-        dim_latent = 512, # the target output latent dimension
-        extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
-        use_mlm=False,
-        downsample_image_embeds = False,
-        use_all_token_embeds = False,
-        cfg=cfg,
-        baseline_type=cfg_dot.baseline_type # this dictate how the xray encoder is loaded to the model
-    )
-
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip
     ckpt_names = [
-        # 'cxr_clip_vit', # xray encoder weights from cxr_clip
+        # 'cxr_clip_swin', # or cxr_clip_resnet ==> xray encoder weights from cxr_clip
+        'cxr_clip_resnet',
+        'medclip_resnet',
+        'medclip_vit',
+        # 'gloria_densenet',
+        # 'gloria_resnet',
         #our pretrained model
-        'swin/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
     ]
     for ckpt_name in ckpt_names:
-        # NOTE: load the pretrained backbones
-        clip_xray, _ = load_model_weights(clip_xray, cfg, ckpt_name)
+
+        #NOTE cfg is mainly for cxr_clip
+        if 'cxr_clip' in ckpt_name: # can be either cxr_clip_swin or cxr_clip_resnet
+            xray_model_type = ckpt_name #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+            dim_xray = 768 if 'swin' in ckpt_name else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
+        elif ckpt_name == 'medclip_resnet':
+            xray_model_type = ckpt_name
+            dim_xray = 2048
+            # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
+        elif ckpt_name == 'medclip_vit':
+            xray_model_type = ckpt_name
+            dim_xray = 768
+        elif ckpt_name == 'gloria_densenet':
+            xray_model_type = ckpt_name
+            dim_xray = 1024 #TODO: double check this.
+        elif ckpt_name == 'gloria_resnet':
+            xray_model_type = ckpt_name
+            dim_xray = 2048
+        else:
+            xray_model_type = ckpt_name
+            dim_xray = 768 if 'swin' in ckpt_name.lower() else 2048
+
+        clip_xray = CTCLIPwithXray(
+            image_encoder = image_encoder,
+            text_encoder = text_encoder,
+            dim_text = 768, # for ct-clip
+            dim_image = 294912, # for ct-clip
+            xray_model_type = xray_model_type,
+            dim_xray = dim_xray,
+            dim_latent = 512, # the target output latent dimension
+            extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+            use_mlm=False,
+            downsample_image_embeds = False,
+            use_all_token_embeds = False,
+            cfg=cfg,
+            model_family=ckpt_name # this dictate how the xray encoder is loaded to the model
+        )
 
         # check the trainable parameters
         # xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
