@@ -315,7 +315,7 @@ def run(cfg_dot):
             downsample_image_embeds = False,
             use_all_token_embeds = False,
             cfg=cfg,
-            model_family=ckpt_name # this dictate how the xray encoder is loaded to the model
+            auto_load_pretrained_weights = True # NOTE: automatically load the model weights based on the xray_model_type
         )
 
         # check the trainable parameters

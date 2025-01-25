@@ -403,13 +403,13 @@ def run(cfg):
         elif ckpt_name == 'medclip_resnet':
             xray_model_type = ckpt_name
             dim_xray = 2048
-            pth_name = 'swin_medclip_features.pth'
+            pth_name = 'resnet_medclip_features.pth'
 
             # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
         elif ckpt_name == 'medclip_vit':
             xray_model_type = ckpt_name
             dim_xray = 768
-            pth_name = 'resnet_medclip_features.pth'
+            pth_name = 'swin_medclip_features.pth'
         
         elif ckpt_name == 'gloria_densenet':
             xray_model_type = ckpt_name

@@ -59,34 +59,11 @@ def main(cfg: DictConfig):
 
     run(cfg)
 
-# def load_model_weights(clip_xray, ckpt_name='ours'):
-                       
-#     if 
-    # # if cfg_dot.linear_probing_params.is_evaluate_our_model:
-    # if ckpt_name == 'ours':
-    #     ckpt_name = 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
-    #     filename = f'swin/{}'
-    #     clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{filename}.pt')
-    #     pth_base_name = f'{ckpt_name}_pretrained_xray_encoder_features'
-    #     print(f'loaded checkpoints: {ckpt_name}')
-    # else:
-    #     # evalute the pretrained model from cxr_clip
-    #     ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
-    #     clip_xray.load_cxr_clip_xray_encoder(
-    #         '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
-    #         freeze_weights=True
-    #     )
-    #     pth_base_name = f'cxr_clip_{ckpt_name}_pretrained_xray_encoder_features'
-    #     print(f'loaded checkpoints: {ckpt_name}')
-    
-    # return clip_xray
-
 
 def run(cfg_dot):
 
     # print custom script argument
     print(f"is_linear_probe_eval: {cfg_dot.linear_probing_params.is_linear_probe_eval}")
-    print(f"is_evaluate_our_model: {cfg_dot.linear_probing_params.is_evaluate_our_model}")
     print(f"num_epochs: {cfg_dot.linear_probing_params.num_epochs}")
     print(f"patience: {cfg_dot.linear_probing_params.patience}")
     print(f"batch_size: {cfg_dot.linear_probing_params.batch_size}")
@@ -120,26 +97,32 @@ def run(cfg_dot):
         heads = 8
     )
 
-    #NOTE cfg is mainly for cxr_clip
-    if cfg_dot.baseline_type == 'cxr_clip':
-        #TODO: NEED TO MANUALLY TOGGLE THE SWIN AND RESNET STATE
-        xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
-        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
-    elif cfg_dot.baseline_type == 'medclip_resnet':
-        xray_model_type = cfg_dot.baseline_type
+    if 'cxr_clip' in cfg_dot.linear_probing_params.baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+        dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
+        pth_base_name = 'swin_cxr_xray_features.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_features.pth'
+    elif cfg_dot.linear_probing_params.baseline_type == 'medclip_resnet':
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 2048
+        pth_base_name = 'resnet_medclip_features.pth'
         # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
-    elif cfg_dot.baseline_type == 'medclip_vit':
-        xray_model_type = cfg_dot.baseline_type
+    elif cfg_dot.linear_probing_params.baseline_type == 'medclip_vit':
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 768
-    elif cfg_dot.baseline_type == 'gloria_densenet':
-        xray_model_type = cfg_dot.baseline_type
+        pth_base_name = 'swin_medclip_features.pth'
+    elif cfg_dot.linear_probing_params.baseline_type == 'gloria_densenet':
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 1024 #TODO: double check this.
-    elif cfg_dot.baseline_type == 'gloria_resnet':
-        xray_model_type = cfg_dot.baseline_type
+        pth_base_name = 'densenet_gloria_features.pth'
+    elif cfg_dot.linear_probing_params.baseline_type == 'gloria_resnet':
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 2048
+        pth_base_name = 'resnet_gloria_features.pth'
     else:
-        assert 'Non supported baseline model type'
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
+        dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type.lower() else 2048
+        pth_base_name = f'{xray_model_type}_xray_features.pth'
+
 
     latent_size = 512
     clip_xray = CTCLIPwithXray(
@@ -155,60 +138,33 @@ def run(cfg_dot):
         downsample_image_embeds = False,
         use_all_token_embeds = False,
         cfg=cfg,
-        model_family=cfg_dot.baseline_type # this dictate how the xray encoder is loaded to the model
+        auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
 
-    if cfg_dot.linear_probing_params.is_evaluate_our_model:
-        # this using our pretrained model => load the custom checkpoint name defined in ckpt_name parameters in traing.yaml file
-        ckpt_name = cfg_dot.linear_probing_params.ckpt_name
-        clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
-        pth_base_name = f'{ckpt_name}_pretrained_xray_encoder_features'
-
-        print(f'loaded checkpoints: {ckpt_name}')
-    elif cfg_dot.baseline_type == 'cxr_clip':
-        # evalute the pretrained model from cxr_clip
-
-        #TODO: requires manually differentiate swin and res in the train.yaml file.
-        ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
-        clip_xray.load_cxr_clip_xray_encoder(
-            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
-            freeze_weights=True
-        )
-        pth_base_name = f'cxr_clip_{ckpt_name}_pretrained_xray_encoder_features'
-        print(f'loaded checkpoints: {ckpt_name}')
-    else:
-        assert 'NOT SUPPOSED TO BE HERE'
-    # elif cfg_dot.baseline_type == 'medclip_resnet':
-    #     pass
-    # elif cfg_dot.baseline_type == 'medclip_vit':
-    #     pass
-    # elif cfg_dot.baseline_type == 'gloria_densenet':
-    #     pass
-    # elif cfg_dot.baseline_type == 'gloria_resnet':
-    #     pass
-    # use the data portion to differentiate
     pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
+    best_ckpt_destination = os.path.join(cfg_dot.linear_probing_params.cpt_dest, 'mimic_ct', f'{pth_base_name}_best_model.pth')
 
+    #NOTE: train on the synthetic dataset and evaluate on the mimic-ct (256 images) data
     split = 'train'
     train_split_inference = CTClipInference(
-            clip_xray,
-            cfg=cfg,
-            tokenizer=tokenizer,
-            data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
-            # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
-            img_embedding_paths = {
-                f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
-            },
-            text_embedding_paths = {
-                f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
-            },
-            reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
-            labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            results_folder="./inference_zeroshot_retrieval",
-            batch_size = 1024,
-            num_train_steps = -1, # placeholder
-            num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-            feature_extraction_mode = True # might be optional
+        clip_xray,
+        cfg=cfg,
+        tokenizer=tokenizer,
+        data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
+        # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
+        img_embedding_paths = {
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
+        },
+        text_embedding_paths = {
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
+        },
+        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        results_folder="./inference_zeroshot_retrieval",
+        batch_size = 1024,
+        num_train_steps = -1, # placeholder
+        num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        feature_extraction_mode = True # might be optional
     )  
 
     # get xray latent features from this particularly baseline model
@@ -290,7 +246,7 @@ def run(cfg_dot):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # remove the all files under the directory and resave it
+    # NOTE: remove the all files under the directory and resave it
     shutil.rmtree(cfg_dot.linear_probing_params.cpt_dest, ignore_errors=True)
 
     # Training and validation loop
@@ -324,8 +280,7 @@ def run(cfg_dot):
             best_val_loss = val_loss
             patience_counter = 0
             os.makedirs(cfg_dot.linear_probing_params.cpt_dest, exist_ok=True)
-            dest = os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth')
-            torch.save(model.state_dict(), dest)
+            torch.save(model.state_dict(), best_ckpt_destination)
         else:
             patience_counter += 1
 
@@ -333,7 +288,7 @@ def run(cfg_dot):
             print("Early stopping triggered.")
             break
 
-    print("Finetuning the Xray encoder completed ==> perform internal testing")
+    print("Finetuning the Xray encoder completed ==> perform external mimic-ct testing")
 
     # testing
     test_dataset = MimicCTReportXRayDataset(
@@ -362,7 +317,7 @@ def run(cfg_dot):
         'test_loader': test_loader,
         'device': device,
         'model': classification_model,
-        'pretrained_cpt_dest': os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth'), # where to retrieve the best checkpoint
+        'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
         'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx' # where to save the files
     }
     test_loop(test_params)
