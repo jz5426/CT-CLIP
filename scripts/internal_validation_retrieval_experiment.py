@@ -17,7 +17,6 @@ from torch.utils.data import DataLoader, TensorDataset
 from zero_shot import CTClipInference
 import pandas as pd
 
-
 def find_top_k_indices(values, k):
     # Check if the list has at least 50 values
     if len(values) < k:
@@ -90,7 +89,7 @@ def load_model_weights(clip_xray, cfg, ckpt_name=None):
 def map_retrieval_evaluation(
         query_latents, # dictionary of the xray latents
         target_latents, # xray or CT feature dictionary
-        data_folder = "./retrieval_results2/",
+        data_folder = "./internal_val_retrieval_results/",
         predicted_label_csv_path='path_to_valid_predicted_labels.csv',
         k_list=[1,5,10,50, 100],
         batch_size=1024,
@@ -191,7 +190,7 @@ def recall_retrieval_evaluation(
         query_latents, 
         target_latents, 
         list_ks=[5, 10, 50, 100], 
-        data_folder = "./retrieval_results2/",
+        data_folder = "./internal_val_retrieval_results/",
         file_name='xray2ct',
         batch_size=1024):
 
@@ -257,7 +256,6 @@ def recall_retrieval_evaluation(
     print(f'results saved to {output_file_path}')
     return list_texts
 
-
 @hydra.main(
         version_base=None,
         config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
@@ -311,17 +309,7 @@ def run(cfg):
     assert(image_features.keys() == text_features.keys())
     ct_report_embeddings = [(image_features[key], text_features[key]) for key in image_features.keys()]
 
-    ## the following are the upper baseline from CT-CLIP
-
-    # ct2ct
-    # print('evaluating ct 2 ct in MAP')
-    # map_retrieval_evaluation(
-    #     image_features,
-    #     target_latents=image_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     file_name='ct2ct_map'
-    # )
-
+    # ## the following are the upper baseline from CT-CLIP
     # # report2ct
     # print('evaluating report 2 ct in recall')
     # recall_retrieval_evaluation(
@@ -336,19 +324,28 @@ def run(cfg):
     #     target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
     #     file_name='ct2report_recall')
 
-    # print('evaluating ct 2 report in MAP')
-    # map_retrieval_evaluation(
-    #     image_features,
-    #     target_latents=text_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     file_name='ct2report_map')
-    
     # print('evaluating report 2 ct in MAP')
     # map_retrieval_evaluation(
     #     text_features,
     #     target_latents=image_features,
     #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
     #     file_name='report2ct_map')
+
+    # # ct2ct
+    # print('evaluating ct 2 ct in MAP')
+    # map_retrieval_evaluation(
+    #     image_features,
+    #     target_latents=image_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name='ct2ct_map'
+    # )
+
+    # print('evaluating ct 2 report in MAP')
+    # map_retrieval_evaluation(
+    #     image_features,
+    #     target_latents=text_features,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name='ct2report_map')
     
     # print('evaluating report 2 report in MAP')
     # map_retrieval_evaluation(
@@ -369,12 +366,6 @@ def run(cfg):
         local_files_only=True
         )
 
-    # print("---------")
-    # print(tokenizer.pad_token_id)
-    # print(tokenizer.mask_token_id)
-    # print("-----------")
-
-
     image_encoder = CTViT(
         dim = 512,
         codebook_size = 8192,
@@ -388,35 +379,72 @@ def run(cfg):
     )
     #dim_image = 131072,
 
-    clip_xray = CTCLIPwithXray(
-        image_encoder = image_encoder,
-        text_encoder = text_encoder,
-        dim_text = 768,
-        dim_image = 294912,
-        xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet',
-        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048,
-        dim_latent = 512,
-        extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
-        use_mlm=False,
-        downsample_image_embeds = False,
-        use_all_token_embeds = False,
-        cfg=cfg
-    )
-
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip
     ckpt_names = [
-        'cxr_clip', # xray encoder weights from cxr_clip
-        #our pretrained model
+        # baseline pretrained model (not pretrained by us)
+        'cxr_clip_swin', # xray encoder weights from cxr_clip
+        'cxr_clip_resnet',
+        'medclip_resnet',
+        'medclip_vit',
+        # 'gloria_densenet',
+        # 'gloria_resnet',
+        # our pretrained model
         'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_0.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_patient__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.0__ctcl_1.0__pretrained_True_50_epoch'
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
+        # TODO: add the resnet one
     ]
     for ckpt_name in ckpt_names:
+
+        #NOTE cfg is mainly for cxr_clip
+        if 'cxr_clip' in ckpt_name: # can be either cxr_clip_swin or cxr_clip_resnet
+            xray_model_type = ckpt_name #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+            dim_xray = 768 if 'swin' in ckpt_name else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
+            pth_name = 'swin_cxr_xray_features.pth' if 'swin' in ckpt_name else 'resnet_cxr_xray_features.pth'
+        elif ckpt_name == 'medclip_resnet':
+            xray_model_type = ckpt_name
+            dim_xray = 2048
+            pth_name = 'swin_medclip_features.pth'
+
+            # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
+        elif ckpt_name == 'medclip_vit':
+            xray_model_type = ckpt_name
+            dim_xray = 768
+            pth_name = 'resnet_medclip_features.pth'
+        
+        elif ckpt_name == 'gloria_densenet':
+            xray_model_type = ckpt_name
+            dim_xray = 1024 #TODO: double check this.
+            pth_name = 'densenet_gloria_features.pth'
+
+        elif ckpt_name == 'gloria_resnet':
+            xray_model_type = ckpt_name
+            dim_xray = 2048
+            pth_name = 'resnet_gloria_features.pth'
+
+        else:
+            # our pretrained model
+            xray_model_type = ckpt_name
+            dim_xray = 768 if 'swin' in ckpt_name.lower() else 2048
+            pth_name = f'{ckpt_name}_xray_features.pth'
+
+        # automatically load the model weights
+        clip_xray = CTCLIPwithXray(
+            image_encoder = image_encoder,
+            text_encoder = text_encoder,
+            dim_text = 768,
+            dim_image = 294912,
+            xray_model_type = xray_model_type,
+            dim_xray = dim_xray,
+            dim_latent = 512,
+            extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+            use_mlm=False,
+            downsample_image_embeds = False,
+            use_all_token_embeds = False,
+            cfg=cfg
+        )
+
         # NOTE: load the pretrained backbones
-        clip_xray, pth_name = load_model_weights(clip_xray, cfg, ckpt_name)
+        # clip_xray, pth_name = load_model_weights(clip_xray, cfg, ckpt_name)
 
         # check the trainable parameters
         # xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
@@ -445,83 +473,80 @@ def run(cfg):
             feature_extraction_mode = True # might be optional
         )  
 
-        # get xray latent features from a model
-        xray_features = retrival_evaluator.xray_feature_extraction(embedding_directory, pth_name=pth_name)
+        # get xray latent features from a model NOTE: to be safe, re-extract the xray feature everytime
+        xray_features = retrival_evaluator.xray_feature_extraction(embedding_directory, pth_name=pth_name, append=False)
 
         # make sure all three dictionary contains the same set of keys
         assert(image_features.keys() == text_features.keys() == xray_features.keys())
 
-        print('evaluating ct 2 xray MAP')
+        # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
+        triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
+
+
+        print('evaluating xray 2 ct_volumes recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[-1] for triple in triplet_embeddings],
+            target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{ckpt_name}_synxray2ct_recall')
+        print('evaluating ct_volumes 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[0] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{ckpt_name}_ct2synxray_recall')
+
+
+
+        print('evaluating xray 2 ct_reports recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[-1] for triple in triplet_embeddings],
+            target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{ckpt_name}_synxray2report_recall')
+        print('evaluating ct_reports 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[1] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{ckpt_name}_report2synxray_recall')
+
+
+
+        print('evaluating xray 2 ct_volumes MAP')
+        map_retrieval_evaluation(
+            xray_features,
+            target_latents=image_features,
+            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            file_name=f'{ckpt_name}_synxray2ct_map')
+        print('evaluating ct_volumes 2 xray MAP')
         map_retrieval_evaluation(
             image_features,
             target_latents=xray_features,
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             file_name=f'{ckpt_name}_ct2synxray_map')
 
-        print('evaluating report 2 xray MAP')
+
+
+        print('evaluating xray 2 ct_reports MAP')
+        map_retrieval_evaluation(
+            xray_features,
+            target_latents=text_features,
+            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            file_name=f'{ckpt_name}_synxray2report_map')
+        print('evaluating ct_reports 2 xray MAP')
         map_retrieval_evaluation(
             text_features,
             target_latents=xray_features,
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             file_name=f'{ckpt_name}_report2synxray_map')
-        
-        # xray2image retrieval evaluation with mean average precision metric
-        # print('evaluating xray 2 ct images MAP')
-        # map_retrieval_evaluation(
-        #     xray_features,
-        #     target_latents=image_features,
-        #     predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-        #     file_name=f'{ckpt_name}_synxray2ct_map')
 
-        # xray2xray retrieval evaluation with mean average precision metric
-        # print('evaluating xray 2 xray MAP')
-        # map_retrieval_evaluation(
-        #     xray_features,
-        #     target_latents=xray_features,
-        #     predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-        #     file_name=f'{ckpt_name}_synxray2synxray_map')
 
-        # print('evaluating xray 2 ct_report MAP')
-        # map_retrieval_evaluation(
-        #     xray_features,
-        #     target_latents=text_features,
-        #     predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-        #     file_name=f'{ckpt_name}_synxray2report_map')
 
-        # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
-        triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
-
-        # print('evaluating xray 2 xray recall')
-        # recall_retrieval_evaluation(
-        #     query_latents=[triple[-1] for triple in triplet_embeddings],
-        #     target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-        #     file_name=f'{ckpt_name}_synxray2synxray_recall')
-
-        # print('evaluating ct 2 xray recall')
-        # recall_retrieval_evaluation(
-        #     query_latents=[triple[0] for triple in triplet_embeddings],
-        #     target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-        #     file_name=f'{ckpt_name}_ct2synxray_recall')
-
-        # print('evaluating report 2 xray recall')
-        # recall_retrieval_evaluation(
-        #     query_latents=[triple[1] for triple in triplet_embeddings],
-        #     target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-        #     file_name=f'{ckpt_name}_report2synxray_recall')
-
-        # xray2image retrival evaluation with recall
-        # print('evaluating xray 2 ct images recall')
-        # recall_retrieval_evaluation(
-        #     query_latents=[triple[-1] for triple in triplet_embeddings],
-        #     target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-        #     file_name=f'{ckpt_name}_synxray2ct_recall')
-
-        # xray2report retrival evaluation with recall
-        # print('evaluating xray 2 ct reports recall')
-        # recall_retrieval_evaluation(
-        #     query_latents=[triple[-1] for triple in triplet_embeddings],
-        #     target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-        #     file_name=f'{ckpt_name}_synxray2report_recall')
+        # there is not symmetric retrieval and recall for this one.
+        print('evaluating xray 2 xray MAP')
+        map_retrieval_evaluation(
+            xray_features,
+            target_latents=xray_features,
+            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            file_name=f'{ckpt_name}_synxray2synxray_map')
 
 if __name__ == '__main__':
+
     main()

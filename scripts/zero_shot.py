@@ -538,6 +538,7 @@ class CTClipInference(nn.Module):
         # load the .pth object if exists
         saving_path = os.path.join(directory, self.split)
         xray_feature_path = os.path.join(saving_path, pth_name)
+
         xray_features = {}
 
         if not append:

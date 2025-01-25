@@ -1000,7 +1000,7 @@ class CTCLIPwithXray(nn.Module):
 
         if xray_model_type == 'cxr_clip_swin':
             # load the plain image encoder
-            self.xray_encoder = load_cxr_clip_image_encoder(cfg["model"]["image_encoder"])
+            self.xray_encoder = load_cxr_clip_image_encoder(cfg["swin"]["image_encoder"])
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
             if auto_load_pretrained_weights:
@@ -1016,7 +1016,7 @@ class CTCLIPwithXray(nn.Module):
 
         elif xray_model_type == 'cxr_clip_resnet':
             # load the plain image encoder
-            self.xray_encoder = load_cxr_clip_image_encoder(cfg["model2"]["image_encoder"])
+            self.xray_encoder = load_cxr_clip_image_encoder(cfg["resnet"]["image_encoder"])
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
             if auto_load_pretrained_weights:
@@ -1064,7 +1064,7 @@ class CTCLIPwithXray(nn.Module):
             # our pretrained model
             ckpt_name = xray_model_type
             self.xray_encoder = load_cxr_clip_image_encoder(
-                cfg["model"]["image_encoder"] if 'swin' in ckpt_name.lower() else cfg["model2"]["image_encoder"]
+                cfg["swin"]["image_encoder"] if 'swin' in ckpt_name.lower() else cfg["resnet"]["image_encoder"]
             )
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 

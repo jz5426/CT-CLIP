@@ -9,8 +9,9 @@ defaults:
   - dataloader: dataloader_128
   - tokenizer: clinical_bert
   - transform: clahe
-  - model: clip_resnet_clinical # clip_swin_clinical #
-  - model2: clip_resnet_clinical
+  - model: clip_resnet_clinical # clip_swin_clinical # mainly for training
+  - resnet: clip_resnet_clinical
+  - swin: clip_swin_clinical
   - optimizer: adamw
   - scheduler: cosine_epoch15_warmup1
   - loss: cxr_clip
