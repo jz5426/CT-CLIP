@@ -142,7 +142,8 @@ def run(cfg_dot):
     )
 
     pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
-    best_ckpt_destination = os.path.join(cfg_dot.linear_probing_params.cpt_dest, 'mimic_ct', f'{pth_base_name}_best_model.pth')
+    ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, 'mimic_ct')
+    best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{pth_base_name}_best_model.pth')
 
     #NOTE: train on the synthetic dataset and evaluate on the mimic-ct (256 images) data
     split = 'train'
@@ -246,8 +247,8 @@ def run(cfg_dot):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
-    # NOTE: remove the all files under the directory and resave it
-    shutil.rmtree(cfg_dot.linear_probing_params.cpt_dest, ignore_errors=True)
+    # NOTE: remove the all files under the 'mimic_ct' directory and resave it
+    shutil.rmtree(ckpt_parent_dir, ignore_errors=True)
 
     # Training and validation loop
     for epoch in range(cfg_dot.linear_probing_params.num_epochs):
@@ -279,7 +280,7 @@ def run(cfg_dot):
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            os.makedirs(cfg_dot.linear_probing_params.cpt_dest, exist_ok=True)
+            os.makedirs(ckpt_parent_dir, exist_ok=True)
             torch.save(model.state_dict(), best_ckpt_destination)
         else:
             patience_counter += 1
@@ -291,6 +292,7 @@ def run(cfg_dot):
     print("Finetuning the Xray encoder completed ==> perform external mimic-ct testing")
 
     # testing
+    # NOTE: use the mimic-ct external dataset to test it.
     test_dataset = MimicCTReportXRayDataset(
         cfg=cfg,
         data_folder='/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',

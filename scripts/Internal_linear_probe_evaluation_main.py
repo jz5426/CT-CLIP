@@ -19,7 +19,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from data import CTReportDataSplitter, CTReportXRayClassificationDataset
-from eval_utils import XrayClassificationModel
+from eval_utils import LinearProbeModel, XrayClassificationModel
 
 import os
 from cxr_clip_utils import convert_dictconfig_to_dict
@@ -32,8 +32,9 @@ from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
 from torch.utils.data import DataLoader
-from sklearn.metrics import precision_recall_fscore_support, roc_auc_score
+from sklearn.metrics import precision_recall_fscore_support, roc_auc_score, average_precision_score
 import pandas as pd
+import shutil
 
 @hydra.main(
         version_base=None,
@@ -72,7 +73,6 @@ def run(cfg_dot):
 
     # print custom script argument
     print(f"is_linear_probe_eval: {cfg_dot.linear_probing_params.is_linear_probe_eval}")
-    print(f"is_evaluate_our_model: {cfg_dot.linear_probing_params.is_evaluate_our_model}")
     print(f"num_epochs: {cfg_dot.linear_probing_params.num_epochs}")
     print(f"patience: {cfg_dot.linear_probing_params.patience}")
     print(f"batch_size: {cfg_dot.linear_probing_params.batch_size}")
@@ -101,42 +101,53 @@ def run(cfg_dot):
         heads = 8
     )
 
+    if 'cxr_clip' in cfg_dot.linear_probing_params.baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+        dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
+        pth_base_name = 'swin_cxr_xray_features.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_features.pth'
+    elif cfg_dot.linear_probing_params.baseline_type == 'medclip_resnet':
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
+        dim_xray = 2048
+        pth_base_name = 'resnet_medclip_features.pth'
+        # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
+    elif cfg_dot.linear_probing_params.baseline_type == 'medclip_vit':
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
+        dim_xray = 768
+        pth_base_name = 'swin_medclip_features.pth'
+    elif cfg_dot.linear_probing_params.baseline_type == 'gloria_densenet':
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
+        dim_xray = 1024 #TODO: double check this.
+        pth_base_name = 'densenet_gloria_features.pth'
+    elif cfg_dot.linear_probing_params.baseline_type == 'gloria_resnet':
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
+        dim_xray = 2048
+        pth_base_name = 'resnet_gloria_features.pth'
+    else:
+        xray_model_type = cfg_dot.linear_probing_params.baseline_type
+        dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type.lower() else 2048
+        pth_base_name = f'{xray_model_type}_xray_features.pth'
+
     latent_size = 512
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
         dim_text = 768,
         dim_image = 294912,
-        xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet',
-        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048, # output size of the xray feature extractor
+        xray_model_type = xray_model_type,
+        dim_xray = dim_xray, # output size of the xray feature extractor
         dim_latent = latent_size, # latent size that match the CT vision encoder and the text encoder.
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
         use_mlm=False,
         downsample_image_embeds = False,
         use_all_token_embeds = False,
-        cfg=cfg
+        cfg=cfg,
+        auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
 
-    if cfg_dot.linear_probing_params.is_evaluate_our_model:
-        ckpt_name = cfg_dot.linear_probing_params.ckpt_name
-        clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
-        pth_base_name = f'{ckpt_name}_pretrained_xray_encoder_features'
-
-        print(f'loaded checkpoints: {ckpt_name}')
-    else:
-        # evalute the model from cxr_clip
-        ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
-        clip_xray.load_cxr_clip_xray_encoder(
-            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
-            freeze_weights=True
-        )
-        pth_base_name = f'cxr_clip_{ckpt_name}_pretrained_xray_encoder_features'
-        print(f'loaded checkpoints: {ckpt_name}')
-
-    # use the data portion to differentiate
+    # modify the base file name => use the data portion to differentiate
     pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
-
-    # modify the base file name
+    ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, 'internal_val')
+    best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{pth_base_name}_best_model.pth')
 
     pathologies = ['Medical material',
                     'Arterial wall calcification', 
@@ -159,12 +170,7 @@ def run(cfg_dot):
 
     # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
     num_classes = len(pathologies)
-    model = XrayClassificationModel(
-        vision_model=clip_xray.xray_encoder, 
-        feature_projector=clip_xray.to_xray_latent, 
-        isLinearProbe=cfg_dot.linear_probing_params.is_linear_probe_eval, 
-        in_features=latent_size, 
-        num_classes=num_classes)
+    model = LinearProbeModel(in_features=latent_size, num_classes=num_classes)
 
     # sanity check the trainable parameters
     learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -178,7 +184,7 @@ def run(cfg_dot):
     )
     train_sample, internal_val_samples = train_data_splitter.prepare_samples(
         train_split=cfg_dot.linear_probing_params.train_data_portion,
-        val_split=0.2
+        val_split=0.2 # NOTE: always use 20% of the training data for validation.
     ) # validation split is always, train_split is controlable
 
     # sanity check
@@ -221,6 +227,9 @@ def run(cfg_dot):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
 
+    # NOTE: remove the all files under the 'internal_Val' directory and resave it
+    shutil.rmtree(ckpt_parent_dir, ignore_errors=True)
+
     # Training and validation loop
     for epoch in range(cfg_dot.linear_probing_params.num_epochs):
         
@@ -251,9 +260,8 @@ def run(cfg_dot):
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             patience_counter = 0
-            os.makedirs(cfg_dot.linear_probing_params.cpt_dest, exist_ok=True)
-            dest = os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth')
-            torch.save(model.state_dict(), dest)
+            os.makedirs(ckpt_parent_dir, exist_ok=True)
+            torch.save(model.state_dict(), best_ckpt_destination)
         else:
             patience_counter += 1
 
@@ -264,7 +272,7 @@ def run(cfg_dot):
     print("Finetuning the Xray encoder completed ==> perform internal testing")
 
     # testing
-    # use all the data for internal validation
+    # NOTE: use all the internal validation data for testing
     test_data_splitter = CTReportDataSplitter(
         csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
@@ -277,13 +285,26 @@ def run(cfg_dot):
         data=test_samples,
         split='valid'
     )
-    test_loader = DataLoader(test_dataset,num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=False)
+    print(f'size of the external test data: {len(test_dataset)}')
+
+    test_loader = DataLoader(
+        test_dataset,
+        num_workers=cfg_dot.linear_probing_params.num_workers,
+        batch_size=cfg_dot.linear_probing_params.batch_size,
+        shuffle=False)
+
+    # define a full classifier with encoder and projection layer learnt from the CT-RATE training set
+    classification_model = XrayClassificationModel(
+        vision_model=clip_xray.xray_encoder, 
+        feature_projector=clip_xray.to_xray_latent, 
+        pretrained_classifier=model # load the classifier layer
+    )
 
     test_params = {
         'test_loader': test_loader,
         'device': device,
-        'model': model,
-        'pretrained_cpt_dest': os.path.join(cfg_dot.linear_probing_params.cpt_dest, f'{pth_base_name}_best_model.pth'),
+        'model': classification_model,
+        'pretrained_cpt_dest': best_ckpt_destination,
         'metric_saving_path': f'./lp_evaluation_results/internal/{pth_base_name}_test_metrics_results.xlsx'
     }
     test_loop(test_params)
@@ -302,8 +323,8 @@ def test_loop(params):
     all_preds = []
     all_probs = []
 
-    # load the pretrained model TODO: uncomment when finished testing
-    model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
+    # only load the pretrained classifier model.fc retrieve exactly the LinearProbeModel defined above
+    model.fc.load_state_dict(torch.load(params['pretrained_cpt_dest']))
 
     print(f'Performing testing with size (in unit batch) {len(test_loader)}')
     with torch.no_grad():
@@ -315,7 +336,6 @@ def test_loop(params):
             outputs = model(inputs)
 
             # For multilabel classification, apply sigmoid and threshold at 0.5
-            # TODO: double check this.
             probs = torch.sigmoid(outputs)
             preds = (probs > 0.5).int()
 
@@ -337,17 +357,19 @@ def test_loop(params):
     auc_micro = roc_auc_score(all_labels, all_probs, average='micro', multi_class='ovr')
     auc_weighted = roc_auc_score(all_labels, all_probs, average='weighted', multi_class='ovr')
     auc_macro = roc_auc_score(all_labels, all_probs, average='macro', multi_class='ovr')
+    pr_auc_score = average_precision_score(all_labels, all_probs, average='micro')
 
+    print(f'Test results for micro average: PR_AUC: {pr_auc_score:.4f}')
     print(f"Test Results for micro average: Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1 Score: {f1_micro:.4f}, AUC: {auc_micro:.4f}")
     print(f"Test Results for weighted average: Precision: {precision_weighted:.4f}, Recall: {recall_weighted:.4f}, F1 Score: {f1_weighted:.4f}, AUC: {auc_weighted:.4f}")
     print(f"Test Results for macro average: Precision: {precision_macro:.4f}, Recall: {recall_macro:.4f}, F1 Score: {f1_macro:.4f}, AUC: {auc_macro:.4f}")
 
     print('Saving the metrics results')
     metrics_data = {
-        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC'],
-        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro],
-        'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted],
-        'Macro': [precision_macro, recall_macro, f1_macro, auc_macro]
+        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC'],
+        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score],
+        'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, -1],
+        'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, -1]
     }
 
     metrics_df = pd.DataFrame(metrics_data)
