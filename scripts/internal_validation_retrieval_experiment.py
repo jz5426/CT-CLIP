@@ -309,50 +309,50 @@ def run(cfg):
     assert(image_features.keys() == text_features.keys())
     ct_report_embeddings = [(image_features[key], text_features[key]) for key in image_features.keys()]
 
-    # ## the following are the upper baseline from CT-CLIP
-    # # report2ct
-    # print('evaluating report 2 ct in recall')
-    # recall_retrieval_evaluation(
-    #     query_latents=[embed[1] for embed in ct_report_embeddings],
-    #     target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
-    #     file_name='report2ct_recall')
+    ## the following are the upper baseline from CT-CLIP
+    # report2ct
+    print('evaluating report 2 ct in recall')
+    recall_retrieval_evaluation(
+        query_latents=[embed[1] for embed in ct_report_embeddings],
+        target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
+        file_name='report2ct_recall')
 
-    # # ct2report
-    # print('evaluating ct 2 report in recall')
-    # recall_retrieval_evaluation(
-    #     query_latents=[embed[0] for embed in ct_report_embeddings],
-    #     target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
-    #     file_name='ct2report_recall')
+    # ct2report
+    print('evaluating ct 2 report in recall')
+    recall_retrieval_evaluation(
+        query_latents=[embed[0] for embed in ct_report_embeddings],
+        target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
+        file_name='ct2report_recall')
 
-    # print('evaluating report 2 ct in MAP')
-    # map_retrieval_evaluation(
-    #     text_features,
-    #     target_latents=image_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     file_name='report2ct_map')
+    print('evaluating report 2 ct in MAP')
+    map_retrieval_evaluation(
+        text_features,
+        target_latents=image_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name='report2ct_map')
 
-    # # ct2ct
-    # print('evaluating ct 2 ct in MAP')
-    # map_retrieval_evaluation(
-    #     image_features,
-    #     target_latents=image_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     file_name='ct2ct_map'
-    # )
+    # ct2ct
+    print('evaluating ct 2 ct in MAP')
+    map_retrieval_evaluation(
+        image_features,
+        target_latents=image_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name='ct2ct_map'
+    )
 
-    # print('evaluating ct 2 report in MAP')
-    # map_retrieval_evaluation(
-    #     image_features,
-    #     target_latents=text_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     file_name='ct2report_map')
+    print('evaluating ct 2 report in MAP')
+    map_retrieval_evaluation(
+        image_features,
+        target_latents=text_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name='ct2report_map')
     
-    # print('evaluating report 2 report in MAP')
-    # map_retrieval_evaluation(
-    #     text_features,
-    #     target_latents=text_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     file_name='report2report_map')
+    print('evaluating report 2 report in MAP')
+    map_retrieval_evaluation(
+        text_features,
+        target_latents=text_features,
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        file_name='report2report_map')
 
     print('Starting Xray related retrieval experiments')
 
