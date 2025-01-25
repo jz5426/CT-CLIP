@@ -947,7 +947,7 @@ class CTCLIPwithXray(nn.Module):
             multiview_loss_weight = 0.1,
             checkpoint_during_training = False,
             cfg=None,
-            model_family='cxr_clip',
+            auto_load_pretrained_weights=True,
             **kwargs
     ):
         super().__init__()
@@ -1003,30 +1003,36 @@ class CTCLIPwithXray(nn.Module):
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["model"]["image_encoder"])
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
-            # load the cxr_clip pretrained weights to the swin encoder as well as the to_xray_latent prejection layer
-            ckpt_file_name = 'swint_mcc'
-            self.load_cxr_clip_xray_encoder(
-                '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
-                freeze_weights=True
-            )
+            if auto_load_pretrained_weights:
+                # load the cxr_clip pretrained weights to the swin encoder as well as the to_xray_latent prejection layer
+                ckpt_file_name = 'swint_mcc'
+                self.load_cxr_clip_xray_encoder(
+                    '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
+                    freeze_weights=True
+                )
+                print('loaded xray encoder from cxr_clip SWIN')
+            else:
+                print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
 
-            print('loaded xray encoder from cxr_clip SWIN')
         elif xray_model_type == 'cxr_clip_resnet':
             # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["model2"]["image_encoder"])
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
-            # load the cxr_clip pretrained weights to the resnet encoder as well as the to_xray_latent prejection layer
-            ckpt_file_name = 'r50_mcc'
-            self.load_cxr_clip_xray_encoder(
-                '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
-                freeze_weights=True
-            )
-            print('loaded xray encoder from cxr_clip RESNET')
+            if auto_load_pretrained_weights:
+                # load the cxr_clip pretrained weights to the resnet encoder as well as the to_xray_latent prejection layer
+                ckpt_file_name = 'r50_mcc'
+                self.load_cxr_clip_xray_encoder(
+                    '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
+                    freeze_weights=True
+                )
+                print('loaded xray encoder from cxr_clip RESNET')
+            else:
+                print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
 
         # NOTE: the rest of the baseline always load the pretrained model including the projection layer
         elif xray_model_type == 'medclip_resnet':
-            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelResNet, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/resnet')
+            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelResNet, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/resnet' if auto_load_pretrained_weights else None)
 
             self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.model.fc)
             medclip_vision_encoder.vision_model.model.fc = nn.Identity() # delete the fc layer
@@ -1036,7 +1042,7 @@ class CTCLIPwithXray(nn.Module):
             print('loaded xray encoder from medclip_resnet')
             
         elif xray_model_type == 'medclip_vit':
-            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelViT, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/vit')
+            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelViT, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/vit' if auto_load_pretrained_weights else None)
             self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
             self.xray_encoder = copy.deepcopy(medclip_vision_encoder.vision_model.model)
 
@@ -1062,10 +1068,13 @@ class CTCLIPwithXray(nn.Module):
             )
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
-            # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
-            #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by strict=True
-            self.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt', freeze_weights=True)
-            print(f'Loaded custom pretrained weights from {ckpt_name}')
+            if auto_load_pretrained_weights:
+                # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
+                #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by strict=True
+                self.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt', freeze_weights=True)
+                print(f'Loaded custom pretrained weights from {ckpt_name}')
+            else:
+                print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
 
 
     def forward(
@@ -1247,14 +1256,7 @@ class CTCLIPwithXray(nn.Module):
             for param in self.CTCLIP.parameters():
                 param.requires_grad = False
     
-    def load_medclip_resnet_encoder(self, medclip_resnet_path, freeze_Weights=False):
 
-        return
-
-    def load_medclip_vit_encoder(self, medclip_vit_path, freeze_Weights=False):
-
-        return
-    
     def load_cxr_clip_xray_encoder(self, cxr_path, freeze_weights=False):
         """handle only loading the cxr_clip based xray encoder and its (not ours) projection layer only -- need special handling of the dictionary keys like below"""
         warnings.filterwarnings('ignore')

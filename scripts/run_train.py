@@ -137,7 +137,7 @@ def run(cfg_dot):
 
     # )
 
-    xray_model_type = 'swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'resnet'
+    xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
@@ -151,11 +151,9 @@ def run(cfg_dot):
         use_mlm=False,
         downsample_image_embeds = False,
         use_all_token_embeds = False,
-        cfg=cfg
+        cfg=cfg,
+        auto_load_pretrained_weights=False
     )
-
-    # NOTE: load the pretrained backbones
-    ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar'
 
     # windows
     # clip_xray.load("C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\CT-CLIP_v2.pt",
@@ -167,6 +165,8 @@ def run(cfg_dot):
 
     # uhn cluster
     #NOTE: if cfg_dot.training_params.use_pretrained_xray_encoder is true => xray encoder and the projection layer is loaded with pretrained cxr_clip weights
+    # Load the CT-CLIP pretrained backbone to CT-CLIP and optionlly load the pretrained cxr_clip xray encoder weights
+    ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar' # NOTE: weights for cxr_clip xray encoder
     clip_xray.load(
         "/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
         f"/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{ckpt_name}" if cfg_dot.training_params.use_pretrained_xray_encoder else None
@@ -256,7 +256,6 @@ def run(cfg_dot):
     trainer.train_by_epoch(cfg_dot.training_params.epochs)
 
     """
-    TODO: check the performance when the xray encoder is initialized from scratch.
     TODO: brainstorm different approachs for the contrastive learning function.
     """
 

@@ -542,58 +542,58 @@ class CTClipTrainer(nn.Module):
                 writer.close()
                 del output
 
-                #save model based on epoch and always saving the last epoch
+                #NOTE save model based on predefined epoch and always saving the last epoch
                 self._save_ckpt(epoch, 'last_epoch.pt', 'saving the last epoch checkpoint', iteration)
-                if epoch % 50 == 0:
+                if epoch % 100 == 0 or epoch % 150 == 0 or epoch % 200 == 0 :
                     self._save_ckpt(epoch, f'{epoch}_epoch.pt', f'saving the {epoch}th epoch checkpoint', iteration)
 
-                # save model based on f1 metric
-                if self.best_f1_val_acc < f1:
-                    print(f'    Previous f1 {self.best_f1_val_acc} --> New best f1 {f1}')
-                    self.best_f1_val_acc = f1
-                    self._save_ckpt(epoch, 
-                                    'CTClip_best_f1_val.pt', 
-                                    'best f1 accuracy achieved!!', 
-                                    iteration)
+                # # save model based on f1 metric
+                # if self.best_f1_val_acc < f1:
+                #     print(f'    Previous f1 {self.best_f1_val_acc} --> New best f1 {f1}')
+                #     self.best_f1_val_acc = f1
+                #     self._save_ckpt(epoch, 
+                #                     'CTClip_best_f1_val.pt', 
+                #                     'best f1 accuracy achieved!!', 
+                #                     iteration)
                 
-                # save model based on flat acc
-                if self.best_flat_val_acc < flat_acc:
-                    print(f'    Previous flat accuracy {self.best_flat_val_acc} --> New best accuracy {flat_acc}')
-                    self.best_flat_val_acc = flat_acc
-                    self._save_ckpt(epoch, 
-                                    'CTClip_best_flat_acc_val.pt', 
-                                    'best flat accuracy achieved!!', 
-                                    iteration)
+                # # save model based on flat acc
+                # if self.best_flat_val_acc < flat_acc:
+                #     print(f'    Previous flat accuracy {self.best_flat_val_acc} --> New best accuracy {flat_acc}')
+                #     self.best_flat_val_acc = flat_acc
+                #     self._save_ckpt(epoch, 
+                #                     'CTClip_best_flat_acc_val.pt', 
+                #                     'best flat accuracy achieved!!', 
+                #                     iteration)
 
-                # save model based on contrastive loss on validation split DURING ITERATION EVALUATION
-                epoch_val_cl_loss = running_val_loss / val_size
+                # # save model based on contrastive loss on validation split DURING ITERATION EVALUATION
+                # epoch_val_cl_loss = running_val_loss / val_size
 
-                if not is_epoch_evaluation and self.best_iter_based_val_cl_loss > epoch_val_cl_loss:
-                    print(f'    Iteration evaluation: Previous validation contrastive loss {self.best_iter_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
-                    self.best_iter_based_val_cl_loss = epoch_val_cl_loss
-                    self._save_ckpt(epoch, 
-                                    'CTClip_lowest_val_cl_loss_during_iterations.pt', 
-                                    'best contrastive loss on validation split!!', 
-                                    iteration)
+                # if not is_epoch_evaluation and self.best_iter_based_val_cl_loss > epoch_val_cl_loss:
+                #     print(f'    Iteration evaluation: Previous validation contrastive loss {self.best_iter_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
+                #     self.best_iter_based_val_cl_loss = epoch_val_cl_loss
+                #     self._save_ckpt(epoch, 
+                #                     'CTClip_lowest_val_cl_loss_during_iterations.pt', 
+                #                     'best contrastive loss on validation split!!', 
+                #                     iteration)
 
-                # save model based on contrastive loss on validation split DURING EPOCH EVALUATION
-                if is_epoch_evaluation and self.best_epoch_based_val_cl_loss > epoch_val_cl_loss:
-                    print(f'    After epoch evaluation: Previous validation contrastive loss {self.best_epoch_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
-                    self.best_epoch_based_val_cl_loss = epoch_val_cl_loss
-                    self.early_stop_counter = 0 # reset if there are any improvement
-                    self._save_ckpt(epoch, 
-                                    'CTClip_lowest_val_cl_loss_after_per_epochs.pt', 
-                                    'best contrastive loss on validation split!!', 
-                                    iteration)
-                elif is_epoch_evaluation: # implies that based on epoch-to-epoch comparison, there is not improvement
-                    # early stopping based on val cl loss
-                    self.early_stop_counter += 1
-                    print(f"No improvement in validation loss for {self.early_stop_counter} epochs.")
+                # # save model based on contrastive loss on validation split DURING EPOCH EVALUATION
+                # if is_epoch_evaluation and self.best_epoch_based_val_cl_loss > epoch_val_cl_loss:
+                #     print(f'    After epoch evaluation: Previous validation contrastive loss {self.best_epoch_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
+                #     self.best_epoch_based_val_cl_loss = epoch_val_cl_loss
+                #     self.early_stop_counter = 0 # reset if there are any improvement
+                #     self._save_ckpt(epoch, 
+                #                     'CTClip_lowest_val_cl_loss_after_per_epochs.pt', 
+                #                     'best contrastive loss on validation split!!', 
+                #                     iteration)
+                # elif is_epoch_evaluation: # implies that based on epoch-to-epoch comparison, there is not improvement
+                #     # early stopping based on val cl loss
+                #     self.early_stop_counter += 1
+                #     print(f"No improvement in validation loss for {self.early_stop_counter} epochs.")
 
-                    # make sure number of minimum epochs are trained.
-                    if self.early_stop_counter >= self.epoch_based_patience and epoch > self.min_epochs:
-                        print(f"Early stopping triggered. Stopping training. {epoch}")
-                        return True # Exit training loop
+                #     # make sure number of minimum epochs are trained.
+                #     if self.early_stop_counter >= self.epoch_based_patience and epoch > self.min_epochs:
+                #         print(f"Early stopping triggered. Stopping training. {epoch}")
+                #         return True # Exit training loop
 
         return False
 

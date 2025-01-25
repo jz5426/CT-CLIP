@@ -18,6 +18,8 @@ class MedCLIPVisionModelResNet(nn.Module):
         self.WEIGHTS_NAME = 'pytorch_model.bin'
         if medclip_checkpoint is not None:
             self.load_from_medclip(medclip_checkpoint)
+        else:
+            print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
         
     def load_from_medclip(self, checkpoint):
         '''handle key mismatch of medclip and the vision encoder.
@@ -66,6 +68,8 @@ class MedCLIPVisionModelViT(nn.Module):
 
         if medclip_checkpoint is not None:
             self.load_from_medclip(medclip_checkpoint)
+        else:
+            print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
 
     def load_from_medclip(self, checkpoint):
         '''handle key mismatch of medclip and the vision encoder.

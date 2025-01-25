@@ -5,7 +5,6 @@ retrieval experiment for mimic
 import os
 from cxr_clip_utils import convert_dictconfig_to_dict
 import hydra
-from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT
 from omegaconf import DictConfig, OmegaConf
 import torch
 from transformer_maskgit import CTViT
@@ -17,7 +16,6 @@ import tqdm
 from torch.utils.data import DataLoader, TensorDataset
 from zero_shot import MimicCTClipInference
 import pandas as pd
-import copy
 
 def find_top_k_indices(values, k):
     # Check if the list has at least 50 values
