@@ -23,7 +23,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 from sklearn.metrics import average_precision_score, precision_recall_fscore_support, roc_auc_score
 import pandas as pd
-from zero_shot import CTClipInference, MimicCTClipInference
+from zero_shot import CTClipInference
 import shutil
 
 @hydra.main(
@@ -96,7 +96,7 @@ def run(cfg_dot):
         dim_head = 32,
         heads = 8
     )
-
+    # cxr_clip_swin, cxr_clip_resnet, medclip_resnet, medclip_vit, gloria_densenet, gloria_resnet, custom_checkpoint_name
     if 'cxr_clip' in cfg_dot.linear_probing_params.baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
         xray_model_type = cfg_dot.linear_probing_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
         dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
@@ -168,10 +168,6 @@ def run(cfg_dot):
         feature_extraction_mode = True # might be optional
     )  
 
-    # get xray latent features from this particularly baseline model
-    train_xray_features = train_split_inference.xray_feature_extraction('./', append=False)
-    print('Xray feature extraction completed')
-
     pathologies = ['Arterial wall calcification', #
                     'Pericardial effusion', #
                     'Coronary artery wall calcification', #
@@ -187,7 +183,13 @@ def run(cfg_dot):
     # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
     # that is, add a additional fc layer on top of the vision model and the feature_projector
     num_classes = len(pathologies)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = LinearProbeModel(in_features=latent_size, num_classes=num_classes)
+    model.to(device)
+
+    # get xray latent features from this particularly baseline model
+    train_xray_features = train_split_inference.xray_feature_extraction('./', append=False)
+    print('Xray feature extraction completed')
 
     # sanity check the trainable parameters
     learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -242,10 +244,6 @@ def run(cfg_dot):
     patience = cfg_dot.linear_probing_params.patience
     best_val_loss = float('inf')
     patience_counter = 0
-
-    # Device setup
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
 
     # NOTE: remove the all files under the 'mimic_ct' directory and resave it
     shutil.rmtree(ckpt_parent_dir, ignore_errors=True)
@@ -309,11 +307,14 @@ def run(cfg_dot):
         shuffle=False)
 
     # define a full classifier with encoder and projection layer learnt from the CT-RATE training set
+    # NOTE: since mimic is a new dataset, so it requires full forward pass of the vision encoder and then the projection layer
     classification_model = XrayClassificationModel(
         vision_model=clip_xray.xray_encoder, 
         feature_projector=clip_xray.to_xray_latent, 
-        pretrained_classifier=model # load the classifier layer
+        pretrained_classifier=model, # load the classifier layer
+        vision_model_type=xray_model_type
     )
+    classification_model.to(device)
 
     test_params = {
         'test_loader': test_loader,
@@ -328,6 +329,7 @@ def run(cfg_dot):
 
 
 def test_loop(params):
+
     test_loader = params['test_loader']
     device = params['device']
     model = params['model']

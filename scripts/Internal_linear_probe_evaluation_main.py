@@ -27,7 +27,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 import torch
 from transformer_maskgit import CTViT
-from transformers import BertModel
+from transformers import BertModel, BertTokenizer
 from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
@@ -35,6 +35,7 @@ from torch.utils.data import DataLoader
 from sklearn.metrics import precision_recall_fscore_support, roc_auc_score, average_precision_score
 import pandas as pd
 import shutil
+from zero_shot import CTClipInference
 
 @hydra.main(
         version_base=None,
@@ -89,6 +90,11 @@ def run(cfg_dot):
         '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
         local_files_only=True
     )
+    tokenizer = BertTokenizer.from_pretrained(
+        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+        do_lower_case=True,
+        local_files_only=True)
+
     image_encoder = CTViT(
         dim = 512,
         codebook_size = 8192,
@@ -100,7 +106,7 @@ def run(cfg_dot):
         dim_head = 32,
         heads = 8
     )
-
+    # assert cfg_dot.linear_probing_params.baseline_type in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
     if 'cxr_clip' in cfg_dot.linear_probing_params.baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
         xray_model_type = cfg_dot.linear_probing_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
         dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
@@ -149,6 +155,29 @@ def run(cfg_dot):
     ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, 'internal_val')
     best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{pth_base_name}_best_model.pth')
 
+    #NOTE: train on the synthetic dataset and evaluate on the validation set (~3000 images)
+    split = 'train'
+    train_split_inference = CTClipInference(
+        clip_xray,
+        cfg=cfg,
+        tokenizer=tokenizer,
+        data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
+        # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
+        img_embedding_paths = {
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
+        },
+        text_embedding_paths = {
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
+        },
+        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        results_folder="./inference_zeroshot_retrieval",
+        batch_size = 1024,
+        num_train_steps = -1, # placeholder
+        num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        feature_extraction_mode = True # might be optional
+    )  
+
     pathologies = ['Medical material',
                     'Arterial wall calcification', 
                     'Cardiomegaly', 
@@ -170,7 +199,13 @@ def run(cfg_dot):
 
     # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
     num_classes = len(pathologies)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = LinearProbeModel(in_features=latent_size, num_classes=num_classes)
+    model.to(device)
+
+    # get xray latent features from this particularly baseline model
+    train_xray_features = train_split_inference.xray_feature_extraction('./', append=False)
+    print('Xray feature extraction completed on the training split for this particular baseline model')
 
     # sanity check the trainable parameters
     learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -200,18 +235,30 @@ def run(cfg_dot):
     train_dataset = CTReportXRayClassificationDataset(
         cfg=cfg,
         data=train_sample, # actual data
+        data_embeddings=train_xray_features,
         split='train'
     )
 
     internal_val_dataset = CTReportXRayClassificationDataset(
         cfg=cfg,
         data=internal_val_samples, # actual data
+        data_embeddings=train_xray_features,
         split='train'
     )
 
     #load the data
-    train_loader = DataLoader(train_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
-    val_loader = DataLoader(internal_val_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
+    train_loader = DataLoader(
+        train_dataset, 
+        num_workers=cfg_dot.linear_probing_params.num_workers, 
+        batch_size=cfg_dot.linear_probing_params.batch_size, 
+        shuffle=True
+    )
+    val_loader = DataLoader(
+        internal_val_dataset, 
+        num_workers=cfg_dot.linear_probing_params.num_workers,
+        batch_size=cfg_dot.linear_probing_params.batch_size, 
+        shuffle=True
+    )
     train_size = len(train_loader)
 
     # Training loop configuration
@@ -222,10 +269,6 @@ def run(cfg_dot):
     patience = cfg_dot.linear_probing_params.patience
     best_val_loss = float('inf')
     patience_counter = 0
-
-    # Device setup
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
 
     # NOTE: remove the all files under the 'internal_Val' directory and resave it
     shutil.rmtree(ckpt_parent_dir, ignore_errors=True)
@@ -272,7 +315,33 @@ def run(cfg_dot):
     print("Finetuning the Xray encoder completed ==> perform internal testing")
 
     # testing
+
     # NOTE: use all the internal validation data for testing
+    split = 'valid'
+    validation_split_inference = CTClipInference(
+        clip_xray,
+        cfg=cfg,
+        tokenizer=tokenizer,
+        data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
+        # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
+        img_embedding_paths = {
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
+        },
+        text_embedding_paths = {
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
+        },
+        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        results_folder="./inference_zeroshot_retrieval",
+        batch_size = 1024,
+        num_train_steps = -1, # placeholder
+        num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        feature_extraction_mode = True # might be optional
+    )  
+    # get xray latent features from this particularly baseline model
+    val_xray_features = validation_split_inference.xray_feature_extraction('./', append=False)
+    print('Xray feature extraction completed on the validation split for this particular baseline model')
+
     test_data_splitter = CTReportDataSplitter(
         csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
@@ -283,6 +352,7 @@ def run(cfg_dot):
     test_dataset = CTReportXRayClassificationDataset(
         cfg=cfg,
         data=test_samples,
+        data_embeddings=val_xray_features,
         split='valid'
     )
     print(f'size of the external test data: {len(test_dataset)}')
@@ -293,17 +363,10 @@ def run(cfg_dot):
         batch_size=cfg_dot.linear_probing_params.batch_size,
         shuffle=False)
 
-    # define a full classifier with encoder and projection layer learnt from the CT-RATE training set
-    classification_model = XrayClassificationModel(
-        vision_model=clip_xray.xray_encoder, 
-        feature_projector=clip_xray.to_xray_latent, 
-        pretrained_classifier=model # load the classifier layer
-    )
-
     test_params = {
         'test_loader': test_loader,
         'device': device,
-        'model': classification_model,
+        'model': model,
         'pretrained_cpt_dest': best_ckpt_destination,
         'metric_saving_path': f'./lp_evaluation_results/internal/{pth_base_name}_test_metrics_results.xlsx'
     }
@@ -315,7 +378,7 @@ def run(cfg_dot):
 def test_loop(params):
     test_loader = params['test_loader']
     device = params['device']
-    model = params['model']
+    model = params['model'] # this is a classifer only.
     metric_saving_path = params['metric_saving_path']
     
     model.eval()
@@ -324,11 +387,13 @@ def test_loop(params):
     all_probs = []
 
     # only load the pretrained classifier model.fc retrieve exactly the LinearProbeModel defined above
-    model.fc.load_state_dict(torch.load(params['pretrained_cpt_dest']))
+    model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
 
     print(f'Performing testing with size (in unit batch) {len(test_loader)}')
     with torch.no_grad():
-        for inputs, labels in test_loader:
+        for data in test_loader:
+            inputs, labels = data # inputs are the embeddings
+
             inputs = inputs.to(device)
             labels = labels.to(device)
 

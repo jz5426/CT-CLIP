@@ -19,7 +19,11 @@ class LinearProbeModel(nn.Module):
         return self.fc(x)
 
 class XrayClassificationModel(nn.Module):
-    def __init__(self, vision_model: nn.Module, feature_projector: nn.Module, pretrained_classifier: nn.Module = None):
+    def __init__(self, 
+                vision_model: nn.Module, 
+                feature_projector: nn.Module, 
+                pretrained_classifier: nn.Module = None,
+                vision_model_type=''):
         """
         Args:
             vision_model (nn.Module): Pretrained vision model.
@@ -31,6 +35,8 @@ class XrayClassificationModel(nn.Module):
         
         # Assign the vision model
         self.vision_model = vision_model
+        self.vision_model_type = vision_model_type
+
         # Add a fully connected layer
         self.to_xray_latent=feature_projector
         
@@ -57,6 +63,12 @@ class XrayClassificationModel(nn.Module):
         """
         # Forward through the vision model
         enc_xray = self.vision_model(x) # [8, 49, 768]
+
+        if self.vision_model_type == 'cxr_clip_resnet' or self.vision_model_type == 'medclip_resnet':
+            enc_xray = enc_xray.view(enc_xray.shape[0], 1, -1)
+        elif self.vision_model_type == 'medclip_vit':
+            enc_xray = enc_xray.last_hidden_state
+
         enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features # [8, 768]
         enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch
         xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
