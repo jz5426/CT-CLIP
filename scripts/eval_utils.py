@@ -64,7 +64,7 @@ class XrayClassificationModel(nn.Module):
         # Forward through the vision model
         enc_xray = self.vision_model(x) # [8, 49, 768]
 
-        if self.vision_model_type == 'cxr_clip_resnet' or self.vision_model_type == 'medclip_resnet':
+        if 'resnet' in self.vision_model_type.lower():
             enc_xray = enc_xray.view(enc_xray.shape[0], 1, -1)
         elif self.vision_model_type == 'medclip_vit':
             enc_xray = enc_xray.last_hidden_state
