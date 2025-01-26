@@ -174,7 +174,7 @@ def run(cfg_dot):
         results_folder="./inference_zeroshot_retrieval",
         batch_size = 1024,
         num_train_steps = -1, # placeholder
-        num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        num_workers = cfg_dot.linear_probing_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         feature_extraction_mode = True # might be optional
     )  
 
@@ -335,7 +335,7 @@ def run(cfg_dot):
         results_folder="./inference_zeroshot_retrieval",
         batch_size = 1024,
         num_train_steps = -1, # placeholder
-        num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        num_workers = cfg_dot.linear_probing_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         feature_extraction_mode = True # might be optional
     )  
     # get xray latent features from this particularly baseline model

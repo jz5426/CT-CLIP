@@ -237,7 +237,7 @@ def run(cfg_dot):
         reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        results_folder=f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{xray_model_type}',
+        results_folder=f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{xray_model_type}', # put the check point in a subdirectory under CT-RATE-CHECKPOINTS
         num_train_steps = 100001,
         batch_style=cfg_dot.training_params.batch_style,
         batch_size = cfg_dot.training_params.batch_size,
