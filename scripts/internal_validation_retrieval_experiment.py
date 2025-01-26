@@ -46,46 +46,6 @@ def calc_similarity(arr1, arr2):
 
     return (oneandone / (oneandone + oneorzero))
 
-def load_model_weights(clip_xray, cfg, ckpt_name=None):
-
-    if ckpt_name == None: 
-        # NOTE: random weights
-        ckpt_name = 'random'
-        pth_name = 'random_xray_features.pth'
-        rand_layers = 0
-        for layer in clip_xray.xray_encoder.modules():
-            if hasattr(layer, 'reset_parameters'):
-                rand_layers += 1
-                layer.weight.data = torch.randn_like(layer.weight)
-                if layer.bias is not None:
-                    layer.bias.data = torch.randn_like(layer.bias)
-        for layer in clip_xray.to_xray_latent.modules():
-            if hasattr(layer, 'reset_parameters'):
-                rand_layers += 1
-                layer.weight.data = torch.randn_like(layer.weight)
-                if layer.bias is not None:
-                    layer.bias.data = torch.randn_like(layer.bias)
-        print('Loaded ramdom weights')
-        print(f'number of randomly initialized layers {rand_layers}')
-    elif ckpt_name == 'cxr_clip':
-        # NOTE: cxr-clip pretrained weights
-        ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
-        clip_xray.load_cxr_clip_xray_encoder(
-            '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
-            freeze_weights=True
-        )
-        pth_name = 'cxr_xray_features.pth'
-        print('Loaded weights from cxr_clip')
-    #TODO: add more baseline here
-    else:
-        # NOTE: our weights
-        # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
-        clip_xray.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt')
-        pth_name = f'{ckpt_name}_xray_features.pth'
-        print(f'Loaded weights from {ckpt_name}')
-
-    return clip_xray, pth_name
-
 def map_retrieval_evaluation(
         query_latents, # dictionary of the xray latents
         target_latents, # xray or CT feature dictionary
@@ -442,9 +402,6 @@ def run(cfg):
             use_all_token_embeds = False,
             cfg=cfg
         )
-
-        # NOTE: load the pretrained backbones
-        # clip_xray, pth_name = load_model_weights(clip_xray, cfg, ckpt_name)
 
         # check the trainable parameters
         # xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
