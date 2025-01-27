@@ -446,31 +446,7 @@ class CTClipInference(nn.Module):
         device = self.device
         with torch.no_grad():
             self.CTClip.eval()
-            # bar = tqdm.tqdm(self.dl, desc="Feature Extration", leave=False)
             idx = 0
-            # for batch_data in tqdm.tqdm(self.dl, desc="Feature Extration", leave=False):
-            #     valid_data, text, _, _, instance_name, _ = batch_data
-
-            #     # batch processing
-            #     text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-            #     output = self.CTClip(text_tokens, valid_data.cuda(), device=device, return_latents=self.feature_extraction_mode)
-            #     text_feature, img_feature, _ = output
-            #     text_feature, img_feature = text_feature.cpu().numpy(), img_feature.cpu().numpy()
-
-            #     # assign the features inside the batch in the dict
-            #     for i, key in enumerate(instance_name):
-            #         self.image_features[key] = img_feature[i, :]
-            #         self.text_features[key] = text_feature[i, :]
-        
-            #     # # save the feature embeddings every 100 iterations.
-            #     if append and idx % 100 == 0:
-            #         os.makedirs(saving_path, exist_ok=True)
-            #         torch.save(self.image_features, img_feature_path)
-            #         torch.save(self.text_features, text_feature_path)
-            #     else:
-            #         print('NOT SAVING IT THE EMBEDDINGS!!!')
-            #     idx += 1
-
             for batch_data in tqdm.tqdm(self.dl, desc="Feature Extraction", leave=False):
                 valid_data, text, _, _, instance_name, _ = batch_data
 

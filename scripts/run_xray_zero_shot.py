@@ -268,12 +268,14 @@ def run(cfg_dot):
 		test_bed_iter,
 		cfg_dot,
 		pathologies,
-		tokenizer
+		tokenizer,
+		report_encoder,
+		report_latent_projecter
 	)
 
 	#NOTE: directly compares the embeddings for zero-shot evaluation but not other dataset
 
-def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer):
+def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, report_encoder, report_latent_projector):
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	all_labels, all_preds, all_probs  = [], [], []
 
@@ -293,16 +295,18 @@ def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer):
 			# make zero-shot prediction for each batch of data of the test bed by computing dot product between text with ct or text and xray
 			for pathology in pathologies:
 				text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
-				# text_tokens=tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+				text_tokens=tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
 
 				if cfg.zero_shot_params.test_bed == 'internal_ct_val':
-					# similarity between text and ct
+					# similarity between text and ct , the text should be the 
 					num_batch_texts = num_batch_images = 1
 					text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts) #NOTE: 1xbxd
 					ct_latents = rearrange(ct_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 					logits = einsum('m t d, n i d -> m n t i', text_latents, ct_latents).squeeze() # [size of the ct, size of the text]
 				elif cfg.zero_shot_params.test_bed == 'mimic_ct':
 					pass
+
+				# TODO: MAKE SURE TO NORMALIZE THE FEATURE BEFORE PERFORMING COMPARISON
 			
 				probs = torch.sigmoid(logits)
 				preds = (probs > 0.5).int()

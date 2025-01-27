@@ -258,6 +258,7 @@ def run(cfg):
     split = 'valid'
     embedding_directory = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/'
     # get the preprocessed image and text features
+    # NOTE: these are normalized features
     saving_path = os.path.join(embedding_directory, split)
     img_feature_path = os.path.join(saving_path, 'image_features.pth')
     text_feature_path = os.path.join(saving_path, 'text_features.pth')
@@ -439,6 +440,7 @@ def run(cfg):
         # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
         triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
 
+        # NOTE: all features are normalized.
 
         print('evaluating xray 2 ct_volumes recall')
         recall_retrieval_evaluation(
@@ -450,8 +452,6 @@ def run(cfg):
             query_latents=[triple[0] for triple in triplet_embeddings],
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
             file_name=f'{ckpt_name}_ct2synxray_recall')
-
-
 
         print('evaluating xray 2 ct_reports recall')
         recall_retrieval_evaluation(

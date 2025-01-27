@@ -343,6 +343,8 @@ def run(cfg_dot):
         # get text features from the model.
         text_features = retrival_evaluator.extract_report_features()
 
+        # NOTE: all features are normalized.
+
         # # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
         triplet_embeddings = [('', text_features[key], xray_features[key]) for key in xray_features.keys()]
 

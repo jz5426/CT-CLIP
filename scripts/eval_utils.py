@@ -16,6 +16,7 @@ class LinearProbeModel(nn.Module):
         self.fc = nn.Linear(in_features, num_classes)
 
     def forward(self, x):
+        # NOTE: assume x is normalized
         return self.fc(x)
 
 class XrayClassificationModel(nn.Module):
@@ -75,7 +76,7 @@ class XrayClassificationModel(nn.Module):
 
         # projection and normalize the features, exactly the way during pretraining
         xray_latents = self.to_xray_latent(xray_embeds) # [8, 512] # NOTE: assume this is pretrained.
-        xray_latents = F.normalize(xray_latents, dim = -1)
+        xray_latents = F.normalize(xray_latents, dim = -1) # NOTE: IMPORTANT!
 
         # Forward through the fully connected layer and output logits
         # this is the extra layer to learn
