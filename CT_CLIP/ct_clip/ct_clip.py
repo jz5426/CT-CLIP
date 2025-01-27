@@ -995,8 +995,10 @@ class CTCLIPwithXray(nn.Module):
         #NOTE: with the xray encoder
         self.cfg = cfg
         self.xray_model_type = xray_model_type
-
-        if xray_model_type == 'cxr_clip_swin' or xray_model_type == '': # default options.
+        if xray_model_type == 'ct_clip':
+            self.xray_encoder = None
+            self.to_xray_latent = None
+        elif xray_model_type == 'cxr_clip_swin': # default options.
             # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["swin"]["image_encoder"])
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)

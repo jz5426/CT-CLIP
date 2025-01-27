@@ -29,11 +29,6 @@ import torch.nn.functional as F
 
 from CTCLIPTrainer import UniqueLevelSampler
 
-def cycle(dl):
-    while True:
-        for data in dl:
-            yield data
-
 def apply_softmax(array):
     """
     Applies softmax function to a torch array.
@@ -122,32 +117,32 @@ def run(cfg_dot):
 	if 'cxr_clip' in cfg_dot.zero_shot_params.baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
 		xray_model_type = cfg_dot.zero_shot_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
 		dim_xray = 768 if 'swin' in cfg_dot.zero_shot_params.baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
-		pth_base_name = 'swin_cxr_xray_features.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_features.pth'
+		pth_base_name = 'swin_cxr_xray.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray.pth'
 	elif cfg_dot.zero_shot_params.baseline_type == 'medclip_resnet':
 		xray_model_type = cfg_dot.zero_shot_params.baseline_type
 		dim_xray = 2048
-		pth_base_name = 'resnet_medclip_features.pth'
+		pth_base_name = 'resnet_medclip.pth'
 		# place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
 	elif cfg_dot.zero_shot_params.baseline_type == 'medclip_vit':
 		xray_model_type = cfg_dot.zero_shot_params.baseline_type
 		dim_xray = 768
-		pth_base_name = 'swin_medclip_features.pth'
+		pth_base_name = 'swin_medclip.pth'
 	elif cfg_dot.zero_shot_params.baseline_type == 'gloria_densenet':
 		xray_model_type = cfg_dot.zero_shot_params.baseline_type
 		dim_xray = 1024 #TODO: double check this.
-		pth_base_name = 'densenet_gloria_features.pth'
+		pth_base_name = 'densenet_gloria.pth'
 	elif cfg_dot.zero_shot_params.baseline_type == 'gloria_resnet':
 		xray_model_type = cfg_dot.zero_shot_params.baseline_type
 		dim_xray = 2048
-		pth_base_name = 'resnet_gloria_features.pth'
-	elif cfg_dot.zero_shot_params.baseline_type == '': # default to cxr_clip_swin for placeholder
+		pth_base_name = 'resnet_gloria.pth'
+	elif cfg_dot.zero_shot_params.baseline_type == 'ct_clip': # default to cxr_clip_swin for placeholder
 		xray_model_type = cfg_dot.zero_shot_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
-		dim_xray = 768
-		pth_base_name = 'swin_cxr_xray_features.pth'
+		dim_xray = -1
+		pth_base_name = 'ct_clip.pth'
 	else:
 		xray_model_type = cfg_dot.zero_shot_params.baseline_type
 		dim_xray = 768 if 'swin' in cfg_dot.zero_shot_params.baseline_type.lower() else 2048
-		pth_base_name = f'{xray_model_type}_xray_features.pth'
+		pth_base_name = f'{xray_model_type}_xray.pth'
 
 	# load the xray encoder or the pretrained one depends on the xray_model_type
 	# NOTE: this automatically loaded the xray encoderd depends on the baseline or type
@@ -173,16 +168,16 @@ def run(cfg_dot):
 	clip_xray.eval()
 
 	# pick the text encoder and its associated latent projector
-	report_encoder = copy.deepcopy(clip_xray.CTCLIP.text_transformer)
-	report_latent_projecter = copy.deepcopy(clip_xray.CTCLIP.to_text_latent)
-	report_encoder.to(device)
-	report_latent_projecter.to(device)
-	report_encoder.eval()
-	report_latent_projecter.eval()
+	# report_encoder = copy.deepcopy(clip_xray.CTCLIP.text_transformer)
+	# report_latent_projecter = copy.deepcopy(clip_xray.CTCLIP.to_text_latent)
+	# report_encoder.to(device)
+	# report_latent_projecter.to(device)
+	# report_encoder.eval()
+	# report_latent_projecter.eval()
 
 	# pick the vision encoder (ct_encoder or any xray encoder, depends on the config params) and its associated latent projector
-	vision_encoder = copy.deepcopy(clip_xray.CTCLIP.visual_transformer if cfg_dot.zero_shot_params.vision_encoder == 'ct_clip' else clip_xray.xray_encoder)
-	vision_latent_projector = copy.deepcopy(clip_xray.CTCLIP.to_visual_latent if cfg_dot.zero_shot_params.vision_encoder == 'ct_clip' else clip_xray.to_xray_latent)
+	vision_encoder = copy.deepcopy(clip_xray.CTCLIP.visual_transformer if cfg_dot.zero_shot_params.baseline_type == 'ct_clip' else clip_xray.xray_encoder)
+	vision_latent_projector = copy.deepcopy(clip_xray.CTCLIP.to_visual_latent if cfg_dot.zero_shot_params.baseline_type == 'ct_clip' else clip_xray.to_xray_latent)
 	vision_encoder.to(device)
 	vision_latent_projector.to(device)
 	vision_encoder.eval()
@@ -192,10 +187,10 @@ def run(cfg_dot):
 	# e.g: the internal val dataset, the mimic dataset, and potential future integration
 	
 	# some integrity constraint
-	if cfg_dot.zero_shot_params.vision_encoder == 'ct_clip':
+	if cfg_dot.zero_shot_params.baseline_type == 'ct_clip':
 		assert cfg_dot.zero_shot_params.test_bed == 'internal_ct_val'
-	if cfg_dot.zero_shot_params.vision_encoder != 'ct_clip':
-		assert cfg_dot.zero_shot_params.test_bed != 'internal_ct_val'
+	# if cfg_dot.zero_shot_params.baseline_type != 'ct_clip':
+	# 	assert cfg_dot.zero_shot_params.test_bed != 'internal_ct_val'
 
 	# load the dataset for test zero-shot performance.
 	if cfg_dot.zero_shot_params.test_bed == 'mimic_ct':
@@ -220,6 +215,12 @@ def run(cfg_dot):
 						'Bronchiectasis',
 						'Interlobular septal thickening'
 		]
+		test_bed_dl = DataLoader(
+			test_bed, 
+			num_workers=cfg_dot.linear_probing_params.num_workers, 
+			batch_size=cfg_dot.linear_probing_params.batch_size, 
+			shuffle=False)
+
 	elif cfg_dot.zero_shot_params.test_bed == 'internal_ct_val':
 		split = 'valid'
 		#NOTE: this returns the ct embeddings and the text embeddings and the xray image (paired up)
@@ -254,7 +255,6 @@ def run(cfg_dot):
 						'Interlobular septal thickening'
 		]
 
-        # custom_sampler = UniqueLevelSampler(test_bed.key_ids, cfg_dot.zero_shot_params.batch_size)
 		custom_sampler = UniqueLevelSampler(test_bed.key_ids, cfg_dot.zero_shot_params.batch_size)
 		test_bed_dl = DataLoader(
 			test_bed,
@@ -262,40 +262,43 @@ def run(cfg_dot):
 			shuffle = False,
 			batch_sampler=custom_sampler
 		)
-		test_bed_iter = cycle(test_bed_dl)
 	else:
 		NotImplementedError(f'{cfg_dot.zero_shot_params.test_bed} is not supported at the moment')
 	
 	# run zero-shot evaluation
-	print(f'size of the test bed in unit batch: {len(test_bed_dl)}')
 	zero_shot_evaluation(
-		test_bed_iter,
+		test_bed_dl,
 		cfg_dot,
 		pathologies,
 		tokenizer,
-		clip_xray
-		# report_encoder,
-		# report_latent_projecter
+		clip_xray,
+        metric_saving_path=f'./lp_evaluation_results/zero_shot/{pth_base_name}_zero_shot_metric_results.xlsx'
 	)
 
-	#NOTE: directly compares the embeddings for zero-shot evaluation but not other dataset
-
-def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, xray_ctclip : CTCLIPwithXray):
+def zero_shot_evaluation(
+		valid_dl, 
+		cfg, 
+		pathologies, 
+		tokenizer, 
+		xray_ctclip : CTCLIPwithXray, 
+		metric_saving_path
+	):
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	all_labels, all_preds, all_probs  = [], [], []
-
+	is_xray = False
 	with torch.no_grad():
-		for val_data in valid_dl_iter: #NOTE: might need to change this to evaluate on the whole validation set.			
+		for val_data in valid_dl:
+
+			# val_data = next(valid_dl_iter)
+			num_batch_texts = num_batch_images = 1
 			if cfg.zero_shot_params.test_bed == 'internal_ct_val':
-				ct_latents, _, onehotlabels, _, _, _ = val_data
-				# text_latents = text_latents.to(device)
-				ct_latents = ct_latents.to(device)
-				num_batch_texts = num_batch_images = 1
-				ct_latents = rearrange(ct_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
+				vision_latents, _, onehotlabels, xray_image, _, _ = val_data
+				vision_latents = vision_latents.to(device)
+				vision_latents = rearrange(vision_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 			elif cfg.zero_shot_params.test_bed == 'mimic_ct':
 				# valid_data is the xray_image
-				xray_image, report, onehotlabels, _ = val_data
-				xray_image = xray_image.to(device)
+				xray_image, _, onehotlabels, _ = val_data
+			xray_image = xray_image.to(device)
 
 			# make zero-shot prediction for each batch of data of the test bed by computing dot product between text with ct or text and xray
 			preds = [[] for _ in range(onehotlabels.shape[0])] # hold the predicted multi-label vector for each sample in the batch
@@ -303,14 +306,18 @@ def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, xray_ctclip
 			for pathology in pathologies:
 				text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
 				text_tokens=tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+				text_latents = xray_ctclip.get_report_latent(text_tokens) # automatically normalized the features
+				text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts) #NOTE: 1xbxd
 
-				if cfg.zero_shot_params.test_bed == 'internal_ct_val':
-					# similarity between text and ct , the text should be the 
-					text_latents = xray_ctclip.get_report_latent(text_tokens) # automatically normalized the features
-					text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts) #NOTE: 1xbxd
-					logits = einsum('m t d, n i d -> m n t i', text_latents, ct_latents).squeeze() # [size of the ct, size of the text]
-				elif cfg.zero_shot_params.test_bed == 'mimic_ct':
-					pass
+				# NOTE: if baselin_type is 'ct_clip', it directly compute the logits below
+				# otherwise, we compute xray latents
+				if cfg.zero_shot_params.baseline_type != 'ct_clip':
+					# get normalized xray latents
+					vision_latents = xray_ctclip.get_xray_latents(xray_image)
+					vision_latents = rearrange(vision_latents, '(m b) ... -> m b ...', m = num_batch_texts)
+					is_xray = True
+				# compute logits (similarity)
+				logits = einsum('m t d, n i d -> m n t i', text_latents, vision_latents).squeeze() # [size of the ct, size of the text]
 
 				path_probs = apply_softmax(logits)
 				for idx in range(path_probs.shape[-1]): # batch size
@@ -321,7 +328,6 @@ def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, xray_ctclip
 			all_labels.extend(onehotlabels.cpu().numpy())
 			all_probs.extend(probs)
 			all_preds.extend(preds)
-			# break
 
 		# Convert to numpy arrays for metric computation
 		# all of the following should be in shape (number of samples, labels)
@@ -348,7 +354,7 @@ def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, xray_ctclip
 		pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='micro')
 		pr_auc_score_macro = average_precision_score(all_labels, all_probs, average='macro')
 		pr_auc_score_weighted = average_precision_score(all_labels, all_probs, average='weighted')
-
+		print('Results are computed with xray encoder' if is_xray else 'Results are computed with CT encoder')
 		print(f"Test Results for micro average: F1 Score: {f1_micro:.4f}, Recall: {recall_micro:.4f}, Precision: {precision_micro:.4f}, AUC: {auc_micro:.4f}, PR_AUC: {pr_auc_score_micro:.4f}")
 		print(f"Test Results for weighted average: F1 Score: {f1_weighted:.4f}, Recall: {recall_weighted:.4f}, Precision: {precision_weighted:.4f}, AUC: {auc_weighted:.4f}, PR_AUC: {pr_auc_score_weighted:.4f}")
 		print(f"Test Results for macro average: F1 Score: {f1_macro:.4f}, Recall: {recall_macro:.4f}, Precision: {precision_macro:.4f}, AUC: {auc_macro:.4f}, PR_AUC: {pr_auc_score_macro:.4f}")
@@ -361,6 +367,10 @@ def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, xray_ctclip
 			'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro]
 		}
 
+		metrics_df = pd.DataFrame(metrics_data)
+		os.makedirs(os.path.dirname(metric_saving_path), exist_ok=True)
+		metrics_df.to_excel(metric_saving_path, index=False)
+		print(f"Metric results saved to {metric_saving_path}")
 
 
 if __name__ == '__main__':
