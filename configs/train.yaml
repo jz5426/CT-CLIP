@@ -55,7 +55,11 @@ linear_probing_params:
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
 
 zero_shot_params:
-  todo: ''
+  baseline_type: '' # just like the one in linear probe
+  vision_encoder: 'ct_clip' # should be either the baseline_type or 'ct_clip'
+  test_bed: 'internal_ct_val' # the dataset that the vision and text encoders suppose to run on.
+  num_workers: 10
+  batch_size: 1024
 
 hydra:
   run:

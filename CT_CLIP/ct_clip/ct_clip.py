@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from functools import partial, wraps
 from pathlib import Path
 
-from cxr_clip_utils import build_model, load_cxr_clip_image_encoder
+from cxr_clip_utils import load_cxr_clip_image_encoder
 from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT
 import torch
 import torch.nn.functional as F
@@ -16,8 +16,6 @@ from einops.layers.torch import Rearrange, Reduce
 from ct_clip.mlm import MLM
 from ct_clip.visual_ssl import SimSiam, SimCLR
 
-from transformers import BertTokenizer, BertModel
-import torchvision
 import warnings
 # helper functions
 
@@ -998,7 +996,7 @@ class CTCLIPwithXray(nn.Module):
         self.cfg = cfg
         self.xray_model_type = xray_model_type
 
-        if xray_model_type == 'cxr_clip_swin':
+        if xray_model_type == 'cxr_clip_swin' or xray_model_type == '': # default options.
             # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["swin"]["image_encoder"])
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)

@@ -428,7 +428,6 @@ class MimicCTReportXRayDataset:
             accession_number = accession_number[:-len(f'.{self.file_extension}')] # hadm_id
             if accession_number not in self.accession_to_text:
                 assert False
-                continue
 
             impression_text = self.accession_to_text[accession_number] # finding + impresion
             text_final = ""
@@ -443,7 +442,6 @@ class MimicCTReportXRayDataset:
             onehotlabels = label_df[label_df["hadm_id"] == accession_number]["one_hot_labels"].values
             if len(onehotlabels) == 0:
                 assert False
-                continue
             samples.append((xray_file, text_final, onehotlabels[0], accession_number))
 
         return samples

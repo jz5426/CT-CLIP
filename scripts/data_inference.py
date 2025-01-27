@@ -214,18 +214,6 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
         rgb_image = Image.fromarray(rgb_image, mode="RGB")
 
-        # # Step 3: Use torch.from_numpy for fast conversion (shares memory)
-        # tensor_image = torch.from_numpy(np_image)
-        
-        # # Step 4: Ensure the tensor has the correct dtype
-        # tensor_image = tensor_image.to(torch.float32)
-        
-        # # Step 5: Normalize NOTE: should be according to the cxr_clip, the inference version
-        # # tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
-        
-        # # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)
-        # tensor_image = tensor_image.unsqueeze(0)  # Add batch dimension
-        
         return rgb_image
 
     def prepare_samples(self):
@@ -275,53 +263,4 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
                         (ct_embedding, text_embedding, onehotlabels[0], xray_file)
                     )
 
-        return samples
-
-
-    def prepare_samples_backup(self):
-        samples = []
-        xray_path_dirs = self.xray_data_folder.split(os.sep)
-        patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
-
-        # Read labels once outside the loop
-        test_df = pd.read_csv(self.labels)
-        test_label_cols = list(test_df.columns[1:])
-        test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
-
-        for patient_folder in tqdm.tqdm(patient_folders):
-            accession_folders = glob.glob(os.path.join(patient_folder, '*'))
-
-            for accession_folder in accession_folders:
-                # nii_files = glob.glob(os.path.join(accession_folder, '*.npz'))
-                # nii_files = glob.glob(os.path.join(accession_folder, '*.nii.gz')) #NOTE: self modified
-                nii_files = glob.glob(os.path.join(accession_folder, '*.pt'))
-
-
-                for nii_file in nii_files:
-                    path_dirs = nii_file.split(os.sep)
-                    accession_number = path_dirs[-1]
-
-                    accession_number = accession_number.replace(".pt", ".nii.gz")
-
-                    # corresponding xray file
-                    xray_file = os.sep.join(xray_path_dirs + path_dirs[path_dirs.index('valid_preprocessed_ct')+1:])
-                    xray_file = xray_file.replace('.pt', '.mha')
-
-                    if accession_number not in self.accession_to_text:
-                        continue
-
-                    impression_text = self.accession_to_text[accession_number]
-                    text_final = ""
-                    for text in list(impression_text):
-                        text = str(text)
-                        if text == "Not given.":
-                            text = ""
-
-                        text_final = text_final + text
-
-                    onehotlabels = test_df[test_df["VolumeName"] == accession_number]["one_hot_labels"].values
-                    if len(onehotlabels) > 0:
-                        samples.append((nii_file, text_final, onehotlabels[0], xray_file))
-                        self.paths.append(nii_file)
-                        self.xray_paths.append(xray_file)
         return samples
