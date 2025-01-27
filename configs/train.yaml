@@ -54,8 +54,8 @@ linear_probing_params:
   train_data_portion: 1.
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
 
-retrieval_params:
-  filter_patient_instances: true
+zero_shot_params:
+  todo: ''
 
 hydra:
   run:
