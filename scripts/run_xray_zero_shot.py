@@ -25,6 +25,7 @@ from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
 import copy
+import torch.nn.functional as F
 
 from CTCLIPTrainer import UniqueLevelSampler
 
@@ -168,6 +169,8 @@ def run(cfg_dot):
 	)
 	clip_xray.load_ctclip('/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt')
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+	clip_xray.to(device)
+	clip_xray.eval()
 
 	# pick the text encoder and its associated latent projector
 	report_encoder = copy.deepcopy(clip_xray.CTCLIP.text_transformer)
@@ -269,50 +272,59 @@ def run(cfg_dot):
 		cfg_dot,
 		pathologies,
 		tokenizer,
-		report_encoder,
-		report_latent_projecter
+		clip_xray
+		# report_encoder,
+		# report_latent_projecter
 	)
 
 	#NOTE: directly compares the embeddings for zero-shot evaluation but not other dataset
 
-def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, report_encoder, report_latent_projector):
+def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, xray_ctclip : CTCLIPwithXray):
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	all_labels, all_preds, all_probs  = [], [], []
 
 	with torch.no_grad():
-		for val_data in valid_dl_iter: #NOTE: might need to change this to evaluate on the whole validation set.
-
+		for val_data in valid_dl_iter: #NOTE: might need to change this to evaluate on the whole validation set.			
 			if cfg.zero_shot_params.test_bed == 'internal_ct_val':
-				ct_latents, text_latents, onehotlabels, xray_image, _, _ = val_data
-				text_latents = text_latents.to(device)
+				ct_latents, _, onehotlabels, _, _, _ = val_data
+				# text_latents = text_latents.to(device)
 				ct_latents = ct_latents.to(device)
-
+				num_batch_texts = num_batch_images = 1
+				ct_latents = rearrange(ct_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 			elif cfg.zero_shot_params.test_bed == 'mimic_ct':
 				# valid_data is the xray_image
 				xray_image, report, onehotlabels, _ = val_data
 				xray_image = xray_image.to(device)
 
 			# make zero-shot prediction for each batch of data of the test bed by computing dot product between text with ct or text and xray
+			preds = [[] for _ in range(onehotlabels.shape[0])] # hold the predicted multi-label vector for each sample in the batch
+			probs = [[] for _ in range(onehotlabels.shape[0])] # hold the predicted multi-label vector for each sample in the batch
 			for pathology in pathologies:
 				text = [f"There is {pathology}.", f"There is no {pathology}."] #NOTE: binary classification for each pathology.
 				text_tokens=tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
 
 				if cfg.zero_shot_params.test_bed == 'internal_ct_val':
 					# similarity between text and ct , the text should be the 
-					num_batch_texts = num_batch_images = 1
+					text_latents = xray_ctclip.get_report_latent(text_tokens) # automatically normalized the features
 					text_latents = rearrange(text_latents, '(m b) ... -> m b ...', m = num_batch_texts) #NOTE: 1xbxd
-					ct_latents = rearrange(ct_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
 					logits = einsum('m t d, n i d -> m n t i', text_latents, ct_latents).squeeze() # [size of the ct, size of the text]
 				elif cfg.zero_shot_params.test_bed == 'mimic_ct':
 					pass
 
 				# TODO: MAKE SURE TO NORMALIZE THE FEATURE BEFORE PERFORMING COMPARISON
+				path_probs = apply_softmax(logits)
+				true_probs = path_probs[0,:]
+				for idx in range(path_probs.shape[-1]): # batch size
+					output = path_probs[:,idx]
+					if output[0]>output[1]:
+						preds[idx].append(1) # 1 indicates has pathology in the one-hot label
+						# probs[idx].append()
+					else:
+						preds[idx].append(0) # 0 indicates no pathnology in the one-hot label
 			
-				probs = torch.sigmoid(logits)
-				preds = (probs > 0.5).int()
-				all_labels.extend(onehotlabels.cpu().numpy())
-				all_preds.extend(preds.cpu().numpy())
-				all_probs.extend(probs.cpu().numpy())
+			all_labels.extend(onehotlabels.cpu().numpy())
+			all_preds.extend(preds)
+			# all_probs.extend(probs.cpu().numpy())
 
 		# Convert to numpy arrays for metric computation
 		all_labels = np.array(all_labels)
