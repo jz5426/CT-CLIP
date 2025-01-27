@@ -267,6 +267,7 @@ def run(cfg_dot):
 		NotImplementedError(f'{cfg_dot.zero_shot_params.test_bed} is not supported at the moment')
 	
 	# run zero-shot evaluation
+	print(f'size of the test bed in unit batch: {len(test_bed_dl)}')
 	zero_shot_evaluation(
 		test_bed_iter,
 		cfg_dot,
@@ -311,22 +312,19 @@ def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, xray_ctclip
 				elif cfg.zero_shot_params.test_bed == 'mimic_ct':
 					pass
 
-				# TODO: MAKE SURE TO NORMALIZE THE FEATURE BEFORE PERFORMING COMPARISON
 				path_probs = apply_softmax(logits)
-				true_probs = path_probs[0,:]
 				for idx in range(path_probs.shape[-1]): # batch size
 					output = path_probs[:,idx]
-					if output[0]>output[1]:
-						preds[idx].append(1) # 1 indicates has pathology in the one-hot label
-						# probs[idx].append()
-					else:
-						preds[idx].append(0) # 0 indicates no pathnology in the one-hot label
+					probs[idx].append(output[0].item()) # index 0 is the probs that it has disease
+					preds[idx].append(1 if output[0]>output[1] else 0)
 			
 			all_labels.extend(onehotlabels.cpu().numpy())
+			all_probs.extend(probs)
 			all_preds.extend(preds)
-			# all_probs.extend(probs.cpu().numpy())
+			# break
 
 		# Convert to numpy arrays for metric computation
+		# all of the following should be in shape (number of samples, labels)
 		all_labels = np.array(all_labels)
 		all_preds = np.array(all_preds)
 		all_probs = np.array(all_probs)
@@ -334,31 +332,34 @@ def zero_shot_evaluation(valid_dl_iter, cfg, pathologies, tokenizer, xray_ctclip
 		# Calculate metrics for multilabel classification
 		# NOTE: might use the same one from the training file instead of using the sklearn one.
 		precision_micro, recall_micro, f1_micro, _ = precision_recall_fscore_support(all_labels, all_preds, average='micro')
-		# precision_weighted, recall_weighted, f1_weighted, _ = precision_recall_fscore_support(all_labels, all_preds, average='weighted')
-		# precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
+		precision_weighted, recall_weighted, f1_weighted, _ = precision_recall_fscore_support(all_labels, all_preds, average='weighted')
+		precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
 
 		auc_micro = roc_auc_score(all_labels, all_probs, average='micro', multi_class='ovr')
-		# auc_weighted = roc_auc_score(all_labels, all_probs, average='weighted', multi_class='ovr')
-		# auc_macro = roc_auc_score(all_labels, all_probs, average='macro', multi_class='ovr')
-		pr_auc_score = average_precision_score(all_labels, all_probs, average='micro')
+		try:
+			auc_macro = roc_auc_score(all_labels, all_probs, average='macro', multi_class='ovr')
+		except:
+			auc_macro = -1
+		try:
+			auc_weighted = roc_auc_score(all_labels, all_probs, average='weighted', multi_class='ovr')
+		except:
+			auc_weighted = -1
 
-		print(f'Test results for micro average: PR_AUC: {pr_auc_score:.4f}')
-		print(f"Test Results for micro average: Precision: {precision_micro:.4f}, Recall: {recall_micro:.4f}, F1 Score: {f1_micro:.4f}, AUC: {auc_micro:.4f}")
-		# print(f"Test Results for weighted average: Precision: {precision_weighted:.4f}, Recall: {recall_weighted:.4f}, F1 Score: {f1_weighted:.4f}, AUC: {auc_weighted:.4f}")
-		# print(f"Test Results for macro average: Precision: {precision_macro:.4f}, Recall: {recall_macro:.4f}, F1 Score: {f1_macro:.4f}, AUC: {auc_macro:.4f}")
+		pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='micro')
+		pr_auc_score_macro = average_precision_score(all_labels, all_probs, average='macro')
+		pr_auc_score_weighted = average_precision_score(all_labels, all_probs, average='weighted')
+
+		print(f"Test Results for micro average: F1 Score: {f1_micro:.4f}, Recall: {recall_micro:.4f}, Precision: {precision_micro:.4f}, AUC: {auc_micro:.4f}, PR_AUC: {pr_auc_score_micro:.4f}")
+		print(f"Test Results for weighted average: F1 Score: {f1_weighted:.4f}, Recall: {recall_weighted:.4f}, Precision: {precision_weighted:.4f}, AUC: {auc_weighted:.4f}, PR_AUC: {pr_auc_score_weighted:.4f}")
+		print(f"Test Results for macro average: F1 Score: {f1_macro:.4f}, Recall: {recall_macro:.4f}, Precision: {precision_macro:.4f}, AUC: {auc_macro:.4f}, PR_AUC: {pr_auc_score_macro:.4f}")
 
 		print('Saving the metrics results')
 		metrics_data = {
 			'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC'],
-			'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score],
-			# 'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, -1],
-			# 'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, -1]
+			'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro],
+			'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted],
+			'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro]
 		}
-
-		metrics_df = pd.DataFrame(metrics_data)
-		os.makedirs(os.path.dirname(metric_saving_path), exist_ok=True)
-		metrics_df.to_excel(metric_saving_path, index=False)
-		print(f"Metric results saved to {metric_saving_path}")
 
 
 

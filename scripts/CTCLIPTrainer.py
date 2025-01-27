@@ -31,7 +31,6 @@ import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP
 import os
 import random
-import tqdm
 
 
 # helpers
