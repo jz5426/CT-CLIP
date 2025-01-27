@@ -152,7 +152,7 @@ def run(cfg_dot):
         downsample_image_embeds = False,
         use_all_token_embeds = False,
         cfg=cfg,
-        auto_load_pretrained_weights=False
+        auto_load_pretrained_weights=False # because it loads it later.
     )
 
     # windows

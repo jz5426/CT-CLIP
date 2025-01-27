@@ -113,9 +113,16 @@ class ResNet50(nn.Module):
         super().__init__()
         # if pretrained:
         #     self.resnet = resnet50(pretrained=pretrained)
-        # else:
+        # else:ß
         #     raise NotImplementedError(f"Not support training from scratch : {name}")
-        self.resnet = resnet50(pretrained=pretrained) # this eventually take the pretrained model from CXR-CLIP anyways
+        # self.resnet = resnet50(pretrained=pretrained) # this eventually take the pretrained model from CXR-CLIP anyways
+
+        assert(pretrained == True)
+        self.resnet = resnet50(pretrained=False) # this eventually takes the pretrained model from CXR-CLIP anyways
+        if pretrained:
+            state_dict = torch.load('/cluster/home/t135419uhn/CT-CLIP/models/resnet50_imagenet_pretrained_1kv2.pth')
+            self.resnet.load_state_dict(state_dict, strict=True)
+            print('loaded imagenet pretrained weights to ResNet50')
 
         self.out_dim = 2048
         del self.resnet.fc
@@ -247,7 +254,7 @@ def load_cxr_clip_image_encoder(config_image_encoder: Dict):
             local_files_only=os.path.exists(os.path.join(cache_dir, f'models--{config_image_encoder["name"].replace("/", "--")}')),
         )
     elif config_image_encoder["name"] == "resnet":
-        _image_encoder = ResNet50(pretrained=False)
+        _image_encoder = ResNet50(pretrained=True) # TODO: this should be default to True
 
     else:
         raise KeyError(f"Not supported image encoder: {config_image_encoder}")

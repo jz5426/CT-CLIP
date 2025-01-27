@@ -4,7 +4,6 @@ import torch
 from torch import nn
 import torchvision
 from transformers import AutoModel
-import zipfile
 
 class MedCLIPVisionModelResNet(nn.Module):
     '''

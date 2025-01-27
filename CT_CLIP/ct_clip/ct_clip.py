@@ -1240,6 +1240,8 @@ class CTCLIPwithXray(nn.Module):
         self.load_ctclip(ctclip_path, freeze_weights=True)
         if cxr_path: # if false, implies randomly initialized
             self.load_cxr_clip_xray_encoder(cxr_path, False)
+        else:
+            print('NOT loading the pretrained cxr_clip weights for the xray encoder')
     
     def load_ctclip(self, ctclip_path, freeze_weights=True):
         """this only load the CT-CLIP model (the original model from the CT-CLIP paper)"""

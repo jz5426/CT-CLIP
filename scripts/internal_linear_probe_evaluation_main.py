@@ -19,7 +19,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from data import CTReportDataSplitter, CTReportXRayClassificationDataset
-from eval_utils import LinearProbeModel, XrayClassificationModel
+from eval_utils import LinearProbeModel
 
 import os
 from cxr_clip_utils import convert_dictconfig_to_dict

@@ -9,7 +9,7 @@ defaults:
   - dataloader: dataloader_128
   - tokenizer: clinical_bert
   - transform: clahe
-  - model: clip_swin_clinical # clip_swin_clinical # mainly for training
+  - model: clip_resnet_clinical # clip_swin_clinical # mainly for training
   - resnet: clip_resnet_clinical
   - swin: clip_swin_clinical
   - optimizer: adamw
@@ -26,9 +26,7 @@ base:
   output:
     checkpoint: ${hydra:run.dir}/checkpoints/
     tensorboard: ${hydra:run.dir}/tensorboard/
-  
 
-  
 training_params:
   batch_size: 360
   num_workers: 10
