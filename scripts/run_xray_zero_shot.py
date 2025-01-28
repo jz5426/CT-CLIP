@@ -167,7 +167,7 @@ def run(cfg_dot):
 	clip_xray.to(device)
 	clip_xray.eval()
 
-	# pick the text encoder and its associated latent projector
+	# # pick the text encoder and its associated latent projector
 	# report_encoder = copy.deepcopy(clip_xray.CTCLIP.text_transformer)
 	# report_latent_projecter = copy.deepcopy(clip_xray.CTCLIP.to_text_latent)
 	# report_encoder.to(device)
@@ -175,13 +175,13 @@ def run(cfg_dot):
 	# report_encoder.eval()
 	# report_latent_projecter.eval()
 
-	# pick the vision encoder (ct_encoder or any xray encoder, depends on the config params) and its associated latent projector
-	vision_encoder = copy.deepcopy(clip_xray.CTCLIP.visual_transformer if cfg_dot.zero_shot_params.baseline_type == 'ct_clip' else clip_xray.xray_encoder)
-	vision_latent_projector = copy.deepcopy(clip_xray.CTCLIP.to_visual_latent if cfg_dot.zero_shot_params.baseline_type == 'ct_clip' else clip_xray.to_xray_latent)
-	vision_encoder.to(device)
-	vision_latent_projector.to(device)
-	vision_encoder.eval()
-	vision_latent_projector.eval()
+	# # pick the vision encoder (ct_encoder or any xray encoder, depends on the config params) and its associated latent projector
+	# vision_encoder = copy.deepcopy(clip_xray.CTCLIP.visual_transformer if cfg_dot.zero_shot_params.baseline_type == 'ct_clip' else clip_xray.xray_encoder)
+	# vision_latent_projector = copy.deepcopy(clip_xray.CTCLIP.to_visual_latent if cfg_dot.zero_shot_params.baseline_type == 'ct_clip' else clip_xray.to_xray_latent)
+	# vision_encoder.to(device)
+	# vision_latent_projector.to(device)
+	# vision_encoder.eval()
+	# vision_latent_projector.eval()
 
 	# load the test bed (the dataset) for zero-shot experiment
 	# e.g: the internal val dataset, the mimic dataset, and potential future integration

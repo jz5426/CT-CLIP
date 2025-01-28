@@ -6,16 +6,13 @@ import torch
 # from torch_geometric import seed_everything
 from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
-from ct_clip import CTCLIP, TextTransformer, CTCLIPwithXray
+from ct_clip import CTCLIPwithXray
 from CTCLIPTrainer import CTClipTrainer
 import random
 import numpy as np
-import argparse
 
 @hydra.main(
         version_base=None,
-        # config_path="C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\configs",
-        # config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/configs",
         config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
         config_name="train")
 def main(cfg: DictConfig):
@@ -70,25 +67,6 @@ def run(cfg_dot):
     #NOTE: you need to use the follownig command to copy and past to the location cp -rL /path/to/source_directory /path/to/destination_directory 
         # the copied files in the destination folder will behave like regular files and directories. You can copy and paste them as usual using a file manager
 
-    # windows wsl from download    
-    # tokenizer = BertTokenizer.from_pretrained(
-    #     'microsoft/BiomedVLP-CXR-BERT-specialized',
-    #     do_lower_case=True,
-    #     cache_dir='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/predownloaded_models/BertTokenizer')
-    # text_encoder = BertModel.from_pretrained(
-    #     'microsoft/BiomedVLP-CXR-BERT-specialized',
-    #     cache_dir='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/predownloaded_models/BertModel'
-    #     )
-
-    # windows wsl from local files
-    # tokenizer = BertTokenizer.from_pretrained(
-    #     '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-    #     do_lower_case=True,
-    #     local_files_only=True)
-    # text_encoder = BertModel.from_pretrained(
-    #     '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-    #     local_files_only=True
-    #     )
 
     # uhn cluster from local filesc
     #TODO: 
@@ -121,101 +99,87 @@ def run(cfg_dot):
         dim_head = 32,
         heads = 8
     )
-    #dim_image = 131072,
+
+    if 'cxr_clip' in cfg_dot.base.training_pretrain_baseline: # can be either cxr_clip_swin or cxr_clip_resnet
+        xray_model_type = cfg_dot.base.training_pretrain_baseline #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+        dim_xray = 768 if 'swin' in cfg_dot.base.training_pretrain_baseline else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
+        pth_base_name = 'swin_cxr_xray_features.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_features.pth'
+    elif cfg_dot.base.training_pretrain_baseline == 'medclip_resnet':
+        xray_model_type = cfg_dot.base.training_pretrain_baseline
+        dim_xray = 2048
+        pth_base_name = 'resnet_medclip_features.pth'
+        # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
+    elif cfg_dot.base.training_pretrain_baseline == 'medclip_vit':
+        xray_model_type = cfg_dot.base.training_pretrain_baseline
+        dim_xray = 768
+        pth_base_name = 'swin_medclip_features.pth'
+    elif cfg_dot.base.training_pretrain_baseline == 'gloria_densenet':
+        xray_model_type = cfg_dot.base.training_pretrain_baseline
+        dim_xray = 1024 #TODO: double check this.
+        pth_base_name = 'densenet_gloria_features.pth'
+    elif cfg_dot.base.training_pretrain_baseline == 'gloria_resnet':
+        xray_model_type = cfg_dot.base.training_pretrain_baseline
+        dim_xray = 2048
+        pth_base_name = 'resnet_gloria_features.pth'
+    else:
+        xray_model_type = cfg_dot.base.training_pretrain_baseline
+        dim_xray = 768 if 'swin' in cfg_dot.base.training_pretrain_baseline.lower() else 2048
+        pth_base_name = f'{xray_model_type}_xray_features.pth'
 
 
-    # clip = CTCLIP(
+    # xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+    # clip_xray = CTCLIPwithXray(
     #     image_encoder = image_encoder,
     #     text_encoder = text_encoder,
+    #     # tokenizer=tokenizer,
     #     dim_text = 768,
     #     dim_image = 294912,
+    #     xray_model_type = xray_model_type,
+    #     dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048,
     #     dim_latent = 512,
     #     extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
     #     use_mlm=False,
     #     downsample_image_embeds = False,
-    #     use_all_token_embeds = False
-
+    #     use_all_token_embeds = False,
+    #     cfg=cfg,
+    #     auto_load_pretrained_weights=False # because it loads it later.
     # )
 
-    xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+    # # uhn cluster
+    # #NOTE: if cfg_dot.training_params.use_pretrained_xray_encoder is true => xray encoder and the projection layer is loaded with pretrained cxr_clip weights
+    # # Load the CT-CLIP pretrained backbone to CT-CLIP and optionlly load the pretrained cxr_clip xray encoder weights
+    # ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar' # NOTE: weights for cxr_clip xray encoder
+    # clip_xray.load(
+    #     "/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
+    #     f"/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{ckpt_name}" if cfg_dot.training_params.use_pretrained_xray_encoder else None
+    # )
+
+    # for custom pretrained weight training
+    latent_size = 512
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
-        # tokenizer=tokenizer,
         dim_text = 768,
         dim_image = 294912,
         xray_model_type = xray_model_type,
-        dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048,
-        dim_latent = 512,
+        dim_xray = dim_xray, # output size of the xray feature extractor
+        dim_latent = latent_size, # latent size that match the CT vision encoder and the text encoder.
         extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
         use_mlm=False,
         downsample_image_embeds = False,
         use_all_token_embeds = False,
         cfg=cfg,
-        auto_load_pretrained_weights=False # because it loads it later.
+        auto_load_pretrained_weights=True if cfg_dot.training_params.use_pretrained_xray_encoder else False,
+        freeze_xray_pretrained_weights=False # need the xray encoder for training => no freeze parameters in xray encoder
     )
-
-    # windows
-    # clip_xray.load("C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\CT-CLIP_v2.pt",
-    #             "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\Chris\\CT-CLIP\\models\\cxr_clip\\{}".format(ckpt_name))
-
-    # windows wsl
-    # clip_xray.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_v2.pt",
-    #             "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/cxr_clip/{}".format(ckpt_name))
-
-    # uhn cluster
-    #NOTE: if cfg_dot.training_params.use_pretrained_xray_encoder is true => xray encoder and the projection layer is loaded with pretrained cxr_clip weights
-    # Load the CT-CLIP pretrained backbone to CT-CLIP and optionlly load the pretrained cxr_clip xray encoder weights
-    ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar' # NOTE: weights for cxr_clip xray encoder
-    clip_xray.load(
-        "/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
-        f"/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{ckpt_name}" if cfg_dot.training_params.use_pretrained_xray_encoder else None
-    )
+    # load the ct-clip pretrained weights
+    clip_xray.load_ctclip('/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt')
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
     ct_clip_trainable = sum(p.numel() for p in clip_xray.CTCLIP.parameters() if p.requires_grad)
     assert(xray_encoder_trainable > 0)
     assert(ct_clip_trainable == 0)
-
-    # windows
-    # trainer = CTClipTrainer(
-    #     clip_xray,
-    #     cfg=cfg,
-    #     data_train= "G:\\Chris\\processed_data\\train_preprocessed_xray_mha",
-    #     data_valid = "G:\\Chris\\processed_data\\train_preprocessed_xray_mha",
-    #     labels = "C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\multi_abnormality_labels\\dataset_multi_abnormality_labels_valid_predicted_labels.csv",
-    #     batch_size = 2,
-    #     results_folder=".\\test",
-    #     num_train_steps = 100001,
-    #     num_workers = 1,
-    # )
-
-    # windows wsl
-    # trainer = CTClipTrainer(
-    #     clip_xray,
-    #     cfg=cfg,
-    #     tokenizer=tokenizer,
-    #     batch_style='patient',
-    #     data_train= "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha",
-    #     data_valid = "/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha",
-    #     img_embedding_paths = {
-    #         'train': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/train/image_features.pth', 
-    #         'valid': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/valid/image_features.pth'
-    #     },
-    #     text_embedding_paths = {
-    #         'train': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/train/text_features.pth',
-    #         'valid': '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings/valid/text_features.pth'
-    #     },
-    #     reports_file_train = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-    #     reports_file_valid = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-    #     labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv",
-    #     results_folder="./checkpoints",
-    #     batch_size = 3,
-    #     num_train_steps = 100001,
-    #     num_workers = 1, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-    #     train_from_scratch = True
-    # )
 
     # uhn cluster
     trainer = CTClipTrainer(
@@ -250,7 +214,8 @@ def run(cfg_dot):
         # lr = 5e-3
         # cxr-clip parameters
         wd = cfg_dot.training_params.weight_decay,
-        lr = cfg_dot.training_params.learning_rate
+        lr = cfg_dot.training_params.learning_rate,
+        model_type=xray_model_type
         # TODO: interpolate the learing rate between ULIP and CXR-CLIP
     )
     trainer.train_by_epoch(cfg_dot.training_params.epochs)

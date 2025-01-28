@@ -946,6 +946,7 @@ class CTCLIPwithXray(nn.Module):
             checkpoint_during_training = False,
             cfg=None,
             auto_load_pretrained_weights=True,
+            freeze_xray_pretrained_weights=True,
             **kwargs
     ):
         super().__init__()
@@ -1008,7 +1009,7 @@ class CTCLIPwithXray(nn.Module):
                 ckpt_file_name = 'swint_mcc'
                 self.load_cxr_clip_xray_encoder(
                     '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
-                    freeze_weights=True
+                    freeze_weights=freeze_xray_pretrained_weights
                 )
                 print('loaded xray encoder from cxr_clip SWIN')
             else:
@@ -1024,7 +1025,7 @@ class CTCLIPwithXray(nn.Module):
                 ckpt_file_name = 'r50_mcc'
                 self.load_cxr_clip_xray_encoder(
                     '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
-                    freeze_weights=True
+                    freeze_weights=freeze_xray_pretrained_weights
                 )
                 print('loaded xray encoder from cxr_clip RESNET')
             else:
@@ -1037,16 +1038,16 @@ class CTCLIPwithXray(nn.Module):
             self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.model.fc)
             medclip_vision_encoder.vision_model.model.fc = nn.Identity() # delete the fc layer
             self.xray_encoder = copy.deepcopy(medclip_vision_encoder.vision_model.model)
-
-            self.freeze_xray_encoder_weights()
+            if freeze_xray_pretrained_weights:
+                self.freeze_xray_encoder_weights()
             print('loaded xray encoder from medclip_resnet')
             
         elif xray_model_type == 'medclip_vit':
             medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelViT, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/vit' if auto_load_pretrained_weights else None)
             self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
             self.xray_encoder = copy.deepcopy(medclip_vision_encoder.vision_model.model)
-
-            self.freeze_xray_encoder_weights()
+            if freeze_xray_pretrained_weights:
+                self.freeze_xray_encoder_weights()
             print('loaded xray encoder from medclip_vit')
             
         elif xray_model_type == 'gloria_densenet':
@@ -1071,7 +1072,7 @@ class CTCLIPwithXray(nn.Module):
             if auto_load_pretrained_weights:
                 # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
                 #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by strict=True
-                self.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt', freeze_weights=True)
+                self.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt', freeze_weights=freeze_xray_pretrained_weights)
                 print(f'Loaded custom pretrained weights from {ckpt_name}')
             else:
                 print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')

@@ -23,6 +23,7 @@ base:
   text_max_length: 256
   loss_best: contrastive
   data_frac: 1.0
+  training_pretrain_baseline: ''
   output:
     checkpoint: ${hydra:run.dir}/checkpoints/
     tensorboard: ${hydra:run.dir}/tensorboard/

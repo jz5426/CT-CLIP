@@ -167,6 +167,7 @@ class CTClipTrainer(nn.Module):
         min_epochs,
         num_train_steps,
         batch_size,
+        model_type,
         text_cl_weight = 1.,
         ct_cl_weight = 1.,
         batch_style='patient',
@@ -326,7 +327,6 @@ class CTClipTrainer(nn.Module):
         self.ct_cl_weight = ct_cl_weight
 
         # base file name for the checkpoints
-        model_type = 'Swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'Resnet'
         self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}'
         print('base file name: ', self.base_file_name)
 
