@@ -237,23 +237,23 @@ def run(cfg_dot):
 		# img_embedding, text_embedding, onehotlabels, xray_image, name_acc, xray_file
 		print(f'size of the {cfg_dot.zero_shot_params.test_bed}: {len(test_bed)}')
 		pathologies = ['Medical material',
-				'Arterial wall calcification', 
-				'Cardiomegaly', 
-				'Pericardial effusion',
-				'Coronary artery wall calcification', 
-				'Hiatal hernia',
-				'Lymphadenopathy', 
-				'Emphysema', 
-				'Atelectasis', 
-				'Lung nodule',
-				'Lung opacity', 
-				'Pulmonary fibrotic sequela', 
-				'Pleural effusion', 
-				'Mosaic attenuation pattern',
-				'Peribronchial thickening', 
-				'Consolidation', 
-				'Bronchiectasis',
-				'Interlobular septal thickening'
+			'Arterial wall calcification', 
+			'Cardiomegaly', 
+			'Pericardial effusion',
+			'Coronary artery wall calcification', 
+			'Hiatal hernia',
+			'Lymphadenopathy', 
+			'Emphysema', 
+			'Atelectasis', 
+			'Lung nodule',
+			'Lung opacity', 
+			'Pulmonary fibrotic sequela', 
+			'Pleural effusion', 
+			'Mosaic attenuation pattern',
+			'Peribronchial thickening', 
+			'Consolidation', 
+			'Bronchiectasis',
+			'Interlobular septal thickening'
 		]
 
 		custom_sampler = UniqueLevelSampler(test_bed.key_ids, cfg_dot.zero_shot_params.batch_size)

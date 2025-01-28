@@ -1,56 +1,59 @@
+import os
 import torch
-import torch.nn as nn
+from torch import nn
+import torchvision
+from transformers import AutoModel
 
-from .. import builder
-from .. import loss
-from transformers import AutoTokenizer
+class GloRIaVisionModelResNet(nn.Module):
+    '''
+    take resnet50 as backbone.
+    '''
+    def __init__(self, gloria_checkpoint=None):
+        super().__init__()
+        self.model = torchvision.models.resnet50(pretrained=False) # prevent from download everything and load it later
+        num_fts = self.model.fc.in_features
+        self.model.fc = nn.Linear(num_fts, 512, bias=False) # projection head
+        if gloria_checkpoint is not None:
+            self.load_from_gloria(gloria_checkpoint)
+        else:
+            print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
+        
+    def load_from_gloria(self, checkpoint):
+        '''handle key mismatch of  and the vision encoder.
+        '''
+        checkpoint = torch.load(checkpoint)
+        state_dict = checkpoint["state_dict"]
+        state_dict = {key.replace("model.", ""): value for key, value in state_dict.items()} # lightning prepend model. for the key
+        new_state_dict = {}
+        # TODO: matches the state dict of the gloria model to our custom resnet50 model that has the same set of layers
+        for key in state_dict.keys():
+            if 'vision_model' in key:
+                new_state_dict[key.replace('vision_model.','')] = state_dict[key]
+        missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
 
-def build_text_model(cfg):
-    return models.text_model.BertEncoder(cfg)
+        # find the intersection
+        model_keys = set(self.state_dict().keys()) # this model's own dictionary
+        ckpt_keys = set(new_state_dict.keys()) # the pretrained dictionary
+        loaded_keys = ckpt_keys.intersection(model_keys) - set(missing_keys)
+        assert (len(self.model.state_dict().keys())) == len(loaded_keys) # check the model is indeed successfully loaded.
 
-class GLoRIA(nn.Module):
-    def __init__(self, cfg):
-        super(GLoRIA, self).__init__()
+        # print('missing keys:', missing_keys)
+        # print('unexpected keys:', unexpected_keys)
+        print('load model weight from:', checkpoint)
 
-        self.cfg = cfg
-        self.text_encoder = builder.build_text_model(cfg)
-        self.img_encoder = builder.build_img_model(cfg)
+    def forward(self, pixel_values, **kwargs):
+        '''args:
+        pixel_values: tensor with shape [bs, 3, img_size, img_size]
+        '''
+        if pixel_values.shape[1] == 1: pixel_values = pixel_values.repeat((1,3,1,1))
+        img_embeds = self.model(pixel_values)
+        return img_embeds
 
-        self.local_loss = loss.gloria_loss.local_loss
-        self.global_loss = loss.gloria_loss.global_loss
-        self.local_loss_weight = self.cfg.model.gloria.local_loss_weight
-        self.global_loss_weight = self.cfg.model.gloria.global_loss_weight
-
-        self.temp1 = self.cfg.model.gloria.temp1
-        self.temp2 = self.cfg.model.gloria.temp2
-        self.temp3 = self.cfg.model.gloria.temp3
-        self.batch_size = self.cfg.train.batch_size
-
-        self.tokenizer = AutoTokenizer.from_pretrained(self.cfg.model.text.bert_type)
-        self.ixtoword = {v: k for k, v in self.tokenizer.get_vocab().items()}
-
-    def text_encoder_forward(self, caption_ids, attention_mask, token_type_ids):
-        text_emb_l, text_emb_g, sents = self.text_encoder(
-            caption_ids, attention_mask, token_type_ids
-        )
-        return text_emb_l, text_emb_g, sents
-
-    def image_encoder_forward(self, imgs):
-        img_feat_g, img_emb_l = self.img_encoder(imgs, get_local=True)
-        img_emb_g, img_emb_l = self.img_encoder.generate_embeddings(
-            img_feat_g, img_emb_l
-        )
-
-        return img_emb_l, img_emb_g
-
-    def forward(self, x):
-
-        # img encoder branch
-        img_emb_l, img_emb_g = self.image_encoder_forward(x["imgs"])
-
-        # text encorder branch
-        text_emb_l, text_emb_g, sents = self.text_encoder_forward(
-            x["caption_ids"], x["attention_mask"], x["token_type_ids"]
-        )
-
-        return img_emb_l, img_emb_g, text_emb_l, text_emb_g, sents
+class GloRIaVisionModel(nn.Module):
+    def __init__(self,
+        vision_cls=GloRIaVisionModelResNet,
+        checkpoint=None,
+        ) -> None:
+        super().__init__()
+        assert vision_cls in [GloRIaVisionModelResNet], 'vision_cls should be one of [GloRIaVisionModelResNet]'
+        self.vision_model = vision_cls(gloria_checkpoint=checkpoint)

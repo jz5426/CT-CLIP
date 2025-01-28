@@ -5,6 +5,7 @@ from functools import partial, wraps
 from pathlib import Path
 
 from cxr_clip_utils import load_cxr_clip_image_encoder
+from gloria_utils import GloRIaVisionModel, GloRIaVisionModelResNet
 from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT
 import torch
 import torch.nn.functional as F
@@ -1053,13 +1054,13 @@ class CTCLIPwithXray(nn.Module):
         elif xray_model_type == 'gloria_densenet':
             # TODO:
             # self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
-
             print('loaded xray encoder from gloria_densenet')
 
         elif xray_model_type == 'gloria_resnet':
             # TODO:
             # self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
-
+            gloria_vision_encoder = GloRIaVisionModel(GloRIaVisionModelResNet, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/gloria/chexpert_resnet50.ckpt')
+            
             print('loaded xray encoder from gloria_resnet')
         else: 
             # our pretrained model

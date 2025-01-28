@@ -100,30 +100,30 @@ def run(cfg_dot):
     if 'cxr_clip' in cfg_dot.linear_probing_params.baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
         xray_model_type = cfg_dot.linear_probing_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
         dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
-        pth_base_name = 'swin_cxr_xray_features.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_features.pth'
+        pth_base_name = 'swin_cxr_xray_features' if 'swin' in xray_model_type else 'resnet_cxr_xray_features'
     elif cfg_dot.linear_probing_params.baseline_type == 'medclip_resnet':
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 2048
-        pth_base_name = 'resnet_medclip_features.pth'
+        pth_base_name = 'resnet_medclip_features'
         # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
     elif cfg_dot.linear_probing_params.baseline_type == 'medclip_vit':
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 768
-        pth_base_name = 'swin_medclip_features.pth'
+        pth_base_name = 'swin_medclip_features'
     elif cfg_dot.linear_probing_params.baseline_type == 'gloria_densenet':
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 1024 #TODO: double check this.
-        pth_base_name = 'densenet_gloria_features.pth'
+        pth_base_name = 'densenet_gloria_features'
     elif cfg_dot.linear_probing_params.baseline_type == 'gloria_resnet':
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 2048
-        pth_base_name = 'resnet_gloria_features.pth'
+        pth_base_name = 'resnet_gloria_features'
     else:
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type.lower() else 2048
-        pth_base_name = f'{xray_model_type}_xray_features.pth'
+        pth_base_name = f'{xray_model_type}_xray_features'
 
-
+    #####
     latent_size = 512
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
@@ -393,10 +393,10 @@ def test_loop(params):
 
     print('Saving the metrics results')
     metrics_data = {
-        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC'],
-        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro],
-        'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted],
-        'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro]
+        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC', 'labels', 'pred_probs'],
+        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro, all_labels.flatten().tolist(), all_probs.flatten().tolist()],
+        'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted, -1, -1],
+        'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro, -1, -1]
     }
 
     metrics_df = pd.DataFrame(metrics_data)
