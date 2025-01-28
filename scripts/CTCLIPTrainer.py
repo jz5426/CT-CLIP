@@ -543,7 +543,7 @@ class CTClipTrainer(nn.Module):
 
                 #NOTE save model based on predefined epoch and always saving the last epoch
                 self._save_ckpt(epoch, 'last_epoch.pt', 'saving the last epoch checkpoint', iteration)
-                if epoch % 50 == 0 and epoch % 100 == 0 or epoch % 150 == 0 or epoch % 200 == 0 :
+                if epoch % 50 == 0:
                     self._save_ckpt(epoch, f'{epoch}_epoch.pt', f'saving the {epoch}th epoch checkpoint', iteration)
 
                 # # save model based on f1 metric
