@@ -288,8 +288,6 @@ def zero_shot_evaluation(
 	is_xray = False
 	with torch.no_grad():
 		for val_data in valid_dl:
-
-			# val_data = next(valid_dl_iter)
 			num_batch_texts = num_batch_images = 1
 			if cfg.zero_shot_params.test_bed == 'internal_ct_val':
 				vision_latents, _, onehotlabels, xray_image, _, _ = val_data
