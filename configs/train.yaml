@@ -23,7 +23,6 @@ base:
   text_max_length: 256
   loss_best: contrastive
   data_frac: 1.0
-  training_pretrain_baseline: ''
   output:
     checkpoint: ${hydra:run.dir}/checkpoints/
     tensorboard: ${hydra:run.dir}/tensorboard/
@@ -41,6 +40,7 @@ training_params:
   weight_decay: 1e-4
   epochs: 202
   min_epochs: 202
+  training_pretrain_baseline: ''
   use_pretrained_xray_encoder: true
 
 linear_probing_params:

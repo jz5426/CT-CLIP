@@ -100,25 +100,25 @@ def run(cfg_dot):
         heads = 8
     )
 
-    if 'cxr_clip' in cfg_dot.base.training_pretrain_baseline: # can be either cxr_clip_swin or cxr_clip_resnet
-        xray_model_type = cfg_dot.base.training_pretrain_baseline #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
-        dim_xray = 768 if 'swin' in cfg_dot.base.training_pretrain_baseline else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
-    elif cfg_dot.base.training_pretrain_baseline == 'medclip_resnet':
-        xray_model_type = cfg_dot.base.training_pretrain_baseline
+    if 'cxr_clip' in cfg_dot.training_params.training_pretrain_baseline: # can be either cxr_clip_swin or cxr_clip_resnet
+        xray_model_type = cfg_dot.training_params.training_pretrain_baseline #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+        dim_xray = 768 if 'swin' in cfg_dot.training_params.training_pretrain_baseline else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
+    elif cfg_dot.training_params.training_pretrain_baseline == 'medclip_resnet':
+        xray_model_type = cfg_dot.training_params.training_pretrain_baseline
         dim_xray = 2048
         # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
-    elif cfg_dot.base.training_pretrain_baseline == 'medclip_vit':
-        xray_model_type = cfg_dot.base.training_pretrain_baseline
+    elif cfg_dot.training_params.training_pretrain_baseline == 'medclip_vit':
+        xray_model_type = cfg_dot.training_params.training_pretrain_baseline
         dim_xray = 768
-    elif cfg_dot.base.training_pretrain_baseline == 'gloria_densenet':
-        xray_model_type = cfg_dot.base.training_pretrain_baseline
+    elif cfg_dot.training_params.training_pretrain_baseline == 'gloria_densenet':
+        xray_model_type = cfg_dot.training_params.training_pretrain_baseline
         dim_xray = 1024 #TODO: double check this.
-    elif cfg_dot.base.training_pretrain_baseline == 'gloria_resnet':
-        xray_model_type = cfg_dot.base.training_pretrain_baseline
+    elif cfg_dot.training_params.training_pretrain_baseline == 'gloria_resnet':
+        xray_model_type = cfg_dot.training_params.training_pretrain_baseline
         dim_xray = 2048
     else:
-        xray_model_type = cfg_dot.base.training_pretrain_baseline
-        dim_xray = 768 if 'swin' in cfg_dot.base.training_pretrain_baseline.lower() else 2048
+        xray_model_type = cfg_dot.training_params.training_pretrain_baseline
+        dim_xray = 768 if 'swin' in cfg_dot.training_params.training_pretrain_baseline.lower() else 2048
 
 
     # xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
