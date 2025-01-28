@@ -123,6 +123,10 @@ def run(cfg_dot):
         dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type.lower() else 2048
         pth_base_name = f'{xray_model_type}_xray_features'
 
+    # TODO: remove the following when done testing
+    xray_model_type = cfg_dot.linear_probing_params.baseline_type
+    dim_xray = 2048
+    pth_base_name = 'resnet_gloria_features'
     #####
     latent_size = 512
     clip_xray = CTCLIPwithXray(
