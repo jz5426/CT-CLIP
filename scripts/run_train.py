@@ -103,28 +103,22 @@ def run(cfg_dot):
     if 'cxr_clip' in cfg_dot.base.training_pretrain_baseline: # can be either cxr_clip_swin or cxr_clip_resnet
         xray_model_type = cfg_dot.base.training_pretrain_baseline #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
         dim_xray = 768 if 'swin' in cfg_dot.base.training_pretrain_baseline else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
-        pth_base_name = 'swin_cxr_xray_features.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_features.pth'
     elif cfg_dot.base.training_pretrain_baseline == 'medclip_resnet':
         xray_model_type = cfg_dot.base.training_pretrain_baseline
         dim_xray = 2048
-        pth_base_name = 'resnet_medclip_features.pth'
         # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
     elif cfg_dot.base.training_pretrain_baseline == 'medclip_vit':
         xray_model_type = cfg_dot.base.training_pretrain_baseline
         dim_xray = 768
-        pth_base_name = 'swin_medclip_features.pth'
     elif cfg_dot.base.training_pretrain_baseline == 'gloria_densenet':
         xray_model_type = cfg_dot.base.training_pretrain_baseline
         dim_xray = 1024 #TODO: double check this.
-        pth_base_name = 'densenet_gloria_features.pth'
     elif cfg_dot.base.training_pretrain_baseline == 'gloria_resnet':
         xray_model_type = cfg_dot.base.training_pretrain_baseline
         dim_xray = 2048
-        pth_base_name = 'resnet_gloria_features.pth'
     else:
         xray_model_type = cfg_dot.base.training_pretrain_baseline
         dim_xray = 768 if 'swin' in cfg_dot.base.training_pretrain_baseline.lower() else 2048
-        pth_base_name = f'{xray_model_type}_xray_features.pth'
 
 
     # xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
