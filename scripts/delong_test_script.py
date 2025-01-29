@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import scipy.stats
-import ast
+import os
 import pickle
 from sklearn.metrics import roc_auc_score
 
@@ -127,7 +127,7 @@ def delong_roc_test(ground_truth, predictions_one, predictions_two):
     return calc_pvalue(aucs, delongcov)
 
 
-def main(pickle_file1: str, pickle_file2: str):
+def main_delong(pickle_file1: str, pickle_file2: str):
 
     # Load dictionaries from pickle files
     with open(pickle_file1, "rb") as f:
@@ -158,6 +158,55 @@ def main(pickle_file1: str, pickle_file2: str):
     p_val = 10**log_p
     print(f'the p value is {p_val}, {'AUCs are significantly different' if p_val < 0.05 else 'No significant difference'}')
 
+    return auc1, auc2, p_val
+
+# f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}'
+
+def full_sweep_evaluation(dirpath, data_portion='1', anchor_file='', results_dest=''):
+    """
+    given the dirpath that contains all the pikle objects (with labels and probs in it) 
+
+    anchor_file: string the filename that we want to base on for the comparison (the results of our pretrained method, either swin or resnet)
+    return:
+        - a excel file and a dictionary
+    """
+    train_portion_identifier = f'train_portion_{data_portion}'
+    
+    # List all pickle files in directory
+    pickle_files = [f for f in os.listdir(dirpath) if f.endswith('.pkl') and train_portion_identifier in f]
+    
+    # Ensure anchor file exists in the directory
+    anchor_path = os.path.join(dirpath, anchor_file)
+    if not os.path.exists(anchor_path):
+        raise FileNotFoundError(f"Anchor file {anchor_file} not found in directory {dirpath}")
+    
+    results = {}
+    
+    # Compare each pickle file against the anchor file
+    for pickle_file in pickle_files:
+        if pickle_file == anchor_file:
+            continue  # Skip comparing anchor file to itself
+        
+        comparison_path = os.path.join(dirpath, pickle_file)
+        
+        try:
+            auc1, auc2, p_val = main_delong(anchor_path, comparison_path)
+            results[pickle_file] = {'AUC1': auc1, 'AUC2': auc2, 'p-value': p_val}
+        except Exception as e:
+            print(f"Error processing {pickle_file}: {e}")
+    
+    # Convert results to DataFrame
+    results_df = pd.DataFrame.from_dict(results, orient='index')
+    
+    # Save results to an Excel file if specified
+    if results_dest:
+        excel_path = os.path.join(results_dest, f'auc_comparison_results_{train_portion_identifier}.xlsx')
+        results_df.to_excel(excel_path, index=True)
+        print(f"Results saved to {excel_path}")
+    
+    return results
+
+
 
 if __name__ == '__main__':
    # two excel files
@@ -168,4 +217,4 @@ if __name__ == '__main__':
     # test all the data (should be significant different)
    file1 = '/Users/maxxyouu/Desktop/delong_test/external_lp_data/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features__train_portion_0.025_data.pkl'
    file2 = '/Users/maxxyouu/Desktop/delong_test/external_lp_data/delong_stats/swin_medclip_features__train_portion_0.025_data.pkl'
-   main(file1, file2)
+   main_delong(file1, file2)
