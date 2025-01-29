@@ -170,6 +170,22 @@ def full_sweep_evaluation(dirpath, data_portion='1', anchor_file='', results_des
     return:
         - a excel file and a dictionary
     """
+    if 'swin' in anchor_file.lower():
+        basename = 'swin'
+    elif 'resnet' in anchor_file.lower():
+        basename = 'resnet'
+    else:
+        print('not a valid anchor file')
+        return None
+    
+    if 'pretrained_false' in anchor_file.lower():
+        basename += '_pretrained_false'
+    elif 'pretrained_true' in anchor_file.lower():
+        basename += '_pretrained_true'
+    else:
+        print('not a valid anchor file')
+        return None
+
     train_portion_identifier = f'train_portion_{data_portion}'
     
     # List all pickle files in directory
@@ -200,7 +216,7 @@ def full_sweep_evaluation(dirpath, data_portion='1', anchor_file='', results_des
     
     # Save results to an Excel file if specified
     if results_dest:
-        excel_path = os.path.join(results_dest, f'auc_comparison_results_{train_portion_identifier}.xlsx')
+        excel_path = os.path.join(results_dest, f'{basename}_auc_comparison_results_{train_portion_identifier}.xlsx')
         results_df.to_excel(excel_path, index=True)
         print(f"Results saved to {excel_path}")
     
@@ -209,12 +225,15 @@ def full_sweep_evaluation(dirpath, data_portion='1', anchor_file='', results_des
 
 
 if __name__ == '__main__':
-   # two excel files
-   # test the 0.01 (should be no signficiant difference, our model caught up)
-   # test the 0.025 (could be signficiantly different or no)
-   # test the 0.05 (should be signfiicantly different now)
-   # test the 0.10 (should be signfiicantly different now) (not sure)
+    # two excel files
+    # test the 0.01 (should be no signficiant difference, our model caught up)
+    # test the 0.025 (could be signficiantly different or no)
+    # test the 0.05 (should be signfiicantly different now)
+    # test the 0.10 (should be signfiicantly different now) (not sure)
     # test all the data (should be significant different)
-   file1 = '/Users/maxxyouu/Desktop/delong_test/external_lp_data/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features__train_portion_0.025_data.pkl'
-   file2 = '/Users/maxxyouu/Desktop/delong_test/external_lp_data/delong_stats/swin_medclip_features__train_portion_0.025_data.pkl'
-   main_delong(file1, file2)
+
+#    file1 = '/Users/maxxyouu/Desktop/delong_test/external_lp_data/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features__train_portion_0.025_data.pkl'
+#    file2 = '/Users/maxxyouu/Desktop/delong_test/external_lp_data/delong_stats/swin_medclip_features__train_portion_0.025_data.pkl'
+#    main_delong(file1, file2)
+
+    full_sweep_evaluation('remaining pickle objects path', '1', 'anchor file', 'destination')
