@@ -123,10 +123,6 @@ def run(cfg_dot):
         dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type.lower() else 2048
         pth_base_name = f'{xray_model_type}_xray_features'
 
-    # TODO: remove the following when done testing
-    xray_model_type = cfg_dot.linear_probing_params.baseline_type
-    dim_xray = 2048
-    pth_base_name = 'resnet_gloria_features'
     #####
     latent_size = 512
     clip_xray = CTCLIPwithXray(
@@ -397,7 +393,7 @@ def test_loop(params):
 
     print('Saving the metrics results')
     metrics_data = {
-        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC', 'labels', 'pred_probs'],
+        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC', 'labels', 'pred_probs'], # the labels and the pred_probs are for delong auc significant test
         'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro, all_labels.flatten().tolist(), all_probs.flatten().tolist()],
         'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted, -1, -1],
         'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro, -1, -1]

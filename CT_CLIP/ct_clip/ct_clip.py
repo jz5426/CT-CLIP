@@ -1059,7 +1059,7 @@ class CTCLIPwithXray(nn.Module):
         elif xray_model_type == 'gloria_resnet':
             # TODO:
             # self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
-            gloria_vision_encoder = GloRIaVisionModel(GloRIaVisionModelResNet, checkpoint='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/gloria/chexpert_resnet50.ckpt')
+            # gloria_vision_encoder = GloRIaVisionModel(GloRIaVisionModelResNet, checkpoint='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/gloria/chexpert_resnet50.ckpt')
             
             print('loaded xray encoder from gloria_resnet')
         else: 
