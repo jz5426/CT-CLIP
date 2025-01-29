@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import scipy.stats
+import ast
+import pickle
 
 # AUC comparison adapted from
 # https://github.com/Netflix/vmaf/
@@ -124,35 +126,31 @@ def delong_roc_test(ground_truth, predictions_one, predictions_two):
     return calc_pvalue(aucs, delongcov)
 
 
-def main(file1: str, file2: str, sheet_name: str = None):
-   # Helper function to load a spreadsheet
-    def load_spreadsheet(filepath, sheet_name):
-        if filepath.endswith('.xlsx'):
-            df = pd.read_excel(filepath, sheet_name=sheet_name)
-        else:
-            df = pd.read_csv(filepath)
-        return df
+def main(pickle_file1: str, pickle_file2: str):
 
-    # Load both spreadsheets
-    df1 = load_spreadsheet(file1, sheet_name)
-    df2 = load_spreadsheet(file2, sheet_name)
+    # Load dictionaries from pickle files
+    with open(pickle_file1, "rb") as f:
+        dict1 = pickle.load(f)
+    
+    with open(pickle_file2, "rb") as f:
+        dict2 = pickle.load(f)
 
-    # Extract labels (second-last row of 'Micro' column)
-    labels1 = np.array(df1.iloc[-2]['Micro'])
-    labels2 = np.array(df2.iloc[-2]['Micro'])
+    # Extract labels and predicted probabilities
+    labels1 = np.array(dict1['labels'])
+    labels2 = np.array(dict2['labels'])
 
     # Ensure the labels match
     if not np.array_equal(labels1, labels2):
-        raise ValueError("Error: The label lists from both spreadsheets do not match!")
+        raise ValueError("Error: The label lists from both pickle files do not match!")
 
-    # Extract probabilities (last row of 'Micro' column)
-    probabilities1 = np.array(df1.iloc[-1]['Micro'])
-    probabilities2 = np.array(df2.iloc[-1]['Micro'])
+    # Extract probability scores
+    probabilities1 = np.array(dict1['pred_probs'])
+    probabilities2 = np.array(dict2['pred_probs'])
 
     delong_roc_test(labels1, probabilities1, probabilities2)
 
 if __name__ == '__main__':
    # two excel files
-   file1 = ''
-   file2 = ''
+   file1 = 'pickle file destination'
+   file2 = 'pickle file destination'
    main(file1, file2)

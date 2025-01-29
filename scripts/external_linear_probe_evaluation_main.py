@@ -25,6 +25,7 @@ from sklearn.metrics import average_precision_score, precision_recall_fscore_sup
 import pandas as pd
 from zero_shot import CTClipInference
 import shutil
+import pickle
 
 @hydra.main(
         version_base=None,
@@ -321,7 +322,8 @@ def run(cfg_dot):
         'device': device,
         'model': classification_model,
         'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-        'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx' # where to save the files
+        'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
+        'delong_stats_saving_path': './lp_evaluation_results/mimic_ct/delong_stats/'
     }
     test_loop(test_params)
 
@@ -334,6 +336,7 @@ def test_loop(params):
     device = params['device']
     model = params['model']
     metric_saving_path = params['metric_saving_path']
+    delong_stats_saving_path = params['delong_stats_saving_path']
     
     all_labels = []
     all_preds = []
@@ -391,13 +394,25 @@ def test_loop(params):
     print(f"Test Results for weighted average: F1 Score: {f1_weighted:.4f}, Recall: {recall_weighted:.4f}, Precision: {precision_weighted:.4f}, AUC: {auc_weighted:.4f}, PR_AUC: {pr_auc_score_weighted:.4f}")
     print(f"Test Results for macro average: F1 Score: {f1_macro:.4f}, Recall: {recall_macro:.4f}, Precision: {precision_macro:.4f}, AUC: {auc_macro:.4f}, PR_AUC: {pr_auc_score_macro:.4f}")
 
-    print('Saving the metrics results')
     metrics_data = {
-        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC', 'labels', 'pred_probs'], # the labels and the pred_probs are for delong auc significant test
-        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro, all_labels.flatten().tolist(), all_probs.flatten().tolist()],
-        'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted, -1, -1],
-        'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro, -1, -1]
+        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC'], # the labels and the pred_probs are for delong auc significant test
+        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro],
+        'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted],
+        'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro]
     }
+
+    print('Saving the metrics results')
+    # save the stats for delong computation
+    assert(len(all_labels.flatten().tolist())==len(all_probs.flatten().tolist()))
+    os.makedirs(os.path.dirname(delong_stats_saving_path), exist_ok=True)
+    labels_preds = {
+        'labels': all_labels.flatten().tolist(),
+        'pred_probs': all_probs.flatten().tolist()
+    }
+    # Save to a pickle file
+    with open(f"{delong_stats_saving_path}/data.pkl", "wb") as f:
+        pickle.dump(labels_preds, f)
+        print('finished dumping the files')
 
     metrics_df = pd.DataFrame(metrics_data)
     os.makedirs(os.path.dirname(metric_saving_path), exist_ok=True)
