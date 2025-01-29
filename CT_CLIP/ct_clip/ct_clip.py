@@ -1009,7 +1009,7 @@ class CTCLIPwithXray(nn.Module):
                 # load the cxr_clip pretrained weights to the swin encoder as well as the to_xray_latent prejection layer
                 ckpt_file_name = 'swint_mcc'
                 self.load_cxr_clip_xray_encoder(
-                    '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
+                    '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
                     freeze_weights=freeze_xray_pretrained_weights
                 )
                 print('loaded xray encoder from cxr_clip SWIN')
@@ -1025,7 +1025,7 @@ class CTCLIPwithXray(nn.Module):
                 # load the cxr_clip pretrained weights to the resnet encoder as well as the to_xray_latent prejection layer
                 ckpt_file_name = 'r50_mcc'
                 self.load_cxr_clip_xray_encoder(
-                    '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
+                    '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
                     freeze_weights=freeze_xray_pretrained_weights
                 )
                 print('loaded xray encoder from cxr_clip RESNET')
@@ -1034,7 +1034,7 @@ class CTCLIPwithXray(nn.Module):
 
         # NOTE: the rest of the baseline always load the pretrained model including the projection layer
         elif xray_model_type == 'medclip_resnet':
-            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelResNet, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/resnet' if auto_load_pretrained_weights else None)
+            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelResNet, checkpoint='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/medclip/resnet' if auto_load_pretrained_weights else None)
 
             self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.model.fc)
             medclip_vision_encoder.vision_model.model.fc = nn.Identity() # delete the fc layer
@@ -1044,7 +1044,7 @@ class CTCLIPwithXray(nn.Module):
             print('loaded xray encoder from medclip_resnet')
             
         elif xray_model_type == 'medclip_vit':
-            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelViT, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/medclip/vit' if auto_load_pretrained_weights else None)
+            medclip_vision_encoder = MedCLIPVisionModel(MedCLIPVisionModelViT, checkpoint='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/medclip/vit' if auto_load_pretrained_weights else None)
             self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
             self.xray_encoder = copy.deepcopy(medclip_vision_encoder.vision_model.model)
             if freeze_xray_pretrained_weights:
@@ -1059,7 +1059,7 @@ class CTCLIPwithXray(nn.Module):
         elif xray_model_type == 'gloria_resnet':
             # TODO:
             # self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
-            gloria_vision_encoder = GloRIaVisionModel(GloRIaVisionModelResNet, checkpoint='/cluster/home/t135419uhn/CT-CLIP/models/gloria/chexpert_resnet50.ckpt')
+            gloria_vision_encoder = GloRIaVisionModel(GloRIaVisionModelResNet, checkpoint='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/gloria/chexpert_resnet50.ckpt')
             
             print('loaded xray encoder from gloria_resnet')
         else: 

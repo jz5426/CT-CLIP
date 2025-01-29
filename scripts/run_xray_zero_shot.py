@@ -162,7 +162,7 @@ def run(cfg_dot):
 		cfg=cfg,
 		auto_load_pretrained_weights=True # because it loads it later.
 	)
-	clip_xray.load_ctclip('/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt')
+	clip_xray.load_ctclip('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/CT-CLIP_v2.pt')
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	clip_xray.to(device)
 	clip_xray.eval()

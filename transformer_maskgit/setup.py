@@ -11,7 +11,7 @@ setup(
     'pillow',
     'numpy',
     'sentencepiece',
-    #'torch==2.0.1',
+    'torch==2.0.1',
     'torchtyping',
     'torchvision',
     'transformers==4.30.1',

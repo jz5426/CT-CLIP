@@ -379,7 +379,7 @@ def run(cfg):
     # NOTE: cxr-clip pretrained weights
     # ckpt_name = 'r50_mcc' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc'
     # clip_xray.load_cxr_clip_xray_encoder(
-    #     '/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
+    #     '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/cxr_clip/{}.tar'.format(ckpt_name), # cxr-clip pretrained
     #     freeze_weights=True
     # )
     # pth_name = 'cxr_xray_features.pth'

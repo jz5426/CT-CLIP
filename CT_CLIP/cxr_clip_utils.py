@@ -120,7 +120,7 @@ class ResNet50(nn.Module):
         assert(pretrained == True)
         self.resnet = resnet50(pretrained=False) # this eventually takes the pretrained model from CXR-CLIP anyways
         if pretrained:
-            state_dict = torch.load('/cluster/home/t135419uhn/CT-CLIP/models/resnet50_imagenet_pretrained_1kv2.pth')
+            state_dict = torch.load('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/resnet50_imagenet_pretrained_1kv2.pth')
             self.resnet.load_state_dict(state_dict, strict=True)
             print('loaded imagenet pretrained weights to ResNet50')
 

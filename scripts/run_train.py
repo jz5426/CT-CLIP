@@ -144,8 +144,8 @@ def run(cfg_dot):
     # # Load the CT-CLIP pretrained backbone to CT-CLIP and optionlly load the pretrained cxr_clip xray encoder weights
     # ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar' # NOTE: weights for cxr_clip xray encoder
     # clip_xray.load(
-    #     "/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt",
-    #     f"/cluster/home/t135419uhn/CT-CLIP/models/cxr_clip/{ckpt_name}" if cfg_dot.training_params.use_pretrained_xray_encoder else None
+    #     "/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/CT-CLIP_v2.pt",
+    #     f"/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/cxr_clip/{ckpt_name}" if cfg_dot.training_params.use_pretrained_xray_encoder else None
     # )
 
     # for custom pretrained weight training
@@ -167,7 +167,7 @@ def run(cfg_dot):
         freeze_xray_pretrained_weights=False # need the xray encoder for training => no freeze parameters in xray encoder
     )
     # load the ct-clip pretrained weights
-    clip_xray.load_ctclip('/cluster/home/t135419uhn/CT-CLIP/models/CT-CLIP_v2.pt')
+    clip_xray.load_ctclip('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/CT-CLIP_v2.pt')
 
     # check the trainable parameters
     xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
