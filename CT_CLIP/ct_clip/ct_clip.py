@@ -5,7 +5,7 @@ from functools import partial, wraps
 from pathlib import Path
 
 from cxr_clip_utils import load_cxr_clip_image_encoder
-from gloria_utils import GloRIaVisionModel, GloRIaVisionModelResNet
+from gloria_utils import GloRIaVisionModel, GloRIaVisionModelDenseNet, GloRIaVisionModelResNet
 from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT
 import torch
 import torch.nn.functional as F
@@ -1052,15 +1052,19 @@ class CTCLIPwithXray(nn.Module):
             print('loaded xray encoder from medclip_vit')
             
         elif xray_model_type == 'gloria_densenet':
-            # TODO:
-            # self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
+            gloria_vision_encoder = GloRIaVisionModel(GloRIaVisionModelDenseNet, checkpoint='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/gloria/pytorch_version/chexpert_densenet121_torch_version.pth')
+
+            self.to_xray_latent = copy.deepcopy(gloria_vision_encoder.vision_model.model.classifier) # the head need to be used for linear probing
+            gloria_vision_encoder.vision_model.model.classifier = nn.Identity() # delete the classifier layer
+            self.xray_encoder = copy.deepcopy(gloria_vision_encoder.vision_model.model)
             print('loaded xray encoder from gloria_densenet')
 
         elif xray_model_type == 'gloria_resnet':
-            # TODO:
-            # self.to_xray_latent = copy.deepcopy(medclip_vision_encoder.vision_model.projection_head)
-            # gloria_vision_encoder = GloRIaVisionModel(GloRIaVisionModelResNet, checkpoint='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/gloria/chexpert_resnet50.ckpt')
-            
+            gloria_vision_encoder = GloRIaVisionModel(GloRIaVisionModelResNet, checkpoint='/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/gloria/pytorch_version/chexpert_resnet50_torch_version.pth')
+
+            self.to_xray_latent = copy.deepcopy(gloria_vision_encoder.vision_model.model.fc) # the head need to be used for linear probing
+            gloria_vision_encoder.vision_model.model.fc = nn.Identity() # delete the fc layer
+            self.xray_encoder = copy.deepcopy(gloria_vision_encoder.vision_model.model)
             print('loaded xray encoder from gloria_resnet')
         else: 
             # our pretrained model
@@ -1273,7 +1277,7 @@ class CTCLIPwithXray(nn.Module):
         for key in saved_state_dict.keys():
             if 'image_encoder.' in key:
                 new_state_dict[key.replace("image_encoder.", "xray_encoder.", 1)] = saved_state_dict[key]
-            
+            # note that during loading of the resnet model in cxr_clip, it removes the fc layer by default and thuse we need to add it back
             # check the CXRClip.forward method line 28 and line 79: https://github.dev/Soombit-ai/cxr-clip/blob/31188857cc5e892c22c731b176080eb5d4484cf2/cxrclip/model/clip.py#L79-L80
             if 'image_projection.projection.weight' in key:
                 new_state_dict[key.replace("image_projection.projection.weight", "to_xray_latent.weight", 1)] = saved_state_dict[key]

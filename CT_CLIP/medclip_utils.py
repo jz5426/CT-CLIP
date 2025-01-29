@@ -34,7 +34,7 @@ class MedCLIPVisionModelResNet(nn.Module):
         model_keys = set(self.state_dict().keys()) # this model's own dictionary
         ckpt_keys = set(new_state_dict.keys()) # the pretrained dictionary
         loaded_keys = ckpt_keys.intersection(model_keys) - set(missing_keys)
-        assert (len(self.model.state_dict().keys())) == len(loaded_keys) # check the model is indeed successfully loaded.
+        assert (len(self.model.state_dict().keys())) == len(loaded_keys) # check the model is indeed successfully loaded including the projection head.
 
         # print('missing keys:', missing_keys)
         # print('unexpected keys:', unexpected_keys)

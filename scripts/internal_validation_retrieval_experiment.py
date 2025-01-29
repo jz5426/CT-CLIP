@@ -375,15 +375,15 @@ def run(cfg):
             dim_xray = 768
             pth_name = 'swin_medclip_features.pth'
         
-        elif ckpt_name == 'gloria_densenet':
-            xray_model_type = ckpt_name
-            dim_xray = 1024 #TODO: double check this.
-            pth_name = 'densenet_gloria_features.pth'
+        # elif ckpt_name == 'gloria_densenet':
+        #     xray_model_type = ckpt_name
+        #     dim_xray = 1024 #TODO: double check this.
+        #     pth_name = 'densenet_gloria_features.pth'
 
-        elif ckpt_name == 'gloria_resnet':
-            xray_model_type = ckpt_name
-            dim_xray = 2048
-            pth_name = 'resnet_gloria_features.pth'
+        # elif ckpt_name == 'gloria_resnet':
+        #     xray_model_type = ckpt_name
+        #     dim_xray = 2048
+        #     pth_name = 'resnet_gloria_features.pth'
 
         else:
             # our pretrained model

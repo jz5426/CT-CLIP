@@ -3,6 +3,7 @@ import numpy as np
 import scipy.stats
 import ast
 import pickle
+from sklearn.metrics import roc_auc_score
 
 # AUC comparison adapted from
 # https://github.com/Netflix/vmaf/
@@ -16,7 +17,7 @@ def compute_midrank(x):
     J = np.argsort(x)
     Z = x[J]
     N = len(x)
-    T = np.zeros(N, dtype=np.float)
+    T = np.zeros(N, dtype=float)
     i = 0
     while i < N:
         j = i
@@ -24,7 +25,7 @@ def compute_midrank(x):
             j += 1
         T[i:j] = 0.5*(i + j - 1)
         i = j
-    T2 = np.empty(N, dtype=np.float)
+    T2 = np.empty(N, dtype=float)
     # Note(kazeevn) +1 is due to Python using 0-based indexing
     # instead of 1-based in the AUC formula in the paper
     T2[J] = T + 1
@@ -60,9 +61,9 @@ def fastDeLong(predictions_sorted_transposed, label_1_count):
     negative_examples = predictions_sorted_transposed[:, m:]
     k = predictions_sorted_transposed.shape[0]
 
-    tx = np.empty([k, m], dtype=np.float)
-    ty = np.empty([k, n], dtype=np.float)
-    tz = np.empty([k, m + n], dtype=np.float)
+    tx = np.empty([k, m], dtype=float)
+    ty = np.empty([k, n], dtype=float)
+    tz = np.empty([k, m + n], dtype=float)
     for r in range(k):
         tx[r, :] = compute_midrank(positive_examples[r, :])
         ty[r, :] = compute_midrank(negative_examples[r, :])
@@ -146,11 +147,25 @@ def main(pickle_file1: str, pickle_file2: str):
     # Extract probability scores
     probabilities1 = np.array(dict1['pred_probs'])
     probabilities2 = np.array(dict2['pred_probs'])
+    
+    assert len(probabilities1) == len(probabilities2)
 
-    delong_roc_test(labels1, probabilities1, probabilities2)
+    auc1 = roc_auc_score(labels1, probabilities1, average='micro', multi_class='ovr')
+    auc2 = roc_auc_score(labels2, probabilities2, average='micro', multi_class='ovr')
+    print(f'auc for the first file: {auc1}; auc for the second file: {auc2}')
+
+    log_p = delong_roc_test(labels1, probabilities1, probabilities2).item()
+    p_val = 10**log_p
+    print(f'the p value is {p_val}, {'AUCs are significantly different' if p_val < 0.05 else 'No significant difference'}')
+
 
 if __name__ == '__main__':
    # two excel files
-   file1 = 'pickle file destination'
-   file2 = 'pickle file destination'
+   # test the 0.01 (should be no signficiant difference, our model caught up)
+   # test the 0.025 (could be signficiantly different or no)
+   # test the 0.05 (should be signfiicantly different now)
+   # test the 0.10 (should be signfiicantly different now) (not sure)
+    # test all the data (should be significant different)
+   file1 = '/Users/maxxyouu/Desktop/delong_test/external_lp_data/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features__train_portion_0.025_data.pkl'
+   file2 = '/Users/maxxyouu/Desktop/delong_test/external_lp_data/delong_stats/swin_medclip_features__train_portion_0.025_data.pkl'
    main(file1, file2)

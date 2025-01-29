@@ -297,12 +297,12 @@ def run(cfg_dot):
         elif ckpt_name == 'medclip_vit':
             xray_model_type = ckpt_name
             dim_xray = 768
-        elif ckpt_name == 'gloria_densenet':
-            xray_model_type = ckpt_name
-            dim_xray = 1024 #TODO: double check this.
-        elif ckpt_name == 'gloria_resnet':
-            xray_model_type = ckpt_name
-            dim_xray = 2048
+        # elif ckpt_name == 'gloria_densenet':
+        #     xray_model_type = ckpt_name
+        #     dim_xray = 1024 #TODO: double check this.
+        # elif ckpt_name == 'gloria_resnet':
+        #     xray_model_type = ckpt_name
+        #     dim_xray = 2048
         else:
             xray_model_type = ckpt_name
             dim_xray = 768 if 'swin' in ckpt_name.lower() else 2048
