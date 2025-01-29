@@ -139,17 +139,6 @@ def run(cfg_dot):
         pth_base_name = f'{xray_model_type}_xray_features.pth'
         latent_size = 512
 
-    # TODO: remove the following
-    xray_model_type = 'gloria_densenet'
-    dim_xray = 1024
-    pth_base_name = 'densenet_gloria_features.pth'
-    latent_size = 768 
-    # xray_model_type = 'gloria_resnet'
-    # dim_xray = 2048
-    # pth_base_name = 'resnet_gloria_features.pth'
-    # latent_size = 768 
-    ######
-
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
