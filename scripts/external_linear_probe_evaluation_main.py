@@ -323,7 +323,7 @@ def run(cfg_dot):
         'model': classification_model,
         'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
         'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
-        'delong_stats_saving_path': './lp_evaluation_results/mimic_ct/delong_stats/'
+        'delong_stats_saving_path': f'./lp_evaluation_results/mimic_ct/delong_stats/{pth_base_name}_data.pkl'
     }
     test_loop(test_params)
 
@@ -410,7 +410,7 @@ def test_loop(params):
         'pred_probs': all_probs.flatten().tolist()
     }
     # Save to a pickle file
-    with open(f"{delong_stats_saving_path}/data.pkl", "wb") as f:
+    with open(delong_stats_saving_path, "wb") as f:
         pickle.dump(labels_preds, f)
         print('finished dumping the files')
 
