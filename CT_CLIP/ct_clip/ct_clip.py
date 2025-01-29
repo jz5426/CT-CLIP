@@ -1169,7 +1169,7 @@ class CTCLIPwithXray(nn.Module):
         # always extract xray feature representation
         enc_xray = self.xray_encoder(xray)
 
-        if 'resnet' in self.xray_model_type.lower():
+        if 'resnet' in self.xray_model_type.lower() or 'densenet' in self.xray_model_type.lower():
             enc_xray = enc_xray.view(enc_xray.shape[0], 1, -1)
         elif self.xray_model_type == 'medclip_vit':
             enc_xray = enc_xray.last_hidden_state

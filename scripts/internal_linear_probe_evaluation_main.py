@@ -150,7 +150,6 @@ def run(cfg_dot):
     # latent_size = 768 
     ######
 
-    latent_size = 512
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,

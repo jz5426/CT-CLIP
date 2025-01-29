@@ -97,35 +97,41 @@ def run(cfg_dot):
         dim_head = 32,
         heads = 8
     )
-    # cxr_clip_swin, cxr_clip_resnet, medclip_resnet, medclip_vit, gloria_densenet, gloria_resnet, custom_checkpoint_name
+
+    # assert cfg_dot.linear_probing_params.baseline_type in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
     if 'cxr_clip' in cfg_dot.linear_probing_params.baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
         xray_model_type = cfg_dot.linear_probing_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
         dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
-        pth_base_name = 'swin_cxr_xray_features' if 'swin' in xray_model_type else 'resnet_cxr_xray_features'
+        pth_base_name = 'swin_cxr_xray_features.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_features.pth'
+        latent_size = 512
     elif cfg_dot.linear_probing_params.baseline_type == 'medclip_resnet':
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 2048
-        pth_base_name = 'resnet_medclip_features'
+        pth_base_name = 'resnet_medclip_features.pth'
+        latent_size = 512
         # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
     elif cfg_dot.linear_probing_params.baseline_type == 'medclip_vit':
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 768
-        pth_base_name = 'swin_medclip_features'
+        pth_base_name = 'swin_medclip_features.pth'
+        latent_size = 512
     elif cfg_dot.linear_probing_params.baseline_type == 'gloria_densenet':
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 1024 #TODO: double check this.
-        pth_base_name = 'densenet_gloria_features'
+        pth_base_name = 'densenet_gloria_features.pth'
+        latent_size = 768
     elif cfg_dot.linear_probing_params.baseline_type == 'gloria_resnet':
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 2048
-        pth_base_name = 'resnet_gloria_features'
+        pth_base_name = 'resnet_gloria_features.pth'
+        latent_size = 768 # the final size of the xray embedding is indeed different in gloria
     else:
         xray_model_type = cfg_dot.linear_probing_params.baseline_type
         dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type.lower() else 2048
-        pth_base_name = f'{xray_model_type}_xray_features'
+        pth_base_name = f'{xray_model_type}_xray_features.pth'
+        latent_size = 512
 
     #####
-    latent_size = 512
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
