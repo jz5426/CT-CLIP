@@ -12,6 +12,7 @@ from omegaconf import DictConfig, OmegaConf
 import torch
 import random
 import numpy as np
+import pickle
 from eval_utils import proportion_mapping
 
 @hydra.main(
@@ -123,8 +124,9 @@ def run(cfg_dot):
         }
         
         # NOTE: save the object so that it is differentateid based on dataset, proportion, and baseline.
-        file_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_internal_splits/{proportion_mapping(cfg_dot.internal_split_caching_params.train_data_portion)}/{saving_base_name}'
-        os.makedirs(file_path, exist_ok=True)
+        file_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_internal_splits/{proportion_mapping(cfg_dot.internal_split_caching_params.train_data_portion)}/'
+        os.makedirs(file_dir, exist_ok=True)
+        file_path = os.path.join(file_dir, saving_base_name)
         torch.save(results, file_path)
 
     elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'vinBig': # the ct dataset
