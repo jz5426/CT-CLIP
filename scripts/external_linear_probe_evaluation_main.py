@@ -131,7 +131,6 @@ def run(cfg_dot):
         pth_base_name = f'{xray_model_type}_xray_features.pth'
         latent_size = 512
 
-    #####
     clip_xray = CTCLIPwithXray(
         image_encoder = image_encoder,
         text_encoder = text_encoder,
@@ -297,6 +296,7 @@ def run(cfg_dot):
     print("Finetuning the Xray encoder completed ==> perform external mimic-ct testing")
 
     # testing
+    
     # NOTE: use the mimic-ct external dataset to test it.
     test_dataset = MimicCTReportXRayDataset(
         cfg=cfg,

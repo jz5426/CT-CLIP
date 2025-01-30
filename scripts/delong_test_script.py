@@ -207,7 +207,7 @@ def full_sweep_evaluation(dirpath, data_portion='1', anchor_file='', results_des
         
         try:
             auc1, auc2, p_val = main_delong(anchor_path, comparison_path)
-            results[pickle_file] = {'AUC1': auc1, 'AUC2': auc2, 'p-value': p_val}
+            results[pickle_file] = {'anchor_AUC': auc1, 'AUC2': auc2, 'p-value': p_val}
         except Exception as e:
             print(f"Error processing {pickle_file}: {e}")
     
