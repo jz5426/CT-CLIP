@@ -182,6 +182,36 @@ def run(cfg_dot):
         num_workers = cfg_dot.linear_probing_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         feature_extraction_mode = True # might be optional
     )  
+    
+    # get xray latent features from this particularly baseline model
+    train_xray_features = train_split_inference.xray_feature_extraction('./', append=False)
+    print('Xray feature extraction completed on the training split for this particular baseline model')
+
+    # Set up the dataset and data loaders
+    train_data_splitter = CTReportDataSplitter(
+        csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
+        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+    )
+    train_sample, internal_val_samples = train_data_splitter.prepare_samples(
+        train_split=cfg_dot.linear_probing_params.train_data_portion,
+        val_split=0.2 # NOTE: always use 20% of the training data for validation.
+    ) # validation split is always, train_split is controlable
+
+    train_dataset = CTReportXRayClassificationDataset(
+        cfg=cfg,
+        data=train_sample, # actual data
+        data_embeddings=train_xray_features,
+        split='train'
+    )
+
+    internal_val_dataset = CTReportXRayClassificationDataset(
+        cfg=cfg,
+        data=internal_val_samples, # actual data
+        data_embeddings=train_xray_features,
+        split='train'
+    )
+
 
     pathologies = ['Medical material',
                     'Arterial wall calcification', 
@@ -208,48 +238,9 @@ def run(cfg_dot):
     model = LinearProbeModel(in_features=latent_size, num_classes=num_classes)
     model.to(device)
 
-    # get xray latent features from this particularly baseline model
-    train_xray_features = train_split_inference.xray_feature_extraction('./', append=False)
-    print('Xray feature extraction completed on the training split for this particular baseline model')
-
     # sanity check the trainable parameters
     learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Number of learnable parameters: {learnable_params}') # should be the same of a single linear layer
-
-    # Set up the dataset and data loaders
-    train_data_splitter = CTReportDataSplitter(
-        csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
-        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
-    )
-    train_sample, internal_val_samples = train_data_splitter.prepare_samples(
-        train_split=cfg_dot.linear_probing_params.train_data_portion,
-        val_split=0.2 # NOTE: always use 20% of the training data for validation.
-    ) # validation split is always, train_split is controlable
-
-    # sanity check
-    # Extract multi-hot label vectors from the samples
-    # train_labels = np.array([label for _, label in train_sample])
-    # val_labels = np.array([label for _, label in internal_val_samples])
-    # train_label_distribution = train_labels.sum(axis=0)
-    # val_label_distribution = val_labels.sum(axis=0)
-    # print(train_label_distribution)
-    # print(val_label_distribution)
-    # print(val_label_distribution/train_label_distribution)
-
-    train_dataset = CTReportXRayClassificationDataset(
-        cfg=cfg,
-        data=train_sample, # actual data
-        data_embeddings=train_xray_features,
-        split='train'
-    )
-
-    internal_val_dataset = CTReportXRayClassificationDataset(
-        cfg=cfg,
-        data=internal_val_samples, # actual data
-        data_embeddings=train_xray_features,
-        split='train'
-    )
 
     #load the data
     train_loader = DataLoader(
@@ -319,9 +310,9 @@ def run(cfg_dot):
 
     print("Finetuning the Xray encoder completed ==> perform internal testing")
 
-    # testing
+    # testing TODO: different from external
 
-    # NOTE: use all the internal validation data for testing
+    # NOTE: use all the internal validation data for testing TODO: load the features from cache
     split = 'valid'
     validation_split_inference = CTClipInference(
         clip_xray,
@@ -347,6 +338,7 @@ def run(cfg_dot):
     val_xray_features = validation_split_inference.xray_feature_extraction('./', append=False)
     print('Xray feature extraction completed on the validation split for this particular baseline model')
 
+    # the whole validation dataset for internal validation.
     test_data_splitter = CTReportDataSplitter(
         csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
@@ -522,3 +514,13 @@ def train_loop(params):
 # Example usage
 if __name__ == "__main__":
     main()
+
+    # sanity check
+    # Extract multi-hot label vectors from the samples
+    # train_labels = np.array([label for _, label in train_sample])
+    # val_labels = np.array([label for _, label in internal_val_samples])
+    # train_label_distribution = train_labels.sum(axis=0)
+    # val_label_distribution = val_labels.sum(axis=0)
+    # print(train_label_distribution)
+    # print(val_label_distribution)
+    # print(val_label_distribution/train_label_distribution)

@@ -1,7 +1,3 @@
-"""
-do the same thing as in internal_linear_probe_evaluation_main and take that to evaluate on the mimic dataset.
-"""
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -27,132 +23,9 @@ from zero_shot import CTClipInference
 import shutil
 import pickle
 
-@hydra.main(
-        version_base=None,
-        config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
-        config_name="train")
-def main(cfg: DictConfig):
-
-    OmegaConf.resolve(cfg)
-
-    if "LOCAL_RANK" in os.environ:
-        # for ddp
-        # passed by torchrun or torch.distributed.launch
-        local_rank = int(os.environ["LOCAL_RANK"])
-    else:
-        # for debugging
-        local_rank = -1
-
-    if local_rank < 1:
-        print(f"Configurations:\n{OmegaConf.to_yaml(cfg)}")
-
-    # seed_everything(1234)
-    # torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True # efficient performance optimization.
-
-    # seed everything
-    seed = 1024
-    random.seed(seed)    
-    np.random.seed(seed)    
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)  # If using multiple GPUs
-
-    run(cfg)
-
-
-def run(cfg_dot):
-
-    # print custom script argument
-    print(f"is_linear_probe_eval: {cfg_dot.linear_probing_params.is_linear_probe_eval}")
-    print(f"num_epochs: {cfg_dot.linear_probing_params.num_epochs}")
-    print(f"patience: {cfg_dot.linear_probing_params.patience}")
-    print(f"batch_size: {cfg_dot.linear_probing_params.batch_size}")
-    print(f"learning_rate: {cfg_dot.linear_probing_params.learning_rate}")
-    print(f"progress_window: {cfg_dot.linear_probing_params.progress_window}")
-    print(f"cpt_dest: {cfg_dot.linear_probing_params.cpt_dest}")
-    print(f"train data portion: {cfg_dot.linear_probing_params.train_data_portion}")
-
-    # convert the config file to dictionary
-    cfg = convert_dictconfig_to_dict(cfg_dot)
-
-    torch.cuda.empty_cache()
-    text_encoder = BertModel.from_pretrained(
-        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-        local_files_only=True
-    )
-    tokenizer = BertTokenizer.from_pretrained(
-        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-        do_lower_case=True,
-        local_files_only=True)
-
-    image_encoder = CTViT(
-        dim = 512,
-        codebook_size = 8192,
-        image_size = 480,
-        patch_size = 20,
-        temporal_patch_size = 10,
-        spatial_depth = 4,
-        temporal_depth = 4,
-        dim_head = 32,
-        heads = 8
-    )
-
-    # assert cfg_dot.linear_probing_params.baseline_type in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
-    if 'cxr_clip' in cfg_dot.linear_probing_params.baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
-        xray_model_type = cfg_dot.linear_probing_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
-        dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
-        pth_base_name = 'swin_cxr_xray_features.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_features.pth'
-        latent_size = 512
-    elif cfg_dot.linear_probing_params.baseline_type == 'medclip_resnet':
-        xray_model_type = cfg_dot.linear_probing_params.baseline_type
-        dim_xray = 2048
-        pth_base_name = 'resnet_medclip_features.pth'
-        latent_size = 512
-        # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
-    elif cfg_dot.linear_probing_params.baseline_type == 'medclip_vit':
-        xray_model_type = cfg_dot.linear_probing_params.baseline_type
-        dim_xray = 768
-        pth_base_name = 'swin_medclip_features.pth'
-        latent_size = 512
-    elif cfg_dot.linear_probing_params.baseline_type == 'gloria_densenet':
-        xray_model_type = cfg_dot.linear_probing_params.baseline_type
-        dim_xray = 1024 #TODO: double check this.
-        pth_base_name = 'densenet_gloria_features.pth'
-        latent_size = 768
-    elif cfg_dot.linear_probing_params.baseline_type == 'gloria_resnet':
-        xray_model_type = cfg_dot.linear_probing_params.baseline_type
-        dim_xray = 2048
-        pth_base_name = 'resnet_gloria_features.pth'
-        latent_size = 768 # the final size of the xray embedding is indeed different in gloria
-    else:
-        xray_model_type = cfg_dot.linear_probing_params.baseline_type
-        dim_xray = 768 if 'swin' in cfg_dot.linear_probing_params.baseline_type.lower() else 2048
-        pth_base_name = f'{xray_model_type}_xray_features.pth'
-        latent_size = 512
-
-    clip_xray = CTCLIPwithXray(
-        image_encoder = image_encoder,
-        text_encoder = text_encoder,
-        dim_text = 768,
-        dim_image = 294912,
-        xray_model_type = xray_model_type,
-        dim_xray = dim_xray, # output size of the xray feature extractor
-        dim_latent = latent_size, # latent size that match the CT vision encoder and the text encoder.
-        extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
-        use_mlm=False,
-        downsample_image_embeds = False,
-        use_all_token_embeds = False,
-        cfg=cfg,
-        auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
-    )
-
-    pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
-    ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, 'mimic_ct')
-    best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{pth_base_name}_best_model.pth')
-
-    #NOTE: train on the synthetic dataset and evaluate on the mimic-ct (256 images) data
-    split = 'train'
+def load_cached_ct_rate_xray_features(split, clip_xray, cfg, tokenizer):
+    # TODO: should load from cache
+    # split = 'train'
     train_split_inference = CTClipInference(
         clip_xray,
         cfg=cfg,
@@ -178,18 +51,82 @@ def run(cfg_dot):
     train_xray_features = train_split_inference.xray_feature_extraction('./', append=False)
     print('Xray feature extraction completed')
 
-    pathologies = ['Arterial wall calcification', #
-                    'Pericardial effusion', #
-                    'Coronary artery wall calcification', #
-                    'Hiatal hernia', #
-                    'Lymphadenopathy', #
-                    'Emphysema', #
-                    'Atelectasis', #
-                    'Mosaic attenuation pattern',#
-                    'Peribronchial thickening', #
-                    'Bronchiectasis', #
-                    'Interlobular septal thickening']#
+    return train_xray_features
 
+def get_train_internal_split(dataset='mimic'):
+    """
+    mimic and internal evalution share the same strategy
+
+    set it up so that it loads from cache instead of loading from scratch
+    """
+    if dataset == 'mimic' or dataset == 'internal':
+        train_data_splitter = CTReportDataSplitter(
+            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
+            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+        )
+        train_sample, internal_val_samples = train_data_splitter.prepare_samples(
+            train_split=cfg_dot.linear_probing_params.train_data_portion,
+            val_split=0.2
+        ) # validation split is always, train_split is controlable
+
+        train_dataset = CTReportXRayClassificationDataset(
+            cfg=cfg,
+            data=train_sample, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            split='train'
+        )
+
+        internal_val_dataset = CTReportXRayClassificationDataset(
+            cfg=cfg,
+            data=internal_val_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            split='train'
+        )
+
+    return train_dataset, internal_val_dataset
+
+
+def get_pathologies(dataset='internal'):
+    if dataset == 'internal':
+      pathologies = ['Medical material',
+                  'Arterial wall calcification', 
+                  'Cardiomegaly', 
+                  'Pericardial effusion',
+                  'Coronary artery wall calcification', 
+                  'Hiatal hernia',
+                  'Lymphadenopathy', 
+                  'Emphysema', 
+                  'Atelectasis', 
+                  'Lung nodule',
+                  'Lung opacity', 
+                  'Pulmonary fibrotic sequela', 
+                  'Pleural effusion', 
+                  'Mosaic attenuation pattern',
+                  'Peribronchial thickening', 
+                  'Consolidation', 
+                  'Bronchiectasis',
+                  'Interlobular septal thickening']
+    elif dataset == 'mimic':
+        pathologies = ['Arterial wall calcification', #
+						'Pericardial effusion', #
+						'Coronary artery wall calcification', #
+						'Hiatal hernia', #
+						'Lymphadenopathy', #
+						'Emphysema', #
+						'Atelectasis', #
+						'Mosaic attenuation pattern',#
+						'Peribronchial thickening', #
+						'Bronchiectasis', #
+						'Interlobular septal thickening']#
+    elif dataset == 'vinBig':
+        pathologies = []
+        # TODO:
+
+    return pathologies
+
+
+def linear_probing_main():
     # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
     # that is, add a additional fc layer on top of the vision model and the feature_projector
     num_classes = len(pathologies)
@@ -200,36 +137,6 @@ def run(cfg_dot):
     # sanity check the trainable parameters
     learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'Number of learnable parameters: {learnable_params}') # should be the same of a single linear layer
-
-    ###################################### NOTE: the following can be cached ######################################
-
-    # Set up the dataset and data loaders
-    #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
-    train_data_splitter = CTReportDataSplitter(
-        csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
-        data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
-    )
-    train_sample, internal_val_samples = train_data_splitter.prepare_samples(
-        train_split=cfg_dot.linear_probing_params.train_data_portion,
-        val_split=0.2
-    ) # validation split is always, train_split is controlable
-
-    train_dataset = CTReportXRayClassificationDataset(
-        cfg=cfg,
-        data=train_sample, # actual data potentially with the embeddings
-        data_embeddings=train_xray_features,
-        split='train'
-    )
-
-    internal_val_dataset = CTReportXRayClassificationDataset(
-        cfg=cfg,
-        data=internal_val_samples, # actual data potentially with the embeddings
-        data_embeddings=train_xray_features,
-        split='train'
-    )
-
-    ###################################### NOTE: the above can be cached ######################################
 
     #load the data
     train_loader = DataLoader(train_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
@@ -289,44 +196,81 @@ def run(cfg_dot):
 
     print("Finetuning the Xray encoder completed ==> perform external mimic-ct testing")
 
-    # testing TODO: different from internal
+
+def evaluate_classifier(dataset='', model):
+    if dataset == 'mimic':
+        test_dataset = MimicCTReportXRayDataset(
+            cfg=cfg,
+            data_folder='/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
+            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
+            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
+            split='valid'
+        )
+        print(f'size of the external test data: {len(test_dataset)}')
+        
+        test_loader = DataLoader(
+            test_dataset, 
+            num_workers=cfg_dot.linear_probing_params.num_workers, 
+            batch_size=cfg_dot.linear_probing_params.batch_size, 
+            shuffle=False)
+
+        # define a full classifier with encoder and projection layer learnt from the CT-RATE training set
+        # NOTE: since mimic is a new dataset, so it requires full forward pass of the vision encoder and then the projection layer
+        classification_model = XrayClassificationModel(
+            vision_model=clip_xray.xray_encoder, 
+            feature_projector=clip_xray.to_xray_latent, 
+            pretrained_classifier=model, # load the classifier layer
+            vision_model_type=xray_model_type
+        )
+        classification_model.to(device)
+
+        test_params = {
+            'test_loader': test_loader,
+            'device': device,
+            'model': classification_model,
+            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
+            'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
+            'delong_stats_saving_path': f'./lp_evaluation_results/mimic_ct/delong_stats/{pth_base_name}_data.pkl'
+        }
+        test_loop(test_params)
+    elif dataset == 'internal':
+        val_xray_features = load_cached_ct_rate_xray_features(split='valid') #TODO:
+        print('Xray feature extraction completed on the validation split for this particular baseline model')
+
+        # the whole validation dataset for internal validation.
+        test_data_splitter = CTReportDataSplitter(
+            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
+            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
+        )
+        test_samples = test_data_splitter.prepare_samples(train_split=1., val_split=0.) # no splitting
+
+        test_dataset = CTReportXRayClassificationDataset(
+            cfg=cfg,
+            data=test_samples,
+            data_embeddings=val_xray_features,
+            split='valid'
+        )
+        print(f'size of the external test data: {len(test_dataset)}')
+
+        test_loader = DataLoader(
+            test_dataset,
+            num_workers=cfg_dot.linear_probing_params.num_workers,
+            batch_size=cfg_dot.linear_probing_params.batch_size,
+            shuffle=False)
+
+        test_params = {
+            'test_loader': test_loader,
+            'device': device,
+            'model': model,
+            'pretrained_cpt_dest': best_ckpt_destination,
+            'metric_saving_path': f'./lp_evaluation_results/internal/{pth_base_name}_test_metrics_results.xlsx'
+        }
+        test_loop(test_params)
+
+    elif dataset == 'vin':
+        pass
     
-    # NOTE: use the mimic-ct external dataset to test it.
-    test_dataset = MimicCTReportXRayDataset(
-        cfg=cfg,
-        data_folder='/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
-        csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
-        labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
-        split='valid'
-    )
-    print(f'size of the external test data: {len(test_dataset)}')
-    
-    test_loader = DataLoader(
-        test_dataset, 
-        num_workers=cfg_dot.linear_probing_params.num_workers, 
-        batch_size=cfg_dot.linear_probing_params.batch_size, 
-        shuffle=False)
-
-    # define a full classifier with encoder and projection layer learnt from the CT-RATE training set
-    # NOTE: since mimic is a new dataset, so it requires full forward pass of the vision encoder and then the projection layer
-    classification_model = XrayClassificationModel(
-        vision_model=clip_xray.xray_encoder, 
-        feature_projector=clip_xray.to_xray_latent, 
-        pretrained_classifier=model, # load the classifier layer
-        vision_model_type=xray_model_type
-    )
-    classification_model.to(device)
-
-    test_params = {
-        'test_loader': test_loader,
-        'device': device,
-        'model': classification_model,
-        'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-        'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
-        'delong_stats_saving_path': f'./lp_evaluation_results/mimic_ct/delong_stats/{pth_base_name}_data.pkl'
-    }
-    test_loop(test_params)
-
     print('Finished probing evaluation without error :)')
 
 
@@ -342,8 +286,10 @@ def test_loop(params):
     all_preds = []
     all_probs = []
 
-    # only load the pretrained classifier TODO: better to compatible with the internal 
+    # external:
     model.fc.load_state_dict(torch.load(params['pretrained_cpt_dest']))
+    # internal 
+    # model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
 
     print(f'Performing testing with size (in unit batch) {len(test_loader)}')
     model.eval()
@@ -482,6 +428,4 @@ def train_loop(params):
     print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {total_loss/len(train_loader):.4f}")
 
 
-# Example usage
-if __name__ == "__main__":
-    main()
+    

@@ -547,6 +547,7 @@ class CTClipInference(nn.Module):
         if append:
             os.makedirs(saving_path, exist_ok=True)
             torch.save(xray_features, xray_feature_path)
+            print(f'Finished saving the xray features for {pth_name}')
 
         return xray_features
     

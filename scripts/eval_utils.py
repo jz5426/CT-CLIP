@@ -83,7 +83,18 @@ class XrayClassificationModel(nn.Module):
         output = self.fc(xray_latents)
         
         return output
-        
+
+def proportion_mapping(proportion):
+    if str(proportion) == '0.01':
+        return 'one_percent'
+    if str(proportion) == '0.025':
+        return 'two_five_percent'
+    if str(proportion) == '0.05':
+        return 'five_percent'
+    if str(proportion) == '0.1':
+        return 'ten_percent'
+    if str(proportion) == '1' or str(proportion) == '1.':
+        return 'hundred_percent'
 
 # Example usage
 # if __name__ == "__main__":

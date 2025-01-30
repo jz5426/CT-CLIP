@@ -1,5 +1,10 @@
 """
-do the same thing as in internal_linear_probe_evaluation_main and take that to evaluate on the mimic dataset.
+- this script is intended to merge the external_linear_probing and internal_linear_probing evaluation
+
+note that this file depends on the following are done:
+- the xray feature for each baseline is cached using the ctrate_xray_feature_caching.py
+- the internal split is already cached using the internal_split_caching.py
+- the implementation of the linear_probe_utils.py, which depends on above.
 """
 
 import torch
@@ -62,16 +67,6 @@ def main(cfg: DictConfig):
 
 
 def run(cfg_dot):
-
-    # print custom script argument
-    print(f"is_linear_probe_eval: {cfg_dot.linear_probing_params.is_linear_probe_eval}")
-    print(f"num_epochs: {cfg_dot.linear_probing_params.num_epochs}")
-    print(f"patience: {cfg_dot.linear_probing_params.patience}")
-    print(f"batch_size: {cfg_dot.linear_probing_params.batch_size}")
-    print(f"learning_rate: {cfg_dot.linear_probing_params.learning_rate}")
-    print(f"progress_window: {cfg_dot.linear_probing_params.progress_window}")
-    print(f"cpt_dest: {cfg_dot.linear_probing_params.cpt_dest}")
-    print(f"train data portion: {cfg_dot.linear_probing_params.train_data_portion}")
 
     # convert the config file to dictionary
     cfg = convert_dictconfig_to_dict(cfg_dot)
@@ -151,6 +146,8 @@ def run(cfg_dot):
     ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, 'mimic_ct')
     best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{pth_base_name}_best_model.pth')
 
+    ###################################### TODO: replace with load_cached_ct_rate_xray_features() start ######################################
+
     #NOTE: train on the synthetic dataset and evaluate on the mimic-ct (256 images) data
     split = 'train'
     train_split_inference = CTClipInference(
@@ -178,30 +175,10 @@ def run(cfg_dot):
     train_xray_features = train_split_inference.xray_feature_extraction('./', append=False)
     print('Xray feature extraction completed')
 
-    pathologies = ['Arterial wall calcification', #
-                    'Pericardial effusion', #
-                    'Coronary artery wall calcification', #
-                    'Hiatal hernia', #
-                    'Lymphadenopathy', #
-                    'Emphysema', #
-                    'Atelectasis', #
-                    'Mosaic attenuation pattern',#
-                    'Peribronchial thickening', #
-                    'Bronchiectasis', #
-                    'Interlobular septal thickening']#
+    ###################################### TODO: replace with load_cached_ct_rate_xray_features() end ######################################
 
-    # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
-    # that is, add a additional fc layer on top of the vision model and the feature_projector
-    num_classes = len(pathologies)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = LinearProbeModel(in_features=latent_size, num_classes=num_classes)
-    model.to(device)
 
-    # sanity check the trainable parameters
-    learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f'Number of learnable parameters: {learnable_params}') # should be the same of a single linear layer
-
-    ###################################### NOTE: the following can be cached ######################################
+    ###################################### TODO: replace with get_train_internal_split() start ######################################
 
     # Set up the dataset and data loaders
     #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
@@ -229,7 +206,36 @@ def run(cfg_dot):
         split='train'
     )
 
-    ###################################### NOTE: the above can be cached ######################################
+    ###################################### TODO: replace with get_train_internal_split() end ######################################
+
+    ###################################### TODO: replace with get_pathologies() start ######################################
+    pathologies = ['Arterial wall calcification', #
+                    'Pericardial effusion', #
+                    'Coronary artery wall calcification', #
+                    'Hiatal hernia', #
+                    'Lymphadenopathy', #
+                    'Emphysema', #
+                    'Atelectasis', #
+                    'Mosaic attenuation pattern',#
+                    'Peribronchial thickening', #
+                    'Bronchiectasis', #
+                    'Interlobular septal thickening']#
+    
+    ###################################### TODO: replace with get_pathologies() ends ######################################
+
+
+    ###################################### TODO: replace with linear_probing_main() start ######################################
+
+    # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
+    # that is, add a additional fc layer on top of the vision model and the feature_projector
+    num_classes = len(pathologies)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = LinearProbeModel(in_features=latent_size, num_classes=num_classes)
+    model.to(device)
+
+    # sanity check the trainable parameters
+    learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f'Number of learnable parameters: {learnable_params}') # should be the same of a single linear layer
 
     #load the data
     train_loader = DataLoader(train_dataset, num_workers=cfg_dot.linear_probing_params.num_workers, batch_size=cfg_dot.linear_probing_params.batch_size, shuffle=True)
@@ -289,6 +295,11 @@ def run(cfg_dot):
 
     print("Finetuning the Xray encoder completed ==> perform external mimic-ct testing")
 
+    ###################################### TODO: replace with linear_probing_main() end ######################################
+
+
+    ###################################### TODO: replace with evaluate_classifier() start ######################################
+
     # testing TODO: different from internal
     
     # NOTE: use the mimic-ct external dataset to test it.
@@ -328,6 +339,8 @@ def run(cfg_dot):
     test_loop(test_params)
 
     print('Finished probing evaluation without error :)')
+
+    ###################################### TODO: replace with evaluate_classifier() ends ######################################
 
 
 def test_loop(params):
