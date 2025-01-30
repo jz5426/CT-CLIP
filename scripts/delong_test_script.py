@@ -200,9 +200,10 @@ def full_sweep_evaluation(dirpath, data_portion='1', anchor_file='', results_des
     
     # Compare each pickle file against the anchor file
     for pickle_file in pickle_files:
-        if pickle_file == anchor_file:
+        if pickle_file in anchor_file:
             continue  # Skip comparing anchor file to itself
         
+        print('Comparing file: ', pickle_file)
         comparison_path = os.path.join(dirpath, pickle_file)
         
         try:
@@ -216,13 +217,12 @@ def full_sweep_evaluation(dirpath, data_portion='1', anchor_file='', results_des
     
     # Save results to an Excel file if specified
     if results_dest:
+        os.makedirs(results_dest, exist_ok=True)
         excel_path = os.path.join(results_dest, f'{basename}_auc_comparison_results_{train_portion_identifier}.xlsx')
-        results_df.to_excel(excel_path, index=True)
+        results_df.to_excel(excel_path, index=True, float_format="%.5f")
         print(f"Results saved to {excel_path}")
     
     return results
-
-
 
 if __name__ == '__main__':
     # two excel files
@@ -236,4 +236,30 @@ if __name__ == '__main__':
 #    file2 = '/Users/maxxyouu/Desktop/delong_test/external_lp_data/delong_stats/swin_medclip_features__train_portion_0.025_data.pkl'
 #    main_delong(file1, file2)
 
-    full_sweep_evaluation('remaining pickle objects path', '1', 'anchor file', 'destination')
+    full_sweep_evaluation(
+        '/Users/maxxyouu/Desktop/delong_test/delong_stats',
+        '0.1',
+        '/Users/maxxyouu/Desktop/delong_test/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features.pth__train_portion_0.1_data.pkl',
+        './delong_significance'
+    )
+
+    full_sweep_evaluation(
+        '/Users/maxxyouu/Desktop/delong_test/delong_stats',
+        '0.05',
+        '/Users/maxxyouu/Desktop/delong_test/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features__train_portion_0.05_data.pkl',
+        './delong_significance'
+    )
+
+    full_sweep_evaluation(
+        '/Users/maxxyouu/Desktop/delong_test/delong_stats',
+        '0.025',
+        '/Users/maxxyouu/Desktop/delong_test/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features__train_portion_0.025_data.pkl',
+        './delong_significance'
+    )
+
+    # full_sweep_evaluation(
+    #     '/Users/maxxyouu/Desktop/delong_test/delong_stats',
+    #     '0.01',
+    #     '/Users/maxxyouu/Desktop/delong_test/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features.pth__train_portion_0.1_data.pkl',
+    #     './delong_significance'
+    # )
