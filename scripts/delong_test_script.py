@@ -178,15 +178,15 @@ def full_sweep_evaluation(dirpath, data_portion='1', anchor_file='', results_des
         print('not a valid anchor file')
         return None
     
-    if 'pretrained_false' in anchor_file.lower():
-        basename += '_pretrained_false'
-    elif 'pretrained_true' in anchor_file.lower():
-        basename += '_pretrained_true'
+    if 'false' in anchor_file.lower():
+        basename += '_pretrainFalse'
+    elif 'true' in anchor_file.lower():
+        basename += '_pretrainTrue'
     else:
         print('not a valid anchor file')
         return None
 
-    train_portion_identifier = f'train_portion_{data_portion}'
+    train_portion_identifier = f'trainPortion{data_portion}'
     
     # List all pickle files in directory
     pickle_files = [f for f in os.listdir(dirpath) if f.endswith('.pkl') and train_portion_identifier in f]
@@ -238,28 +238,35 @@ if __name__ == '__main__':
 
     full_sweep_evaluation(
         '/Users/maxxyouu/Desktop/delong_test/delong_stats',
+        '1',
+        'swin_trainPortion1_pretrainFalse.pkl',
+        './delong_significance'
+    )
+
+    full_sweep_evaluation(
+        '/Users/maxxyouu/Desktop/delong_test/delong_stats',
         '0.1',
-        '/Users/maxxyouu/Desktop/delong_test/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features.pth__train_portion_0.1_data.pkl',
+        'swin_trainPortion0.1_pretrainFalse.pkl',
         './delong_significance'
     )
 
     full_sweep_evaluation(
         '/Users/maxxyouu/Desktop/delong_test/delong_stats',
         '0.05',
-        '/Users/maxxyouu/Desktop/delong_test/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features__train_portion_0.05_data.pkl',
+        'swin_trainPortion0.05_pretrainFalse.pkl',
         './delong_significance'
     )
 
     full_sweep_evaluation(
         '/Users/maxxyouu/Desktop/delong_test/delong_stats',
         '0.025',
-        '/Users/maxxyouu/Desktop/delong_test/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features__train_portion_0.025_data.pkl',
+        'swin_trainPortion0.025_pretrainFalse.pkl',
         './delong_significance'
     )
 
-    # full_sweep_evaluation(
-    #     '/Users/maxxyouu/Desktop/delong_test/delong_stats',
-    #     '0.01',
-    #     '/Users/maxxyouu/Desktop/delong_test/delong_stats/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features.pth__train_portion_0.1_data.pkl',
-    #     './delong_significance'
-    # )
+    full_sweep_evaluation(
+        '/Users/maxxyouu/Desktop/delong_test/delong_stats',
+        '0.01',
+        'swin_trainPortion0.01_pretrainFalse.pkl',
+        './delong_significance'
+    )
