@@ -46,6 +46,7 @@ training_params:
 linear_probing_params:
   baseline_type: 'cxr_clip_resnet' # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
   is_linear_probe_eval: true
+  multi_sweep_evaluation: false
   num_epochs: 1 # 1000
   patience: 20
   batch_size: 4096
