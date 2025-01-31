@@ -228,6 +228,7 @@ def run(cfg_dot):
 		#NOTE: this returns the ct embeddings and the text embeddings and the xray image (paired up)
 		test_bed = CTReportXRayDatasetinfer(
 			data_folder=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha', # THIS IS CORRECT
+			model_type=xray_model_type,
 			cfg=cfg, 
 			csv_file=f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
 			img_embedding_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth',

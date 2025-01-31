@@ -150,7 +150,7 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         #         for _dataset in data_config[_split]:
         #             data_config[_split][_dataset]["normalize"] = "imagenet"
 
-        self.normalize = 'huggingface' if 'swin' in model_type or 'vit' in model_type else 'imagenet' # when use swin or non-resnet architecture
+        self.normalize = 'huggingface' if 'swin' in model_type.lower() or 'vit' in model_type.lower() else 'imagenet' # when use swin or non-resnet architecture
         print('normalization used => ', self.normalize)
         # self.normalize = "huggingface" # when use swin or non-resnet architecture
         # if cfg["model"]["image_encoder"]["name"] == "resnet":

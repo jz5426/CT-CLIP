@@ -292,7 +292,7 @@ class CTReportXRayClassificationDataset:
         self.cfg = cfg
         self.samples = data
         self.embeddings = data_embeddings
-        self.normalize = 'huggingface' if 'swin' in model_type or 'vit' in model_type else 'imagenet' # when use swin or non-resnet architecture
+        self.normalize = 'huggingface' if 'swin' in model_type.lower() or 'vit' in model_type.lower() else 'imagenet' # when use swin or non-resnet architecture
         print('normalization used => ', self.normalize)
 
         # self.normalize = "huggingface" # when use swin or non-resnet architecture
@@ -368,7 +368,7 @@ class MimicCTReportXRayDataset:
         self.labels = labels
         self.accession_to_text = self.load_accession_text(csv_file)
         self.samples = self.prepare_samples(data_folder)
-        self.normalize = 'huggingface' if 'swin' in model_type or 'vit' in model_type else 'imagenet' # when use swin or non-resnet architecture
+        self.normalize = 'huggingface' if 'swin' in model_type.lower() or 'vit' in model_type.lower() else 'imagenet' # when use swin or non-resnet architecture
         print('normalization used => ', self.normalize)
 
         self.xray_transform = load_transform(split=split, transform_config=cfg['transform'])
@@ -534,7 +534,7 @@ class CTReportXRayDataset(CTReportDataset):
         #         for _dataset in data_config[_split]:
         #             data_config[_split][_dataset]["normalize"] = "imagenet"
 
-        self.normalize = 'huggingface' if 'swin' in model_type or 'vit' in model_type else 'imagenet' # when use swin or non-resnet architecture
+        self.normalize = 'huggingface' if 'swin' in model_type.lower() or 'vit' in model_type.lower() else 'imagenet' # when use swin or non-resnet architecture
         print('normalization used => ', self.normalize)
 
         # self.normalize = "huggingface" # when use swin or non-resnet architecture
