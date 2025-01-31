@@ -456,6 +456,18 @@ class MimicCTReportXRayDataset:
 
     def __len__(self):
         return len(self.samples)
+    
+class VinBigDataChestXrayDataset(Dataset):
+    def __init__(self, dataframe, image_dir):
+        super().__init__()
+        self.image_ids = dataframe["image_id"].unique()
+        self.df = dataframe
+        self.image_dir = image_dir
+        self.transforms = 
+
+    def __getitem__(self, index):
+
+        pass
 
 class CTReportXRayDataset(CTReportDataset):
 
@@ -556,18 +568,6 @@ class CTReportXRayDataset(CTReportDataset):
 
         rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
         rgb_image = Image.fromarray(rgb_image, mode="RGB")
-
-        # # Step 3: Use torch.from_numpy for fast conversion (shares memory)
-        # tensor_image = torch.from_numpy(np_image)
-        
-        # # Step 4: Ensure the tensor has the correct dtype
-        # tensor_image = tensor_image.to(torch.float32)
-        
-        # # Step 5: Normalize NOTE: should be according to the cxr_clip
-        # # tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())
-        
-        # # Step 6: Add channel dimension for PyTorch (C x 3 x H x W)
-        # tensor_image = tensor_image.unsqueeze(0)  # Add batch dimension
         
         return rgb_image
 
@@ -620,61 +620,3 @@ class CTReportXRayDataset(CTReportDataset):
 
     def __len__(self):
         return len(self.key_ids)
-
-    # def prepare_samples_backup(self):
-    #     """
-    #     override the parent method
-
-    #     assume the files inside the path are preprocessed and saved in as .pt object from torch.save
-    #     check the file: preprocess_ctrate_with_xray_valid
-    #     """
-
-    #     #TODO: load the embeddings based on the dictionary here: samples should contains (imsage embeddings, text embeddings, xray_file)
-    #         # the batching style should based on self.batch_style
-    #     samples = []
-    #     xray_path_dirs = self.xray_data_folder.split(os.sep)
-    #     for patient_folder in tqdm.tqdm(glob.glob(os.path.join(self.data_folder, '*'))):
-    #         for accession_folder in glob.glob(os.path.join(patient_folder, '*')):
-    #             pt_files = glob.glob(os.path.join(accession_folder, '*.pt'))
-    #             for nii_file in pt_files:
-    #                 path_dirs = nii_file.split(os.sep)
-    #                 accession_number = path_dirs[-1]
-    #                 accession_number = accession_number.replace(".pt", ".nii.gz")
-
-    #                 # corresponding xray file => xray parent directory + the remaining path that reach the instance
-    #                 xray_file = os.sep.join(xray_path_dirs + path_dirs[path_dirs.index(self.parent_folder)+1:])
-    #                 xray_file = xray_file.replace('.pt', '.mha')
-    #                 if accession_number not in self.accession_to_text:
-    #                     continue
-
-    #                 impression_text = self.accession_to_text[accession_number]
-
-    #                 if impression_text == "Not given.":
-    #                     impression_text=""
-
-    #                 input_text_concat = ""
-    #                 for text in impression_text:
-    #                     input_text_concat = input_text_concat + str(text)
-    #                 input_text_concat = impression_text[0]
-    #                 # input_text = f'{impression_text}'
-    #                 samples.append((nii_file, input_text_concat, xray_file))
-    #                 self.paths.append(nii_file)
-    #                 self.xray_paths.append(xray_file)
-    #     return samples
-
-    # def __getitem__backup(self, index):
-    #     #TODO: replace the input_text and nii_file
-    #     nii_file, input_text, xray_file = self.samples[index]
-    #     video_tensor = self.nii_to_tensor(nii_file)
-
-    #     xray_image = self.xray_to_rgb(xray_file)
-    #     # transformation borrowed from cxr_clip
-    #     xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
-
-    #     input_text = str(input_text)
-    #     input_text = input_text.replace('"', '')
-    #     input_text = input_text.replace('\'', '')
-    #     input_text = input_text.replace('(', '')
-    #     input_text = input_text.replace(')', '')
-
-    #     return video_tensor, input_text, xray_image

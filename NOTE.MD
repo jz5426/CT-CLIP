@@ -6,6 +6,7 @@ install the following
 
 pip uninstall attr
 pip install attrs
+pip install pydicom
 pip install albumentations 
 pip install scikit-multilearn
 pip install SimpleITK

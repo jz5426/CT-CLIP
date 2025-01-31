@@ -14,7 +14,9 @@ from PIL import Image
 from functools import partial
 import pydicom
 
-def read_dcm_files(csv_file_path):
+XRAY_DATA_TYPE = 'vinbigxray'
+
+def read_mimic_dcm_files(csv_file_path):
     """
     Retrieve paths of all dcm files in the given directory.
 
@@ -29,6 +31,13 @@ def read_dcm_files(csv_file_path):
 
     # h mainly used for naming the xray vols
     return [(h,c) for h, c in zip(hadm_ids, cxr_path_list)]
+
+def read_vinbig_dcm_files(csv_file_path):
+    df = pd.read_csv(csv_file_path)
+    image_ids = df['image_id'].tolist()
+    # create path base on each image id in the list
+    vinbig_path_list = [(image_id, os.path.join(os.path.dirname(csv_file_path), 'train', image_id+'.dicom')) for image_id in image_ids]
+    return vinbig_path_list
 
 def read_dcm_data(file_path):
     """
@@ -49,16 +58,23 @@ def read_dcm_data(file_path):
         return None
 
 def process_file(file_instance_tuple, shared_dst_dir):
-    hadm_id, file_path = file_instance_tuple
+    image_id, file_path = file_instance_tuple
+    if XRAY_DATA_TYPE == 'mimic':
+        xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_mha')
+    elif XRAY_DATA_TYPE == 'vinbigxray':
+        xray_folder_path_new = os.path.join(shared_dst_dir, 'vinbig_preprocessed_xray_mha')
 
-    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_mha')
     os.makedirs(xray_folder_path_new, exist_ok=True)
-    file_name = hadm_id + '.mha'
+    file_name = image_id + '.mha'
     xray_mha_save_path = os.path.join(xray_folder_path_new, file_name)
 
-    xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_rgb')
+    if XRAY_DATA_TYPE == 'mimic':
+        xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_rgb')
+    elif XRAY_DATA_TYPE == 'vinbigxray':
+        xray_folder_path_new = os.path.join(shared_dst_dir, 'vinbig_preprocessed_xray_rgb')
+
     os.makedirs(xray_folder_path_new, exist_ok=True)
-    file_name = hadm_id + '.png'
+    file_name = image_id + '.png'
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
 
     xray_array = read_dcm_data(file_path)
@@ -88,10 +104,16 @@ def process_file(file_instance_tuple, shared_dst_dir):
 
 
 if __name__ == "__main__":
-    num_workers = 20
-    csv_file_path = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label_pa_ap.csv'
-    dcm_files = read_dcm_files(csv_file_path)
+    num_workers = 1
+    if XRAY_DATA_TYPE == 'mimic':
+        csv_file_path = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label_pa_ap.csv'
+        shared_dst_dir = './preprocessed_mimic'
+        dcm_files = read_mimic_dcm_files(csv_file_path)
+    elif XRAY_DATA_TYPE == 'vinbigxray':
+        csv_file_path = '/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/train.csv'
+        shared_dst_dir = './preprocessed_vinbig'
+        dcm_files = read_vinbig_dcm_files(csv_file_path)
 
     with Pool(num_workers) as pool:
-        func_with_arg = partial(process_file, shared_dst_dir='./preprocessed_mimic')
+        func_with_arg = partial(process_file, shared_dst_dir=shared_dst_dir)
         list(tqdm(pool.imap_unordered(func_with_arg, dcm_files), total=len(dcm_files)))
