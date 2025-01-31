@@ -48,6 +48,7 @@ def main(cfg: DictConfig):
     # torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
 
+    # iterate 10 times and collect the stats
     if cfg.linear_probe_params.multi_sweep_evaluation:
         # List of seeds to iterate over
         seed_list = [1024, 1234, 4321, 5678, 8765, 1357, 2468, 9753, 8642, 3141]
