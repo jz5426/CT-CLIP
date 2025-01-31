@@ -17,25 +17,25 @@ source activate ctclip
 # then run the sbatch lp_val.sh for different models
 
 ## for verification
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=medclip_vit
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=medclip_resnet
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=medclip_vit
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=medclip_resnet
 
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=medclip_vit
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=medclip_resnet
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=medclip_vit
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=medclip_resnet
 
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=medclip_vit
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=medclip_resnet
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=medclip_vit
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=medclip_resnet
 
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=medclip_vit
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=medclip_resnet
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=medclip_vit
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=medclip_resnet
 
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=medclip_vit
-python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=medclip_resnet
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
+python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=medclip_vit
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/linear_probe_evaluation.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=medclip_resnet
 
 ## real run 
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
@@ -45,6 +45,7 @@ python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=medclip_vit
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=medclip_resnet
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=gloria_densenet
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=1 linear_probing_params.baseline_type=gloria_resnet
 
 
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
@@ -54,6 +55,7 @@ python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=medclip_vit
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=medclip_resnet
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=gloria_densenet
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.025 linear_probing_params.baseline_type=gloria_resnet
 
 
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
@@ -63,6 +65,7 @@ python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=medclip_vit
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=medclip_resnet
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=gloria_densenet
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.05 linear_probing_params.baseline_type=gloria_resnet
 
 
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
@@ -72,6 +75,8 @@ python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=medclip_vit
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=medclip_resnet
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=gloria_densenet
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.1 linear_probing_params.baseline_type=gloria_resnet
+
 
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
@@ -80,6 +85,8 @@ python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=medclip_vit
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=medclip_resnet
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=gloria_densenet
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py linear_probing_params.train_data_portion=0.01 linear_probing_params.baseline_type=gloria_resnet
+
 
 
 

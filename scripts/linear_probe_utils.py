@@ -221,7 +221,7 @@ def evaluate_classifier(params):
             'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
             'delong_stats_saving_path': f'./lp_evaluation_results/mimic_ct/delong_stats/{pth_base_name}_data.pkl'
         }
-        test_loop(test_params)
+        return test_loop(test_params)
     elif dataset == 'ct-rate':
         val_xray_features = load_cached_ct_rate_xray_features(split='valid') #TODO:
         print('Xray feature extraction completed on the validation split for this particular baseline model')

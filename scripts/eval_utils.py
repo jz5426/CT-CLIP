@@ -14,6 +14,8 @@ class LinearProbeModel(nn.Module):
         super(LinearProbeModel, self).__init__()
         # NOTE: the linear layer should be pretrained
         self.fc = nn.Linear(in_features, num_classes)
+        print("Weights of the linear layer:")
+        print(self.fc.weight)
 
     def forward(self, x):
         # NOTE: assume x is normalized

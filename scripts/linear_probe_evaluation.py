@@ -49,9 +49,10 @@ def main(cfg: DictConfig):
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
 
     # iterate 10 times and collect the stats
-    if cfg.linear_probe_params.multi_sweep_evaluation:
+    if cfg.linear_probing_params.multi_sweep_evaluation:
         # List of seeds to iterate over
-        seed_list = [1024, 1234, 4321, 5678, 8765, 1357, 2468, 9753, 8642, 3141]
+        seed_list = [1024, 1234, 4321, 5678, 8765, 1357, 2468, 9753, 8642, 3141][:5]
+
         results = {}
 
         for i, seed in enumerate(seed_list):
@@ -181,7 +182,8 @@ def run(cfg_dot):
     if cfg_dot.linear_probing_params.evaluation_dataset == 'mimic':
         parent_dir = 'mimic_ct'
     elif cfg_dot.linear_probing_params.evaluation_dataset == 'ct-rate':
-        parent_dir = 'internal_val'
+        parent_dir = 'ct-rate'
+
     ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, parent_dir)
     best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{pth_base_name}_best_model.pth')
     params = {

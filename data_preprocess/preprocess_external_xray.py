@@ -15,6 +15,8 @@ from functools import partial
 import pydicom
 
 XRAY_DATA_TYPE = 'vinbigxray'
+MIRROR = False
+SPLIT = 'test'
 
 def read_mimic_dcm_files(csv_file_path):
     """
@@ -35,8 +37,9 @@ def read_mimic_dcm_files(csv_file_path):
 def read_vinbig_dcm_files(csv_file_path):
     df = pd.read_csv(csv_file_path)
     image_ids = df['image_id'].unique().tolist() # note that there are duplicates for multi labels
+    print(f'unique: {len(image_ids)}')
     # create path base on each image id in the list
-    vinbig_path_list = [(image_id, os.path.join(os.path.dirname(csv_file_path), 'train', image_id+'.dicom')) for image_id in image_ids]
+    vinbig_path_list = [(image_id, os.path.join(os.path.dirname(csv_file_path), SPLIT, image_id+'.dicom')) for image_id in image_ids]
     return vinbig_path_list
 
 def read_dcm_data(file_path):
@@ -60,18 +63,18 @@ def read_dcm_data(file_path):
 def process_file(file_instance_tuple, shared_dst_dir):
     image_id, file_path = file_instance_tuple
     if XRAY_DATA_TYPE == 'mimic':
-        xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_mha')
+        xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_mha' if not MIRROR else 'mimic_preprocessed_xray_mha_mirror')
     elif XRAY_DATA_TYPE == 'vinbigxray':
-        xray_folder_path_new = os.path.join(shared_dst_dir, 'vinbig_preprocessed_xray_mha')
+        xray_folder_path_new = os.path.join(shared_dst_dir, 'vinbig_preprocessed_xray_mha' if not MIRROR else 'vinbig_preprocessed_xray_mha_mirror')
 
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = image_id + '.mha'
     xray_mha_save_path = os.path.join(xray_folder_path_new, file_name)
 
     if XRAY_DATA_TYPE == 'mimic':
-        xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_rgb')
+        xray_folder_path_new = os.path.join(shared_dst_dir, 'mimic_preprocessed_xray_rgb' if not MIRROR else 'mimic_preprocessed_xray_rgb_mirror')
     elif XRAY_DATA_TYPE == 'vinbigxray':
-        xray_folder_path_new = os.path.join(shared_dst_dir, 'vinbig_preprocessed_xray_rgb')
+        xray_folder_path_new = os.path.join(shared_dst_dir, 'vinbig_preprocessed_xray_rgb' if not MIRROR else 'vinbig_preprocessed_xray_rgb_mirror')
 
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = image_id + '.png'
@@ -85,12 +88,14 @@ def process_file(file_instance_tuple, shared_dst_dir):
     if 'mirror' in xray_folder_path_new: # rotate the image?
         print('mirroring the xray')
         xray_array = np.flip(np.squeeze(xray_array), axis=-1)
+
+    # NOTE that this is only done to the rgb image, which is not saved.
     np_image = (xray_array - xray_array.min()) / (xray_array.max() - xray_array.min()) * 255
     np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
 
     rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
     rgb_image = Image.fromarray(rgb_image, mode="RGB")
-    rgb_image.show()
+    # rgb_image.show()
 
     xray_image = sitk.GetImageFromArray(xray_array)
     xray_image.SetSpacing((1.0, 1.0))  # Example spacing
@@ -104,14 +109,14 @@ def process_file(file_instance_tuple, shared_dst_dir):
 
 
 if __name__ == "__main__":
-    num_workers = 1
+    num_workers = 20
     if XRAY_DATA_TYPE == 'mimic':
         csv_file_path = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label_pa_ap.csv'
         shared_dst_dir = './preprocessed_mimic'
         dcm_files = read_mimic_dcm_files(csv_file_path)
     elif XRAY_DATA_TYPE == 'vinbigxray':
-        csv_file_path = '/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/train.csv'
-        shared_dst_dir = '/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_train'
+        csv_file_path = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{SPLIT}.csv'
+        shared_dst_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{SPLIT}'
         dcm_files = read_vinbig_dcm_files(csv_file_path)
 
     with Pool(num_workers) as pool:
