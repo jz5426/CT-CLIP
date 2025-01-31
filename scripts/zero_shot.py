@@ -182,6 +182,7 @@ class MimicCTClipInference(nn.Module):
             data_folder=data_folder,
             csv_file=reports_file,
             labels=labels, 
+            model_type=CTClip.xray_model_type,
             split='valid')
 
         # Split dataset into train and validation sets
@@ -325,13 +326,15 @@ class CTClipInference(nn.Module):
             # Load the pre-trained weights
             self.ds = CTReportXRayDataset(
                         data_folder=data_folder,
+                        model_type=self.CTClip.xray_model_type,
                         csv_file=reports_file,
                         cfg=cfg,
                         img_embedding_path=img_embedding_paths['train'], 
                         text_embedding_path=text_embedding_paths['train'],
                         batch_style='instance') if 'train' in img_embedding_paths else \
                       CTReportXRayDatasetinfer(
-                        data_folder=data_folder, 
+                        data_folder=data_folder,
+                        model_type=self.CTClip.xray_model_type,
                         cfg=cfg, 
                         csv_file=reports_file,
                         img_embedding_path=img_embedding_paths['valid'],

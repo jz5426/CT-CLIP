@@ -202,6 +202,7 @@ def run(cfg_dot):
         cfg=cfg,
         data=train_sample, # actual data
         data_embeddings=train_xray_features,
+        model_type=xray_model_type,
         split='train'
     )
 
@@ -209,6 +210,7 @@ def run(cfg_dot):
         cfg=cfg,
         data=internal_val_samples, # actual data
         data_embeddings=train_xray_features,
+        model_type=xray_model_type,
         split='train'
     )
 
@@ -350,6 +352,7 @@ def run(cfg_dot):
         cfg=cfg,
         data=test_samples,
         data_embeddings=val_xray_features,
+        model_type=xray_model_type,
         split='valid'
     )
     print(f'size of the external test data: {len(test_dataset)}')

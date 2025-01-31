@@ -112,6 +112,7 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
     def __init__(self,
                  data_folder, 
+                 model_type,
                  cfg, 
                  csv_file='',
                  img_embedding_path='F:\\Chris\\dataset\\features_embeddings\\valid\\image_features.pth', 
@@ -149,9 +150,10 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         #         for _dataset in data_config[_split]:
         #             data_config[_split][_dataset]["normalize"] = "imagenet"
 
-        self.normalize = "huggingface" # when use swin or non-resnet architecture
-        if cfg["model"]["image_encoder"]["name"] == "resnet":
-            self.normalize = "imagenet" # only for resnet architecture
+        self.normalize = 'huggingface' if 'swin' in model_type or 'vit' in model_type else 'imagenet' # when use swin or non-resnet architecture
+        # self.normalize = "huggingface" # when use swin or non-resnet architecture
+        # if cfg["model"]["image_encoder"]["name"] == "resnet":
+        #     self.normalize = "imagenet" # only for resnet architecture
 
         self.xray_transform = load_transform(split='valid', transform_config=cfg['transform'])
             # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation

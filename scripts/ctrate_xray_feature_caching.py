@@ -129,7 +129,7 @@ def run(cfg_dot):
     ###################################### NOTE: the following can be cached ######################################
 
     split = 'train'
-    train_split_inference = ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+    train_split_inference = ct_rate_split(split, xray_model_type, clip_xray, cfg, cfg_dot, tokenizer)
     # get xray latent features from this particularly baseline model
     train_split_inference.xray_feature_extraction(
         directory=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/',
@@ -138,7 +138,7 @@ def run(cfg_dot):
     )
 
     split = 'valid'
-    valid_split_inference = ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+    valid_split_inference = ct_rate_split(split, xray_model_type, clip_xray, cfg, cfg_dot, tokenizer)
     valid_split_inference.xray_feature_extraction(
         directory=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/',
         pth_name=pth_base_name, 
@@ -149,7 +149,7 @@ def run(cfg_dot):
 
     print(f'Finished caching the xray feature extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
 
-def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
+def ct_rate_split(split, xray_model_type, clip_xray, cfg, cfg_dot, tokenizer):
 
     split_inference = CTClipInference(
         clip_xray,

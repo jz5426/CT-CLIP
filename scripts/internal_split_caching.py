@@ -104,6 +104,7 @@ def run(cfg_dot):
             cfg=cfg,
             data=train_sample, # actual data potentially with the embeddings
             data_embeddings=train_xray_features,
+            model_type=xray_model_type,
             split='train'
         )
 
@@ -111,6 +112,7 @@ def run(cfg_dot):
             cfg=cfg,
             data=internal_val_samples, # actual data potentially with the embeddings
             data_embeddings=train_xray_features,
+            model_type=xray_model_type,
             split='train'
         )
 

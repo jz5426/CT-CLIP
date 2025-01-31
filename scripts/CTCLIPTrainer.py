@@ -240,6 +240,7 @@ class CTClipTrainer(nn.Module):
                 csv_file=reports_file_train,
                 img_embedding_path=img_embedding_paths['train'], 
                 text_embedding_path=text_embedding_paths['train'],
+                model_type=CTClip.xray_model_type,
                 batch_style=batch_style
             )
             self.valid_ds = CTReportXRayDatasetinfer(
@@ -249,6 +250,7 @@ class CTClipTrainer(nn.Module):
                 img_embedding_path=img_embedding_paths['valid'],
                 text_embedding_path=text_embedding_paths['valid'],
                 batch_style=batch_style,
+                model_type=CTClip.xray_model_type,
                 labels=labels
             )
 

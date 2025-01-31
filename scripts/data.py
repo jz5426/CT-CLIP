@@ -284,6 +284,7 @@ class CTReportXRayClassificationDataset:
     def __init__(self,
                  cfg, 
                  data, # list of data processed from the prepare_sample
+                 model_type,
                  data_embeddings=None,
                  split='train'):
         self.file_extension = 'mha'
@@ -291,9 +292,11 @@ class CTReportXRayClassificationDataset:
         self.cfg = cfg
         self.samples = data
         self.embeddings = data_embeddings
-        self.normalize = "huggingface" # when use swin or non-resnet architecture
-        if cfg["model"]["image_encoder"]["name"] == "resnet":
-            self.normalize = "imagenet" # only for resnet architecture
+        self.normalize = 'huggingface' if 'swin' in model_type or 'vit' in model_type else 'imagenet' # when use swin or non-resnet architecture
+
+        # self.normalize = "huggingface" # when use swin or non-resnet architecture
+        # if cfg["model"]["image_encoder"]["name"] == "resnet":
+        #     self.normalize = "imagenet" # only for resnet architecture
 
         # TODO: check the split for validation set
         self.xray_transform = load_transform(split=split, transform_config=cfg['transform'])
@@ -356,6 +359,7 @@ class MimicCTReportXRayDataset:
                  data_folder, # list of data processed from the prepare_sample
                  csv_file,
                  labels,
+                 model_type,
                  split='valid'):
         self.file_extension = 'mha'
         self.xray_paths = []
@@ -363,9 +367,7 @@ class MimicCTReportXRayDataset:
         self.labels = labels
         self.accession_to_text = self.load_accession_text(csv_file)
         self.samples = self.prepare_samples(data_folder)
-        self.normalize = "huggingface" # when use swin or non-resnet architecture
-        if cfg["model"]["image_encoder"]["name"] == "resnet":
-            self.normalize = "imagenet" # only for resnet architecture
+        self.normalize = 'huggingface' if 'swin' in model_type or 'vit' in model_type else 'imagenet' # when use swin or non-resnet architecture
 
         self.xray_transform = load_transform(split=split, transform_config=cfg['transform'])
             # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
@@ -465,6 +467,25 @@ class VinBigDataChestXrayDataset(Dataset):
         self.image_dir = image_dir
         self.transforms = 
 
+    def xray_mha_to_rgb(self, path, transform):
+        """
+        assume the path to the xray is mha format
+        """
+        
+        # Step 1: Read the .mha file using SimpleITK
+        itk_image = sitk.ReadImage(path)
+        
+        # Step 2: Convert to a NumPy array
+        np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
+
+        np_image = (np_image - np_image.min()) / (np_image.max() - np_image.min()) * 255
+        np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
+
+        rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
+        rgb_image = Image.fromarray(rgb_image, mode="RGB")
+
+        return rgb_image
+
     def __getitem__(self, index):
 
         pass
@@ -474,6 +495,7 @@ class CTReportXRayDataset(CTReportDataset):
     def __init__(self,
                  data_folder, 
                  cfg, 
+                 model_type,
                  csv_file='',
                  img_embedding_path='F:\\Chris\\dataset\\features_embeddings\\train\\image_features.pth', 
                  text_embedding_path='F:\\Chris\\dataset\\features_embeddings\\train\\text_features.pth', 
@@ -510,9 +532,11 @@ class CTReportXRayDataset(CTReportDataset):
         #         for _dataset in data_config[_split]:
         #             data_config[_split][_dataset]["normalize"] = "imagenet"
 
-        self.normalize = "huggingface" # when use swin or non-resnet architecture
-        if cfg["model"]["image_encoder"]["name"] == "resnet":
-            self.normalize = "imagenet" # only for resnet architecture
+        self.normalize = 'huggingface' if 'swin' in model_type or 'vit' in model_type else 'imagenet' # when use swin or non-resnet architecture
+
+        # self.normalize = "huggingface" # when use swin or non-resnet architecture
+        # if cfg["model"]["image_encoder"]["name"] == "resnet":
+        #     self.normalize = "imagenet" # only for resnet architecture
 
         self.xray_transform = load_transform(split='train', transform_config=cfg['transform'])
             # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation

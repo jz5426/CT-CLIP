@@ -199,6 +199,7 @@ def run(cfg_dot):
 			data_folder='/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
 			csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
 			labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
+			model_type=xray_model_type,
 			split='valid' # for transformation
 		)
 		# xray_image, report, label, accession_number
