@@ -4,91 +4,67 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset
-from eval_utils import LinearProbeModel, XrayClassificationModel
-from transformers import BertTokenizer, BertModel
+from eval_utils import XrayClassificationModel, proportion_mapping
 import os
-from cxr_clip_utils import convert_dictconfig_to_dict
-import hydra
-from omegaconf import DictConfig, OmegaConf
 import torch
-from transformer_maskgit import CTViT
-from transformers import BertModel
-from ct_clip import CTCLIPwithXray
-import random
 import numpy as np
 from torch.utils.data import DataLoader
 from sklearn.metrics import average_precision_score, precision_recall_fscore_support, roc_auc_score
 import pandas as pd
-from zero_shot import CTClipInference
 import shutil
 import pickle
 
-def load_cached_ct_rate_xray_features(split, clip_xray, cfg, tokenizer):
-    # TODO: should load from cache
+def load_cached_ct_rate_xray_features(pth_base_name, split):
     # split = 'train'
-    train_split_inference = CTClipInference(
-        clip_xray,
-        cfg=cfg,
-        tokenizer=tokenizer,
-        data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
-        # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
-        img_embedding_paths = {
-            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
-        },
-        text_embedding_paths = {
-            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
-        },
-        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
-        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-        results_folder="./inference_zeroshot_retrieval",
-        batch_size = 1024,
-        num_train_steps = -1, # placeholder
-        num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-        feature_extraction_mode = True # might be optional
-    )  
 
-    # get xray latent features from this particularly baseline model
-    train_xray_features = train_split_inference.xray_feature_extraction('./', append=False)
+    # base on the baseline model, load the corresponding xray features
+    xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/{split}/{pth_base_name}'
+    xray_features = torch.load(xray_feature_path)
     print('Xray feature extraction completed')
+    return xray_features
 
-    return train_xray_features
-
-def get_train_internal_split(dataset='mimic'):
+def get_train_internal_split(dataset, model, proportion):
     """
     mimic and internal evalution share the same strategy
 
     set it up so that it loads from cache instead of loading from scratch
     """
-    if dataset == 'mimic' or dataset == 'internal':
-        train_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
-            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
-        )
-        train_sample, internal_val_samples = train_data_splitter.prepare_samples(
-            train_split=cfg_dot.linear_probing_params.train_data_portion,
-            val_split=0.2
-        ) # validation split is always, train_split is controlable
+    # from internal_split_caching
+    # assert model in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
+    if 'cxr_clip' in model: # can be either cxr_clip_swin or cxr_clip_resnet
+        xray_model_type = model #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+        saving_base_name = 'swin_cxr_xray_datasplit.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_datasplit.pth'
+    elif model == 'medclip_resnet':
+        xray_model_type = model
+        saving_base_name = 'resnet_medclip_datasplit.pth'
+        # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
+    elif model == 'medclip_vit':
+        xray_model_type = model
+        saving_base_name = 'swin_medclip_datasplit.pth'
+    elif model == 'gloria_densenet':
+        xray_model_type = model
+        saving_base_name = 'densenet_gloria_datasplit.pth'
+    elif model == 'gloria_resnet':
+        xray_model_type = model
+        saving_base_name = 'resnet_gloria_datasplit.pth'
+    else:
+        xray_model_type = model
+        saving_base_name = f'{xray_model_type}_datasplit.pth'
 
-        train_dataset = CTReportXRayClassificationDataset(
-            cfg=cfg,
-            data=train_sample, # actual data potentially with the embeddings
-            data_embeddings=train_xray_features,
-            split='train'
-        )
-
-        internal_val_dataset = CTReportXRayClassificationDataset(
-            cfg=cfg,
-            data=internal_val_samples, # actual data potentially with the embeddings
-            data_embeddings=train_xray_features,
-            split='train'
-        )
-
-    return train_dataset, internal_val_dataset
+    # decide to which cache to retrieve base on the model (saving_base_name), the dataset, and the proportion
+    if dataset == 'ct-rate' or dataset == 'mimic':
+        internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_internal_splits/{proportion_mapping(proportion)}/'
+        target_file_path = os.path.join(internal_split_dir, saving_base_name)
+        results = torch.load(target_file_path)
+        print('internal split loaded')
+        return results['train_split'], results['internal_val_split']
+    elif dataset == 'vinBig':
+        return None
 
 
 def get_pathologies(dataset='internal'):
-    if dataset == 'internal':
+    # NOTE: the order of the listed pathologies matter
+    if dataset == 'ct-rate':
       pathologies = ['Medical material',
                   'Arterial wall calcification', 
                   'Cardiomegaly', 
@@ -126,13 +102,14 @@ def get_pathologies(dataset='internal'):
     return pathologies
 
 
-def linear_probing_main():
-    # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
-    # that is, add a additional fc layer on top of the vision model and the feature_projector
-    num_classes = len(pathologies)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = LinearProbeModel(in_features=latent_size, num_classes=num_classes)
-    model.to(device)
+def linear_probing_main(params):
+    model = params['model']
+    device = params['device']
+    train_dataset = params['train_dataset']
+    internal_val_dataset = params['internal_val_dataset']
+    cfg_dot = params['cfg_dot']
+    ckpt_parent_dir = params['ckpt_parent_dir']
+    best_ckpt_destination = params['best_ckpt_destination']
 
     # sanity check the trainable parameters
     learnable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -195,9 +172,19 @@ def linear_probing_main():
             break
 
     print("Finetuning the Xray encoder completed ==> perform external mimic-ct testing")
+    return model
 
+def evaluate_classifier(params):
+    dataset = params['dataset']
+    cfg = params['cfg']
+    cfg_dot = params['cfg_dot']
+    clip_xray = params['clip_xray']
+    device = params['device']
+    xray_model_type = params['xray_model_type']
+    model = params['model']
+    best_ckpt_destination = params['best_ckpt_destination']
+    pth_base_name = params['pth_base_name']
 
-def evaluate_classifier(dataset='', model):
     if dataset == 'mimic':
         test_dataset = MimicCTReportXRayDataset(
             cfg=cfg,
@@ -219,7 +206,7 @@ def evaluate_classifier(dataset='', model):
         classification_model = XrayClassificationModel(
             vision_model=clip_xray.xray_encoder, 
             feature_projector=clip_xray.to_xray_latent, 
-            pretrained_classifier=model, # load the classifier layer
+            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded soon
             vision_model_type=xray_model_type
         )
         classification_model.to(device)
@@ -228,12 +215,13 @@ def evaluate_classifier(dataset='', model):
             'test_loader': test_loader,
             'device': device,
             'model': classification_model,
+            'full_forward_pass': True,
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
             'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
             'delong_stats_saving_path': f'./lp_evaluation_results/mimic_ct/delong_stats/{pth_base_name}_data.pkl'
         }
         test_loop(test_params)
-    elif dataset == 'internal':
+    elif dataset == 'ct-rate':
         val_xray_features = load_cached_ct_rate_xray_features(split='valid') #TODO:
         print('Xray feature extraction completed on the validation split for this particular baseline model')
 
@@ -263,6 +251,7 @@ def evaluate_classifier(dataset='', model):
             'test_loader': test_loader,
             'device': device,
             'model': model,
+            'full_forward_pass': False,
             'pretrained_cpt_dest': best_ckpt_destination,
             'metric_saving_path': f'./lp_evaluation_results/internal/{pth_base_name}_test_metrics_results.xlsx'
         }
@@ -281,15 +270,18 @@ def test_loop(params):
     model = params['model']
     metric_saving_path = params['metric_saving_path']
     delong_stats_saving_path = params['delong_stats_saving_path']
+    full_forward_pass = params['full_forward_pass']
     
     all_labels = []
     all_preds = []
     all_probs = []
 
-    # external:
-    model.fc.load_state_dict(torch.load(params['pretrained_cpt_dest']))
-    # internal 
-    # model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
+    # for full forward pass, only need to load the weights of the classifier
+    if full_forward_pass:
+        model.fc.load_state_dict(torch.load(params['pretrained_cpt_dest']))
+    else:
+        # default to be the classifier layer
+        model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
 
     print(f'Performing testing with size (in unit batch) {len(test_loader)}')
     model.eval()
