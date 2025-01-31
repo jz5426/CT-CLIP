@@ -461,36 +461,36 @@ class MimicCTReportXRayDataset:
     def __len__(self):
         return len(self.samples)
     
-class VinBigDataChestXrayDataset(Dataset):
-    def __init__(self, dataframe, image_dir):
-        super().__init__()
-        self.image_ids = dataframe["image_id"].unique()
-        self.df = dataframe
-        self.image_dir = image_dir
-        self.transforms = 
+# class VinBigDataChestXrayDataset(Dataset):
+#     def __init__(self, dataframe, image_dir):
+#         super().__init__()
+#         self.image_ids = dataframe["image_id"].unique()
+#         self.df = dataframe
+#         self.image_dir = image_dir
+#         self.transforms = 
 
-    def xray_mha_to_rgb(self, path, transform):
-        """
-        assume the path to the xray is mha format
-        """
+#     def xray_mha_to_rgb(self, path, transform):
+#         """
+#         assume the path to the xray is mha format
+#         """
         
-        # Step 1: Read the .mha file using SimpleITK
-        itk_image = sitk.ReadImage(path)
+#         # Step 1: Read the .mha file using SimpleITK
+#         itk_image = sitk.ReadImage(path)
         
-        # Step 2: Convert to a NumPy array
-        np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
+#         # Step 2: Convert to a NumPy array
+#         np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
 
-        np_image = (np_image - np_image.min()) / (np_image.max() - np_image.min()) * 255
-        np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
+#         np_image = (np_image - np_image.min()) / (np_image.max() - np_image.min()) * 255
+#         np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
 
-        rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
-        rgb_image = Image.fromarray(rgb_image, mode="RGB")
+#         rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
+#         rgb_image = Image.fromarray(rgb_image, mode="RGB")
 
-        return rgb_image
+#         return rgb_image
 
-    def __getitem__(self, index):
+#     def __getitem__(self, index):
 
-        pass
+#         pass
 
 class CTReportXRayDataset(CTReportDataset):
 
