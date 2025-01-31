@@ -253,9 +253,10 @@ def evaluate_classifier(params):
             'model': model,
             'full_forward_pass': False,
             'pretrained_cpt_dest': best_ckpt_destination,
-            'metric_saving_path': f'./lp_evaluation_results/internal/{pth_base_name}_test_metrics_results.xlsx'
+            'metric_saving_path': f'./lp_evaluation_results/ct-rate/{pth_base_name}_test_metrics_results.xlsx',
+            'delong_stats_saving_path': f'./lp_evaluation_results/ct-rate/delong_stats/{pth_base_name}_data.pkl'
         }
-        test_loop(test_params)
+        return test_loop(test_params)
 
     elif dataset == 'vin':
         pass
@@ -356,6 +357,8 @@ def test_loop(params):
     os.makedirs(os.path.dirname(metric_saving_path), exist_ok=True)
     metrics_df.to_excel(metric_saving_path, index=False)
     print(f"Metric results saved to {metric_saving_path}")
+
+    return labels_preds
 
 
 def validation_loop(params):

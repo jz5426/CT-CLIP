@@ -365,7 +365,7 @@ def run(cfg_dot):
         'device': device,
         'model': model,
         'pretrained_cpt_dest': best_ckpt_destination,
-        'metric_saving_path': f'./lp_evaluation_results/internal/{pth_base_name}_test_metrics_results.xlsx'
+        'metric_saving_path': f'./lp_evaluation_results/ct-rate/{pth_base_name}_test_metrics_results.xlsx'
     }
     test_loop(test_params)
 

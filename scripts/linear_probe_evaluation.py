@@ -23,6 +23,7 @@ from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
 import pandas as pd
+import pickle
 
 @hydra.main(
         version_base=None,
@@ -47,6 +48,33 @@ def main(cfg: DictConfig):
     # torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
 
+    if cfg.linear_probe_params.multi_sweep_evaluation:
+        # List of seeds to iterate over
+        seed_list = [1024, 1234, 4321, 5678, 8765, 1357, 2468, 9753, 8642, 3141]
+        results = {}
+
+        for i, seed in enumerate(seed_list):
+            # Set the random seeds
+            random.seed(seed)
+            np.random.seed(seed)
+            torch.manual_seed(seed)
+            torch.cuda.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+
+            # Run the function and store the label_predictions
+            label_predictions = run(cfg)
+            results[seed] = label_predictions
+            print(f'finish the evaluation round {i+1}/{len(seed_list)}')
+
+        # Define save path so that it is unique to the baseline and the datasets
+        save_path = f"./lp_evaluation_results/multi_sweep/{cfg.linear_probing_params.evaluation_dataset}/{cfg.linear_probing_params.baseline_type}_trainPortion{cfg.linear_probing_params.train_data_portion}_sweeps_results.pkl"
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        # Save results as a Pickle file
+        with open(save_path, "wb") as f:
+            pickle.dump(results, f)
+        print(f"full sweep results are saved to : {save_path}")
+        return 
+
     # seed everything
     seed = 1024
     random.seed(seed)    
@@ -68,10 +96,6 @@ def run(cfg_dot):
         '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
         local_files_only=True
     )
-    # tokenizer = BertTokenizer.from_pretrained(
-    #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-    #     do_lower_case=True,
-    #     local_files_only=True)
 
     image_encoder = CTViT(
         dim = 512,
@@ -187,7 +211,9 @@ def run(cfg_dot):
         'best_ckpt_destination': best_ckpt_destination,
         'pth_base_name': pth_base_name
     }
-    evaluate_classifier(params)
+    label_predictions = evaluate_classifier(params)
+
+    return label_predictions
     
 
 # Example usage
