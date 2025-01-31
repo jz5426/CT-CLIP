@@ -52,8 +52,8 @@ def get_train_internal_split(dataset, model, proportion):
         saving_base_name = f'{xray_model_type}_datasplit.pth'
 
     # decide to which cache to retrieve base on the model (saving_base_name), the dataset, and the proportion
-    if dataset == 'ct-rate' or dataset == 'mimic':
-        internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_internal_splits/{proportion_mapping(proportion)}/'
+    if dataset == 'mimic':
+        internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_mimic_splits/{proportion_mapping(proportion)}/'
         target_file_path = os.path.join(internal_split_dir, saving_base_name)
         results = torch.load(target_file_path)
         print('internal split loaded')
@@ -62,7 +62,7 @@ def get_train_internal_split(dataset, model, proportion):
         return None
 
 
-def get_pathologies(dataset='internal'):
+def get_pathologies(dataset='ct-rate'):
     # NOTE: the order of the listed pathologies matter
     if dataset == 'ct-rate':
       pathologies = ['Medical material',

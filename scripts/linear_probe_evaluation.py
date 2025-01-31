@@ -152,7 +152,12 @@ def run(cfg_dot):
     model.to(device)
 
     pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
-    ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, 'mimic_ct')
+
+    if cfg_dot.linear_probing_params.evaluation_dataset == 'mimic':
+        parent_dir = 'mimic_ct'
+    elif cfg_dot.linear_probing_params.evaluation_dataset == 'ct-rate':
+        parent_dir = 'internal_val'
+    ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, parent_dir)
     best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{pth_base_name}_best_model.pth')
     params = {
         'num_classes': len(pathologies),

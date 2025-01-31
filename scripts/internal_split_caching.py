@@ -82,7 +82,7 @@ def run(cfg_dot):
         pth_base_name = f'{xray_model_type}_xray_features.pth'
         saving_base_name = f'{xray_model_type}_datasplit.pth'
 
-    if cfg_dot.internal_split_caching_params.evaluation_dataset == 'ct_rate':
+    if cfg_dot.internal_split_caching_params.evaluation_dataset == 'mimic':
 
         # base on the baseline model, load the corresponding xray features
         xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
@@ -124,11 +124,13 @@ def run(cfg_dot):
         }
         
         # NOTE: save the object so that it is differentateid based on dataset, proportion, and baseline.
-        file_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_internal_splits/{proportion_mapping(cfg_dot.internal_split_caching_params.train_data_portion)}/'
+        file_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_mimic_splits/{proportion_mapping(cfg_dot.internal_split_caching_params.train_data_portion)}/'
         os.makedirs(file_dir, exist_ok=True)
         file_path = os.path.join(file_dir, saving_base_name)
         torch.save(results, file_path)
-
+    elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'ct-rate':
+        # TODO:
+        pass
     elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'vinBig': # the ct dataset
         print('not implemented yet')
         pass
