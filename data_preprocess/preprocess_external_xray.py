@@ -34,7 +34,7 @@ def read_mimic_dcm_files(csv_file_path):
 
 def read_vinbig_dcm_files(csv_file_path):
     df = pd.read_csv(csv_file_path)
-    image_ids = df['image_id'].tolist()
+    image_ids = df['image_id'].unique().tolist() # note that there are duplicates for multi labels
     # create path base on each image id in the list
     vinbig_path_list = [(image_id, os.path.join(os.path.dirname(csv_file_path), 'train', image_id+'.dicom')) for image_id in image_ids]
     return vinbig_path_list
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         dcm_files = read_mimic_dcm_files(csv_file_path)
     elif XRAY_DATA_TYPE == 'vinbigxray':
         csv_file_path = '/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/train.csv'
-        shared_dst_dir = './preprocessed_vinbig'
+        shared_dst_dir = '/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_train'
         dcm_files = read_vinbig_dcm_files(csv_file_path)
 
     with Pool(num_workers) as pool:
