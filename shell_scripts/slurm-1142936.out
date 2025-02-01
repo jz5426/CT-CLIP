@@ -423,3 +423,826 @@ Epoch [19/100], Batch [8/10] in training split, Training Loss: 0.3235
 Epoch 20/100, Training Loss: 0.3258
 Performing validation with size (in unit batch) 3
 Validation Loss: 0.3257
+Epoch [20/100], Batch [0/10] in training split, Training Loss: 0.3188
+Epoch [20/100], Batch [2/10] in training split, Training Loss: 0.3235
+Epoch [20/100], Batch [4/10] in training split, Training Loss: 0.3193
+Epoch [20/100], Batch [6/10] in training split, Training Loss: 0.3309
+Epoch [20/100], Batch [8/10] in training split, Training Loss: 0.3246
+Epoch 21/100, Training Loss: 0.3263
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3266
+Epoch [21/100], Batch [0/10] in training split, Training Loss: 0.3247
+Epoch [21/100], Batch [2/10] in training split, Training Loss: 0.3289
+Epoch [21/100], Batch [4/10] in training split, Training Loss: 0.3270
+Epoch [21/100], Batch [6/10] in training split, Training Loss: 0.3334
+Epoch [21/100], Batch [8/10] in training split, Training Loss: 0.3204
+Epoch 22/100, Training Loss: 0.3254
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3268
+Epoch [22/100], Batch [0/10] in training split, Training Loss: 0.3172
+Epoch [22/100], Batch [2/10] in training split, Training Loss: 0.3286
+Epoch [22/100], Batch [4/10] in training split, Training Loss: 0.3251
+Epoch [22/100], Batch [6/10] in training split, Training Loss: 0.3207
+Epoch [22/100], Batch [8/10] in training split, Training Loss: 0.3292
+Epoch 23/100, Training Loss: 0.3262
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3254
+Epoch [23/100], Batch [0/10] in training split, Training Loss: 0.3334
+Epoch [23/100], Batch [2/10] in training split, Training Loss: 0.3276
+Epoch [23/100], Batch [4/10] in training split, Training Loss: 0.3328
+Epoch [23/100], Batch [6/10] in training split, Training Loss: 0.3254
+Epoch [23/100], Batch [8/10] in training split, Training Loss: 0.3206
+Epoch 24/100, Training Loss: 0.3264
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3255
+Epoch [24/100], Batch [0/10] in training split, Training Loss: 0.3216
+Epoch [24/100], Batch [2/10] in training split, Training Loss: 0.3263
+Epoch [24/100], Batch [4/10] in training split, Training Loss: 0.3233
+Epoch [24/100], Batch [6/10] in training split, Training Loss: 0.3200
+Epoch [24/100], Batch [8/10] in training split, Training Loss: 0.3290
+Epoch 25/100, Training Loss: 0.3241
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3265
+Epoch [25/100], Batch [0/10] in training split, Training Loss: 0.3274
+Epoch [25/100], Batch [2/10] in training split, Training Loss: 0.3212
+Epoch [25/100], Batch [4/10] in training split, Training Loss: 0.3244
+Epoch [25/100], Batch [6/10] in training split, Training Loss: 0.3310
+Epoch [25/100], Batch [8/10] in training split, Training Loss: 0.3229
+Epoch 26/100, Training Loss: 0.3267
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3281
+Epoch [26/100], Batch [0/10] in training split, Training Loss: 0.3250
+Epoch [26/100], Batch [2/10] in training split, Training Loss: 0.3232
+Epoch [26/100], Batch [4/10] in training split, Training Loss: 0.3269
+Epoch [26/100], Batch [6/10] in training split, Training Loss: 0.3303
+Epoch [26/100], Batch [8/10] in training split, Training Loss: 0.3229
+Epoch 27/100, Training Loss: 0.3257
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3259
+Epoch [27/100], Batch [0/10] in training split, Training Loss: 0.3262
+Epoch [27/100], Batch [2/10] in training split, Training Loss: 0.3246
+Epoch [27/100], Batch [4/10] in training split, Training Loss: 0.3279
+Epoch [27/100], Batch [6/10] in training split, Training Loss: 0.3262
+Epoch [27/100], Batch [8/10] in training split, Training Loss: 0.3277
+Epoch 28/100, Training Loss: 0.3257
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3283
+Epoch [28/100], Batch [0/10] in training split, Training Loss: 0.3283
+Epoch [28/100], Batch [2/10] in training split, Training Loss: 0.3253
+Epoch [28/100], Batch [4/10] in training split, Training Loss: 0.3251
+Epoch [28/100], Batch [6/10] in training split, Training Loss: 0.3237
+Epoch [28/100], Batch [8/10] in training split, Training Loss: 0.3304
+Epoch 29/100, Training Loss: 0.3267
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3278
+Epoch [29/100], Batch [0/10] in training split, Training Loss: 0.3263
+Epoch [29/100], Batch [2/10] in training split, Training Loss: 0.3275
+Epoch [29/100], Batch [4/10] in training split, Training Loss: 0.3200
+Epoch [29/100], Batch [6/10] in training split, Training Loss: 0.3271
+Epoch [29/100], Batch [8/10] in training split, Training Loss: 0.3258
+Epoch 30/100, Training Loss: 0.3249
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3265
+Epoch [30/100], Batch [0/10] in training split, Training Loss: 0.3251
+Epoch [30/100], Batch [2/10] in training split, Training Loss: 0.3235
+Epoch [30/100], Batch [4/10] in training split, Training Loss: 0.3320
+Epoch [30/100], Batch [6/10] in training split, Training Loss: 0.3223
+Epoch [30/100], Batch [8/10] in training split, Training Loss: 0.3273
+Epoch 31/100, Training Loss: 0.3250
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3232
+Epoch [31/100], Batch [0/10] in training split, Training Loss: 0.3224
+Epoch [31/100], Batch [2/10] in training split, Training Loss: 0.3264
+Epoch [31/100], Batch [4/10] in training split, Training Loss: 0.3218
+Epoch [31/100], Batch [6/10] in training split, Training Loss: 0.3227
+Epoch [31/100], Batch [8/10] in training split, Training Loss: 0.3253
+Epoch 32/100, Training Loss: 0.3261
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3259
+Epoch [32/100], Batch [0/10] in training split, Training Loss: 0.3205
+Epoch [32/100], Batch [2/10] in training split, Training Loss: 0.3326
+Epoch [32/100], Batch [4/10] in training split, Training Loss: 0.3261
+Epoch [32/100], Batch [6/10] in training split, Training Loss: 0.3239
+Epoch [32/100], Batch [8/10] in training split, Training Loss: 0.3241
+Epoch 33/100, Training Loss: 0.3254
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3247
+Epoch [33/100], Batch [0/10] in training split, Training Loss: 0.3226
+Epoch [33/100], Batch [2/10] in training split, Training Loss: 0.3216
+Epoch [33/100], Batch [4/10] in training split, Training Loss: 0.3328
+Epoch [33/100], Batch [6/10] in training split, Training Loss: 0.3253
+Epoch [33/100], Batch [8/10] in training split, Training Loss: 0.3199
+Epoch 34/100, Training Loss: 0.3254
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3259
+Epoch [34/100], Batch [0/10] in training split, Training Loss: 0.3136
+Epoch [34/100], Batch [2/10] in training split, Training Loss: 0.3273
+Epoch [34/100], Batch [4/10] in training split, Training Loss: 0.3237
+Epoch [34/100], Batch [6/10] in training split, Training Loss: 0.3234
+Epoch [34/100], Batch [8/10] in training split, Training Loss: 0.3238
+Epoch 35/100, Training Loss: 0.3249
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3264
+Epoch [35/100], Batch [0/10] in training split, Training Loss: 0.3265
+Epoch [35/100], Batch [2/10] in training split, Training Loss: 0.3303
+Epoch [35/100], Batch [4/10] in training split, Training Loss: 0.3243
+Epoch [35/100], Batch [6/10] in training split, Training Loss: 0.3253
+Epoch [35/100], Batch [8/10] in training split, Training Loss: 0.3287
+Epoch 36/100, Training Loss: 0.3237
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3249
+Epoch [36/100], Batch [0/10] in training split, Training Loss: 0.3250
+Epoch [36/100], Batch [2/10] in training split, Training Loss: 0.3292
+Epoch [36/100], Batch [4/10] in training split, Training Loss: 0.3252
+Epoch [36/100], Batch [6/10] in training split, Training Loss: 0.3217
+Epoch [36/100], Batch [8/10] in training split, Training Loss: 0.3222
+Epoch 37/100, Training Loss: 0.3262
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3242
+Epoch [37/100], Batch [0/10] in training split, Training Loss: 0.3274
+Epoch [37/100], Batch [2/10] in training split, Training Loss: 0.3303
+Epoch [37/100], Batch [4/10] in training split, Training Loss: 0.3248
+Epoch [37/100], Batch [6/10] in training split, Training Loss: 0.3206
+Epoch [37/100], Batch [8/10] in training split, Training Loss: 0.3194
+Epoch 38/100, Training Loss: 0.3260
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3276
+Epoch [38/100], Batch [0/10] in training split, Training Loss: 0.3264
+Epoch [38/100], Batch [2/10] in training split, Training Loss: 0.3300
+Epoch [38/100], Batch [4/10] in training split, Training Loss: 0.3228
+Epoch [38/100], Batch [6/10] in training split, Training Loss: 0.3266
+Epoch [38/100], Batch [8/10] in training split, Training Loss: 0.3248
+Epoch 39/100, Training Loss: 0.3243
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3242
+Epoch [39/100], Batch [0/10] in training split, Training Loss: 0.3236
+Epoch [39/100], Batch [2/10] in training split, Training Loss: 0.3253
+Epoch [39/100], Batch [4/10] in training split, Training Loss: 0.3304
+Epoch [39/100], Batch [6/10] in training split, Training Loss: 0.3242
+Epoch [39/100], Batch [8/10] in training split, Training Loss: 0.3228
+Epoch 40/100, Training Loss: 0.3252
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3288
+Epoch [40/100], Batch [0/10] in training split, Training Loss: 0.3237
+Epoch [40/100], Batch [2/10] in training split, Training Loss: 0.3229
+Epoch [40/100], Batch [4/10] in training split, Training Loss: 0.3256
+Epoch [40/100], Batch [6/10] in training split, Training Loss: 0.3197
+Epoch [40/100], Batch [8/10] in training split, Training Loss: 0.3264
+Epoch 41/100, Training Loss: 0.3236
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3259
+Epoch [41/100], Batch [0/10] in training split, Training Loss: 0.3240
+Epoch [41/100], Batch [2/10] in training split, Training Loss: 0.3251
+Epoch [41/100], Batch [4/10] in training split, Training Loss: 0.3248
+Epoch [41/100], Batch [6/10] in training split, Training Loss: 0.3266
+Epoch [41/100], Batch [8/10] in training split, Training Loss: 0.3250
+Epoch 42/100, Training Loss: 0.3246
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3274
+Epoch [42/100], Batch [0/10] in training split, Training Loss: 0.3269
+Epoch [42/100], Batch [2/10] in training split, Training Loss: 0.3249
+Epoch [42/100], Batch [4/10] in training split, Training Loss: 0.3168
+Epoch [42/100], Batch [6/10] in training split, Training Loss: 0.3335
+Epoch [42/100], Batch [8/10] in training split, Training Loss: 0.3227
+Epoch 43/100, Training Loss: 0.3251
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3235
+Epoch [43/100], Batch [0/10] in training split, Training Loss: 0.3215
+Epoch [43/100], Batch [2/10] in training split, Training Loss: 0.3212
+Epoch [43/100], Batch [4/10] in training split, Training Loss: 0.3257
+Epoch [43/100], Batch [6/10] in training split, Training Loss: 0.3250
+Epoch [43/100], Batch [8/10] in training split, Training Loss: 0.3263
+Epoch 44/100, Training Loss: 0.3246
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3256
+Epoch [44/100], Batch [0/10] in training split, Training Loss: 0.3249
+Epoch [44/100], Batch [2/10] in training split, Training Loss: 0.3233
+Epoch [44/100], Batch [4/10] in training split, Training Loss: 0.3216
+Epoch [44/100], Batch [6/10] in training split, Training Loss: 0.3203
+Epoch [44/100], Batch [8/10] in training split, Training Loss: 0.3356
+Epoch 45/100, Training Loss: 0.3241
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3266
+Epoch [45/100], Batch [0/10] in training split, Training Loss: 0.3206
+Epoch [45/100], Batch [2/10] in training split, Training Loss: 0.3278
+Epoch [45/100], Batch [4/10] in training split, Training Loss: 0.3227
+Epoch [45/100], Batch [6/10] in training split, Training Loss: 0.3260
+Epoch [45/100], Batch [8/10] in training split, Training Loss: 0.3306
+Epoch 46/100, Training Loss: 0.3243
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3247
+Epoch [46/100], Batch [0/10] in training split, Training Loss: 0.3274
+Epoch [46/100], Batch [2/10] in training split, Training Loss: 0.3287
+Epoch [46/100], Batch [4/10] in training split, Training Loss: 0.3275
+Epoch [46/100], Batch [6/10] in training split, Training Loss: 0.3228
+Epoch [46/100], Batch [8/10] in training split, Training Loss: 0.3270
+Epoch 47/100, Training Loss: 0.3232
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3280
+Epoch [47/100], Batch [0/10] in training split, Training Loss: 0.3219
+Epoch [47/100], Batch [2/10] in training split, Training Loss: 0.3225
+Epoch [47/100], Batch [4/10] in training split, Training Loss: 0.3244
+Epoch [47/100], Batch [6/10] in training split, Training Loss: 0.3224
+Epoch [47/100], Batch [8/10] in training split, Training Loss: 0.3215
+Epoch 48/100, Training Loss: 0.3237
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3241
+Epoch [48/100], Batch [0/10] in training split, Training Loss: 0.3240
+Epoch [48/100], Batch [2/10] in training split, Training Loss: 0.3220
+Epoch [48/100], Batch [4/10] in training split, Training Loss: 0.3270
+Epoch [48/100], Batch [6/10] in training split, Training Loss: 0.3238
+Epoch [48/100], Batch [8/10] in training split, Training Loss: 0.3260
+Epoch 49/100, Training Loss: 0.3250
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3255
+Epoch [49/100], Batch [0/10] in training split, Training Loss: 0.3167
+Epoch [49/100], Batch [2/10] in training split, Training Loss: 0.3231
+Epoch [49/100], Batch [4/10] in training split, Training Loss: 0.3247
+Epoch [49/100], Batch [6/10] in training split, Training Loss: 0.3234
+Epoch [49/100], Batch [8/10] in training split, Training Loss: 0.3294
+Epoch 50/100, Training Loss: 0.3239
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3217
+Epoch [50/100], Batch [0/10] in training split, Training Loss: 0.3255
+Epoch [50/100], Batch [2/10] in training split, Training Loss: 0.3288
+Epoch [50/100], Batch [4/10] in training split, Training Loss: 0.3210
+Epoch [50/100], Batch [6/10] in training split, Training Loss: 0.3287
+Epoch [50/100], Batch [8/10] in training split, Training Loss: 0.3214
+Epoch 51/100, Training Loss: 0.3235
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3257
+Epoch [51/100], Batch [0/10] in training split, Training Loss: 0.3235
+Epoch [51/100], Batch [2/10] in training split, Training Loss: 0.3279
+Epoch [51/100], Batch [4/10] in training split, Training Loss: 0.3162
+Epoch [51/100], Batch [6/10] in training split, Training Loss: 0.3216
+Epoch [51/100], Batch [8/10] in training split, Training Loss: 0.3235
+Epoch 52/100, Training Loss: 0.3242
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3242
+Epoch [52/100], Batch [0/10] in training split, Training Loss: 0.3237
+Epoch [52/100], Batch [2/10] in training split, Training Loss: 0.3230
+Epoch [52/100], Batch [4/10] in training split, Training Loss: 0.3269
+Epoch [52/100], Batch [6/10] in training split, Training Loss: 0.3240
+Epoch [52/100], Batch [8/10] in training split, Training Loss: 0.3258
+Epoch 53/100, Training Loss: 0.3233
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3262
+Epoch [53/100], Batch [0/10] in training split, Training Loss: 0.3255
+Epoch [53/100], Batch [2/10] in training split, Training Loss: 0.3215
+Epoch [53/100], Batch [4/10] in training split, Training Loss: 0.3242
+Epoch [53/100], Batch [6/10] in training split, Training Loss: 0.3229
+Epoch [53/100], Batch [8/10] in training split, Training Loss: 0.3200
+Epoch 54/100, Training Loss: 0.3232
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3227
+Epoch [54/100], Batch [0/10] in training split, Training Loss: 0.3207
+Epoch [54/100], Batch [2/10] in training split, Training Loss: 0.3191
+Epoch [54/100], Batch [4/10] in training split, Training Loss: 0.3202
+Epoch [54/100], Batch [6/10] in training split, Training Loss: 0.3214
+Epoch [54/100], Batch [8/10] in training split, Training Loss: 0.3273
+Epoch 55/100, Training Loss: 0.3241
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3247
+Epoch [55/100], Batch [0/10] in training split, Training Loss: 0.3269
+Epoch [55/100], Batch [2/10] in training split, Training Loss: 0.3268
+Epoch [55/100], Batch [4/10] in training split, Training Loss: 0.3284
+Epoch [55/100], Batch [6/10] in training split, Training Loss: 0.3150
+Epoch [55/100], Batch [8/10] in training split, Training Loss: 0.3250
+Epoch 56/100, Training Loss: 0.3235
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3244
+Epoch [56/100], Batch [0/10] in training split, Training Loss: 0.3254
+Epoch [56/100], Batch [2/10] in training split, Training Loss: 0.3194
+Epoch [56/100], Batch [4/10] in training split, Training Loss: 0.3258
+Epoch [56/100], Batch [6/10] in training split, Training Loss: 0.3253
+Epoch [56/100], Batch [8/10] in training split, Training Loss: 0.3267
+Epoch 57/100, Training Loss: 0.3232
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3258
+Epoch [57/100], Batch [0/10] in training split, Training Loss: 0.3224
+Epoch [57/100], Batch [2/10] in training split, Training Loss: 0.3292
+Epoch [57/100], Batch [4/10] in training split, Training Loss: 0.3279
+Epoch [57/100], Batch [6/10] in training split, Training Loss: 0.3229
+Epoch [57/100], Batch [8/10] in training split, Training Loss: 0.3215
+Epoch 58/100, Training Loss: 0.3236
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3221
+Epoch [58/100], Batch [0/10] in training split, Training Loss: 0.3233
+Epoch [58/100], Batch [2/10] in training split, Training Loss: 0.3250
+Epoch [58/100], Batch [4/10] in training split, Training Loss: 0.3233
+Epoch [58/100], Batch [6/10] in training split, Training Loss: 0.3266
+Epoch [58/100], Batch [8/10] in training split, Training Loss: 0.3220
+Epoch 59/100, Training Loss: 0.3230
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3237
+Epoch [59/100], Batch [0/10] in training split, Training Loss: 0.3266
+Epoch [59/100], Batch [2/10] in training split, Training Loss: 0.3256
+Epoch [59/100], Batch [4/10] in training split, Training Loss: 0.3240
+Epoch [59/100], Batch [6/10] in training split, Training Loss: 0.3198
+Epoch [59/100], Batch [8/10] in training split, Training Loss: 0.3235
+Epoch 60/100, Training Loss: 0.3240
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3253
+Epoch [60/100], Batch [0/10] in training split, Training Loss: 0.3249
+Epoch [60/100], Batch [2/10] in training split, Training Loss: 0.3211
+Epoch [60/100], Batch [4/10] in training split, Training Loss: 0.3193
+Epoch [60/100], Batch [6/10] in training split, Training Loss: 0.3225
+Epoch [60/100], Batch [8/10] in training split, Training Loss: 0.3223
+Epoch 61/100, Training Loss: 0.3248
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3232
+Epoch [61/100], Batch [0/10] in training split, Training Loss: 0.3259
+Epoch [61/100], Batch [2/10] in training split, Training Loss: 0.3229
+Epoch [61/100], Batch [4/10] in training split, Training Loss: 0.3226
+Epoch [61/100], Batch [6/10] in training split, Training Loss: 0.3286
+Epoch [61/100], Batch [8/10] in training split, Training Loss: 0.3178
+Epoch 62/100, Training Loss: 0.3236
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3284
+Epoch [62/100], Batch [0/10] in training split, Training Loss: 0.3277
+Epoch [62/100], Batch [2/10] in training split, Training Loss: 0.3202
+Epoch [62/100], Batch [4/10] in training split, Training Loss: 0.3235
+Epoch [62/100], Batch [6/10] in training split, Training Loss: 0.3232
+Epoch [62/100], Batch [8/10] in training split, Training Loss: 0.3248
+Epoch 63/100, Training Loss: 0.3243
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3242
+Epoch [63/100], Batch [0/10] in training split, Training Loss: 0.3194
+Epoch [63/100], Batch [2/10] in training split, Training Loss: 0.3212
+Epoch [63/100], Batch [4/10] in training split, Training Loss: 0.3265
+Epoch [63/100], Batch [6/10] in training split, Training Loss: 0.3207
+Epoch [63/100], Batch [8/10] in training split, Training Loss: 0.3196
+Epoch 64/100, Training Loss: 0.3230
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3198
+Epoch [64/100], Batch [0/10] in training split, Training Loss: 0.3215
+Epoch [64/100], Batch [2/10] in training split, Training Loss: 0.3220
+Epoch [64/100], Batch [4/10] in training split, Training Loss: 0.3285
+Epoch [64/100], Batch [6/10] in training split, Training Loss: 0.3266
+Epoch [64/100], Batch [8/10] in training split, Training Loss: 0.3183
+Epoch 65/100, Training Loss: 0.3241
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3240
+Epoch [65/100], Batch [0/10] in training split, Training Loss: 0.3218
+Epoch [65/100], Batch [2/10] in training split, Training Loss: 0.3270
+Epoch [65/100], Batch [4/10] in training split, Training Loss: 0.3182
+Epoch [65/100], Batch [6/10] in training split, Training Loss: 0.3227
+Epoch [65/100], Batch [8/10] in training split, Training Loss: 0.3259
+Epoch 66/100, Training Loss: 0.3223
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3249
+Epoch [66/100], Batch [0/10] in training split, Training Loss: 0.3316
+Epoch [66/100], Batch [2/10] in training split, Training Loss: 0.3219
+Epoch [66/100], Batch [4/10] in training split, Training Loss: 0.3211
+Epoch [66/100], Batch [6/10] in training split, Training Loss: 0.3190
+Epoch [66/100], Batch [8/10] in training split, Training Loss: 0.3173
+Epoch 67/100, Training Loss: 0.3229
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3260
+Epoch [67/100], Batch [0/10] in training split, Training Loss: 0.3187
+Epoch [67/100], Batch [2/10] in training split, Training Loss: 0.3208
+Epoch [67/100], Batch [4/10] in training split, Training Loss: 0.3283
+Epoch [67/100], Batch [6/10] in training split, Training Loss: 0.3197
+Epoch [67/100], Batch [8/10] in training split, Training Loss: 0.3263
+Epoch 68/100, Training Loss: 0.3222
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3213
+Epoch [68/100], Batch [0/10] in training split, Training Loss: 0.3242
+Epoch [68/100], Batch [2/10] in training split, Training Loss: 0.3222
+Epoch [68/100], Batch [4/10] in training split, Training Loss: 0.3165
+Epoch [68/100], Batch [6/10] in training split, Training Loss: 0.3183
+Epoch [68/100], Batch [8/10] in training split, Training Loss: 0.3247
+Epoch 69/100, Training Loss: 0.3227
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3266
+Epoch [69/100], Batch [0/10] in training split, Training Loss: 0.3225
+Epoch [69/100], Batch [2/10] in training split, Training Loss: 0.3260
+Epoch [69/100], Batch [4/10] in training split, Training Loss: 0.3230
+Epoch [69/100], Batch [6/10] in training split, Training Loss: 0.3233
+Epoch [69/100], Batch [8/10] in training split, Training Loss: 0.3263
+Epoch 70/100, Training Loss: 0.3220
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3258
+Epoch [70/100], Batch [0/10] in training split, Training Loss: 0.3175
+Epoch [70/100], Batch [2/10] in training split, Training Loss: 0.3255
+Epoch [70/100], Batch [4/10] in training split, Training Loss: 0.3209
+Epoch [70/100], Batch [6/10] in training split, Training Loss: 0.3228
+Epoch [70/100], Batch [8/10] in training split, Training Loss: 0.3268
+Epoch 71/100, Training Loss: 0.3235
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3249
+Epoch [71/100], Batch [0/10] in training split, Training Loss: 0.3189
+Epoch [71/100], Batch [2/10] in training split, Training Loss: 0.3248
+Epoch [71/100], Batch [4/10] in training split, Training Loss: 0.3210
+Epoch [71/100], Batch [6/10] in training split, Training Loss: 0.3247
+Epoch [71/100], Batch [8/10] in training split, Training Loss: 0.3248
+Epoch 72/100, Training Loss: 0.3233
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3258
+Epoch [72/100], Batch [0/10] in training split, Training Loss: 0.3250
+Epoch [72/100], Batch [2/10] in training split, Training Loss: 0.3261
+Epoch [72/100], Batch [4/10] in training split, Training Loss: 0.3223
+Epoch [72/100], Batch [6/10] in training split, Training Loss: 0.3209
+Epoch [72/100], Batch [8/10] in training split, Training Loss: 0.3215
+Epoch 73/100, Training Loss: 0.3235
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3247
+Epoch [73/100], Batch [0/10] in training split, Training Loss: 0.3221
+Epoch [73/100], Batch [2/10] in training split, Training Loss: 0.3220
+Epoch [73/100], Batch [4/10] in training split, Training Loss: 0.3182
+Epoch [73/100], Batch [6/10] in training split, Training Loss: 0.3242
+Epoch [73/100], Batch [8/10] in training split, Training Loss: 0.3218
+Epoch 74/100, Training Loss: 0.3236
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3254
+Epoch [74/100], Batch [0/10] in training split, Training Loss: 0.3200
+Epoch [74/100], Batch [2/10] in training split, Training Loss: 0.3220
+Epoch [74/100], Batch [4/10] in training split, Training Loss: 0.3229
+Epoch [74/100], Batch [6/10] in training split, Training Loss: 0.3269
+Epoch [74/100], Batch [8/10] in training split, Training Loss: 0.3260
+Epoch 75/100, Training Loss: 0.3230
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3244
+Epoch [75/100], Batch [0/10] in training split, Training Loss: 0.3253
+Epoch [75/100], Batch [2/10] in training split, Training Loss: 0.3221
+Epoch [75/100], Batch [4/10] in training split, Training Loss: 0.3243
+Epoch [75/100], Batch [6/10] in training split, Training Loss: 0.3256
+Epoch [75/100], Batch [8/10] in training split, Training Loss: 0.3231
+Epoch 76/100, Training Loss: 0.3236
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3239
+Epoch [76/100], Batch [0/10] in training split, Training Loss: 0.3248
+Epoch [76/100], Batch [2/10] in training split, Training Loss: 0.3250
+Epoch [76/100], Batch [4/10] in training split, Training Loss: 0.3229
+Epoch [76/100], Batch [6/10] in training split, Training Loss: 0.3165
+Epoch [76/100], Batch [8/10] in training split, Training Loss: 0.3223
+Epoch 77/100, Training Loss: 0.3241
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3225
+Epoch [77/100], Batch [0/10] in training split, Training Loss: 0.3195
+Epoch [77/100], Batch [2/10] in training split, Training Loss: 0.3222
+Epoch [77/100], Batch [4/10] in training split, Training Loss: 0.3209
+Epoch [77/100], Batch [6/10] in training split, Training Loss: 0.3218
+Epoch [77/100], Batch [8/10] in training split, Training Loss: 0.3232
+Epoch 78/100, Training Loss: 0.3233
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3230
+Epoch [78/100], Batch [0/10] in training split, Training Loss: 0.3226
+Epoch [78/100], Batch [2/10] in training split, Training Loss: 0.3224
+Epoch [78/100], Batch [4/10] in training split, Training Loss: 0.3238
+Epoch [78/100], Batch [6/10] in training split, Training Loss: 0.3252
+Epoch [78/100], Batch [8/10] in training split, Training Loss: 0.3223
+Epoch 79/100, Training Loss: 0.3231
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3229
+Epoch [79/100], Batch [0/10] in training split, Training Loss: 0.3329
+Epoch [79/100], Batch [2/10] in training split, Training Loss: 0.3191
+Epoch [79/100], Batch [4/10] in training split, Training Loss: 0.3181
+Epoch [79/100], Batch [6/10] in training split, Training Loss: 0.3243
+Epoch [79/100], Batch [8/10] in training split, Training Loss: 0.3193
+Epoch 80/100, Training Loss: 0.3238
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3240
+Epoch [80/100], Batch [0/10] in training split, Training Loss: 0.3243
+Epoch [80/100], Batch [2/10] in training split, Training Loss: 0.3191
+Epoch [80/100], Batch [4/10] in training split, Training Loss: 0.3143
+Epoch [80/100], Batch [6/10] in training split, Training Loss: 0.3298
+Epoch [80/100], Batch [8/10] in training split, Training Loss: 0.3209
+Epoch 81/100, Training Loss: 0.3224
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3233
+Epoch [81/100], Batch [0/10] in training split, Training Loss: 0.3255
+Epoch [81/100], Batch [2/10] in training split, Training Loss: 0.3260
+Epoch [81/100], Batch [4/10] in training split, Training Loss: 0.3244
+Epoch [81/100], Batch [6/10] in training split, Training Loss: 0.3244
+Epoch [81/100], Batch [8/10] in training split, Training Loss: 0.3140
+Epoch 82/100, Training Loss: 0.3224
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3216
+Epoch [82/100], Batch [0/10] in training split, Training Loss: 0.3228
+Epoch [82/100], Batch [2/10] in training split, Training Loss: 0.3265
+Epoch [82/100], Batch [4/10] in training split, Training Loss: 0.3210
+Epoch [82/100], Batch [6/10] in training split, Training Loss: 0.3263
+Epoch [82/100], Batch [8/10] in training split, Training Loss: 0.3261
+Epoch 83/100, Training Loss: 0.3217
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3231
+Epoch [83/100], Batch [0/10] in training split, Training Loss: 0.3215
+Epoch [83/100], Batch [2/10] in training split, Training Loss: 0.3221
+Epoch [83/100], Batch [4/10] in training split, Training Loss: 0.3222
+Epoch [83/100], Batch [6/10] in training split, Training Loss: 0.3267
+Epoch [83/100], Batch [8/10] in training split, Training Loss: 0.3253
+Epoch 84/100, Training Loss: 0.3230
+Performing validation with size (in unit batch) 3
+Validation Loss: 0.3246
+Early stopping triggered.
+Finetuning the Xray encoder completed ==> perform external mimic-ct testing
+  0%|          | 0/256 [00:00<?, ?it/s]100%|██████████| 256/256 [00:00<00:00, 5807.84it/s]
+/cluster/home/t135419uhn/CT-CLIP/scripts/external_linear_probe_evaluation_main.py:349: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  model.fc.load_state_dict(torch.load(params['pretrained_cpt_dest']))
+normalization used =>  huggingface
+size of the external test data: 256
+Pretrained classifier is loaded.
+Performing testing with size (in unit batch) 1
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: F-score is ill-defined and being set to 0.0 in labels with no true nor predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Precision is ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_classification.py:1565: UndefinedMetricWarning: F-score is ill-defined and being set to 0.0 in labels with no true nor predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_ranking.py:379: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_ranking.py:379: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_ranking.py:379: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_ranking.py:379: UndefinedMetricWarning: Only one class is present in y_true. ROC AUC score is not defined in that case.
+  warnings.warn(
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_ranking.py:1033: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_ranking.py:1033: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_ranking.py:1033: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/sklearn/metrics/_ranking.py:1033: UserWarning: No positive class found in y_true, recall is set to one for all thresholds.
+  warnings.warn(
+Test Results for micro average: F1 Score: 0.4215, Recall: 0.3708, Precision: 0.4883, AUC: 0.7862, PR_AUC: 0.4247
+Test Results for weighted average: F1 Score: 0.3779, Recall: 0.3708, Precision: 0.4784, AUC: 0.6137, PR_AUC: 0.4672
+Test Results for macro average: F1 Score: 0.1789, Recall: 0.1735, Precision: 0.2453, AUC: nan, PR_AUC: 0.2343
+Saving the metrics results
+finished dumping the files
+Metric results saved to ./lp_evaluation_results/mimic_ct/modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch_xray_features.pth__train_portion_1_test_metrics_results.xlsx
+Finished probing evaluation without error :)
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/albumentations/check_version.py:107: UserWarning: Error fetching version info <urlopen error [Errno 101] Network is unreachable>
+  data = fetch_version_info()
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/vector_quantize_pytorch/vector_quantize_pytorch.py:261: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  @autocast(enabled = False)
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/vector_quantize_pytorch/vector_quantize_pytorch.py:391: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  @autocast(enabled = False)
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/transformers/modeling_utils.py:463: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  return torch.load(checkpoint_file, map_location="cpu")
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/torchvision/models/_utils.py:208: UserWarning: The parameter 'pretrained' is deprecated since 0.13 and may be removed in the future, please use 'weights' instead.
+  warnings.warn(
+/cluster/home/t135419uhn/miniconda3/envs/ctclip/lib/python3.10/site-packages/torchvision/models/_utils.py:223: UserWarning: Arguments other than a weight enum or `None` for 'weights' are deprecated since 0.13 and may be removed in the future. The current behavior is equivalent to passing `weights=None`.
+  warnings.warn(msg)
+/cluster/home/t135419uhn/CT-CLIP/CT_CLIP/cxr_clip_utils.py:123: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/resnet50_imagenet_pretrained_1kv2.pth')
+/cluster/home/t135419uhn/CT-CLIP/scripts/data.py:512: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.ct_embeddings = torch.load(img_embedding_path)
+/cluster/home/t135419uhn/CT-CLIP/scripts/data.py:513: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  self.text_embeddings = torch.load(text_embedding_path)
+Configurations:
+base:
+  seed: 1234
+  amp: true
+  image_size: 224
+  text_max_length: 256
+  loss_best: contrastive
+  data_frac: 1.0
+  output:
+    checkpoint: ./outputs/2025-01-31/20-42-49/checkpoints/
+    tensorboard: ./outputs/2025-01-31/20-42-49/tensorboard/
+training_params:
+  batch_size: 360
+  num_workers: 10
+  batch_style: experiment
+  train_from_scratch: false
+  epoch_based_patience: 25
+  iteration_evaluate_frequency: 50
+  text_cl_weight: 1.0
+  ct_cl_weight: 1.0
+  learning_rate: 5.0e-05
+  weight_decay: 0.0001
+  epochs: 202
+  min_epochs: 202
+  training_pretrain_baseline: ''
+  use_pretrained_xray_encoder: true
+linear_probing_params:
+  baseline_type: modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
+  is_linear_probe_eval: true
+  multi_sweep_evaluation: true
+  num_epochs: 100
+  patience: 20
+  batch_size: 4096
+  learning_rate: 0.05
+  progress_window: 2
+  num_workers: 10
+  train_data_portion: 1
+  evaluation_dataset: mimic
+  cpt_dest: /cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation
+zero_shot_params:
+  baseline_type: ''
+  test_bed: internal_ct_val
+  num_workers: 10
+  batch_size: 1024
+xray_feature_caching_params:
+  baseline_type: ''
+  num_workers: 10
+  batch_size: 1024
+  evaluation_dataset: ct-rate
+internal_split_caching_params:
+  baseline_type: ''
+  num_workers: 10
+  batch_size: 1024
+  train_data_portion: 0.1
+  evaluation_dataset: mimic
+data_train:
+  mimic_cxr:
+    name: mimic_cxr
+    data_type: imagetext
+    data_path: datasets/mimic_train.csv
+    image_size: 224
+    text_max_length: 256
+    data_frac: 1.0
+  chexpert:
+    name: chexpert
+    data_type: imagetext
+    data_path: datasets/chexpert_train.csv
+    image_size: 224
+    text_max_length: 256
+    prompt_from_json: true
+    data_frac: 1.0
+data_valid:
+  mimic_cxr:
+    name: mimic_cxr
+    data_type: imagetext
+    data_path: datasets/mimic_valid.csv
+    image_size: 224
+    text_max_length: 256
+  chexpert:
+    name: chexpert
+    data_type: imagetext
+    data_path: datasets/chexpert_valid.csv
+    image_size: 224
+    text_max_length: 256
+    prompt_from_json: true
+dataloader:
+  train:
+    pin_memory: true
+    shuffle: true
+    drop_last: true
+    num_workers: 8
+    prefetch_factor: 8
+    batch_size: 128
+  valid:
+    pin_memory: true
+    shuffle: false
+    drop_last: false
+    num_workers: 8
+    prefetch_factor: 8
+    batch_size: 128
+  test:
+    pin_memory: true
+    shuffle: false
+    drop_last: false
+    num_workers: 16
+    batch_size: 128
+tokenizer:
+  source: huggingface
+  pretrained_model_name_or_path: emilyalsentzer/Bio_ClinicalBERT
+  cache_dir: huggingface/tokenizers
+transform:
+  train:
+    RandomResizedCrop:
+      size: 224
+      scale:
+      - 0.8
+      - 1.1
+    CLAHE:
+      clip_limit: 4.0
+    ColorJitter:
+      brightness: 0.1
+      contrast: 0.2
+      saturation: 0.2
+      hue: 0.1
+    CenterCrop:
+      size: 224
+  valid:
+    Resize:
+      size: 224
+    CenterCrop:
+      size: 224
+  test:
+    Resize:
+      size: 224
+    CenterCrop:
+      size: 224
+model:
+  name: clip_custom
+  temperature: 0.07
+  image_encoder:
+    source: torchvision
+    name: resnet
+    pretrained: true
+    model_type: resnet
+  text_encoder:
+    source: huggingface
+    name: emilyalsentzer/Bio_ClinicalBERT
+    pretrained: true
+    gradient_checkpointing: false
+    pooling: eos
+    cache_dir: ./huggingface_downloads/
+    trust_remote_code: true
+    mlm_head: true
+  projection_head:
+    name: linear
+    dropout: 0.1
+    proj_dim: 512
+resnet:
+  name: clip_custom
+  temperature: 0.07
+  image_encoder:
+    source: torchvision
+    name: resnet
+    pretrained: true
+    model_type: resnet
+  text_encoder:
+    source: huggingface
+    name: emilyalsentzer/Bio_ClinicalBERT
+    pretrained: true
+    gradient_checkpointing: false
+    pooling: eos
+    cache_dir: ./huggingface_downloads/
+    trust_remote_code: true
+    mlm_head: true
+  projection_head:
+    name: linear
+    dropout: 0.1
+    proj_dim: 512
+swin:
+  name: clip_custom
+  temperature: 0.07
+  image_encoder:
+    source: huggingface
+    name: microsoft/swin-tiny-patch4-window7-224
+    pretrained: true
+    model_type: swin
+    cache_dir: /cluster/home/t135419uhn/CT-CLIP/predownloaded_models/cxr-swinTiny/
+  text_encoder:
+    source: huggingface
+    name: emilyalsentzer/Bio_ClinicalBERT
+    pretrained: true
+    gradient_checkpointing: false
+    pooling: eos
+    cache_dir: ./huggingface_downloads/
+    trust_remote_code: true
+    mlm_head: true
+  projection_head:
+    name: linear
+    dropout: 0.1
+    proj_dim: 512
+optimizer:
+  name: adamw
+  config:
+    lr: 5.0e-05
+    weight_decay: 0.0001
+scheduler:
+  name: cosine
+  config:
+    total_epochs: 15
+    warmup_epochs: 1
+loss:
+  cxr_clip:
+    label_smoothing: 0.0
+    i2i_weight: 1.0
+    t2t_weight: 0.5
+    loss_ratio: 1.0
+
+is_linear_probe_eval: True
+num_epochs: 100
+patience: 20
+batch_size: 4096
+learning_rate: 0.05
+progress_window: 2
+cpt_dest: /cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation
+train data portion: 1
+logit temperature Parameter containing:
+tensor(0.0700, requires_grad=True)
+loaded imagenet pretrained weights to ResNet50
+    freezing weights in XRAY_CTCLIP
+Loaded custom pretrained weights from modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
+  0%|          | 0/20000 [00:00<?, ?it/s]  0%|          | 56/20000 [00:00<00:35, 557.07it/s]  1%|          | 124/20000 [00:00<00:31, 624.44it/s]  1%|          | 191/20000 [00:00<00:30, 644.43it/s]  1%|▏         | 256/20000 [00:00<00:31, 634.46it/s]  2%|▏         | 320/20000 [00:00<00:31, 629.51it/s]  2%|▏         | 383/20000 [00:00<00:31, 623.71it/s]  2%|▏         | 446/20000 [00:00<00:31, 619.39it/s]  3%|▎         | 513/20000 [00:00<00:30, 633.60it/s]  3%|▎         | 577/20000 [00:00<00:30, 628.48it/s]  3%|▎         | 640/20000 [00:01<00:31, 623.19it/s]  4%|▍         | 766/20000 [00:01<00:23, 814.32it/s]  4%|▍         | 848/20000 [00:01<00:25, 757.87it/s]  5%|▍         | 925/20000 [00:01<00:26, 726.84it/s]  5%|▍         | 999/20000 [00:01<00:27, 682.05it/s]  5%|▌         | 1069/20000 [00:01<00:28, 667.17it/s]  6%|▌         | 1137/20000 [00:01<00:29, 645.07it/s]  6%|▌         | 1202/20000 [00:01<00:29, 640.61it/s]  6%|▋         | 1267/20000 [00:01<00:30, 604.75it/s]  7%|▋         | 1335/20000 [00:02<00:30, 622.11it/s]  7%|▋         | 1398/20000 [00:02<00:30, 617.00it/s]  7%|▋         | 1467/20000 [00:02<00:29, 633.67it/s]  8%|▊         | 1531/20000 [00:02<00:31, 593.15it/s]  8%|▊         | 1591/20000 [00:02<00:31, 587.40it/s]  8%|▊         | 1688/20000 [00:02<00:26, 691.77it/s]  9%|▉         | 1759/20000 [00:02<00:27, 653.04it/s]  9%|▉         | 1826/20000 [00:02<00:29, 623.46it/s]  9%|▉         | 1890/20000 [00:02<00:29, 610.94it/s] 10%|▉         | 1958/20000 [00:03<00:28, 629.85it/s] 10%|█         | 2022/20000 [00:03<00:28, 626.14it/s] 10%|█         | 2085/20000 [00:03<00:29, 606.72it/s] 11%|█         | 2146/20000 [00:03<00:29, 600.99it/s] 11%|█         | 2207/20000 [00:03<00:29, 599.46it/s] 11%|█▏        | 2268/20000 [00:03<00:30, 586.26it/s] 12%|█▏        | 2327/20000 [00:03<00:30, 575.66it/s] 12%|█▏        | 2386/20000 [00:03<00:30, 579.51it/s] 12%|█▏        | 2445/20000 [00:03<00:30, 576.70it/s] 13%|█▎        | 2506/20000 [00:03<00:29, 585.67it/s] 13%|█▎        | 2565/20000 [00:04<00:30, 578.22it/s] 13%|█▎        | 2647/20000 [00:04<00:26, 646.86it/s] 14%|█▎        | 2712/20000 [00:04<00:28, 615.65it/s] 14%|█▍        | 2777/20000 [00:04<00:27, 624.16it/s] 14%|█▍        | 2843/20000 [00:04<00:27, 632.94it/s] 15%|█▍        | 2907/20000 [00:04<00:27, 613.57it/s] 15%|█▌        | 3006/20000 [00:04<00:23, 718.87it/s] 15%|█▌        | 3079/20000 [00:04<00:24, 679.45it/s] 16%|█▌        | 3148/20000 [00:04<00:24, 680.06it/s] 16%|█▌        | 3217/20000 [00:05<00:26, 626.66it/s] 16%|█▋        | 3284/20000 [00:05<00:26, 636.48it/s] 17%|█▋        | 3426/20000 [00:05<00:19, 853.60it/s] 18%|█▊        | 3514/20000 [00:05<00:21, 769.25it/s] 18%|█▊        | 3594/20000 [00:05<00:23, 703.02it/s] 18%|█▊        | 3668/20000 [00:05<00:24, 660.18it/s] 19%|█▊        | 3737/20000 [00:05<00:24, 655.01it/s] 19%|█▉        | 3804/20000 [00:05<00:26, 618.94it/s] 19%|█▉        | 3867/20000 [00:06<00:27, 595.67it/s] 20%|█▉        | 3928/20000 [00:06<00:27, 576.25it/s] 20%|█▉        | 3987/20000 [00:06<00:28, 562.08it/s] 20%|██        | 4052/20000 [00:06<00:27, 582.79it/s] 21%|██        | 4113/20000 [00:06<00:26, 590.09it/s] 21%|██        | 4192/20000 [00:06<00:24, 644.72it/s] 21%|██▏       | 4261/20000 [00:06<00:24, 654.85it/s] 22%|██▏       | 4327/20000 [00:06<00:25, 623.78it/s] 22%|██▏       | 4390/20000 [00:06<00:25, 604.42it/s] 22%|██▏       | 4452/20000 [00:06<00:25, 607.61it/s] 23%|██▎       | 4514/20000 [00:07<00:26, 584.32it/s] 23%|██▎       | 4573/20000 [00:07<00:26, 571.92it/s] 23%|██▎       | 4632/20000 [00:07<00:26, 573.49it/s] 23%|██▎       | 4690/20000 [00:07<00:27, 564.84it/s] 24%|██▍       | 4753/20000 [00:07<00:26, 580.67it/s] 24%|██▍       | 4833/20000 [00:07<00:23, 637.76it/s] 24%|██▍       | 4897/20000 [00:07<00:24, 607.62it/s] 25%|██▍       | 4959/20000 [00:07<00:25, 592.73it/s] 25%|██▌       | 5030/20000 [00:07<00:23, 624.01it/s] 25%|██▌       | 5093/20000 [00:08<00:24, 611.12it/s] 26%|██▌       | 5161/20000 [00:08<00:23, 630.75it/s] 26%|██▌       | 5237/20000 [00:08<00:22, 666.87it/s] 27%|██▋       | 5307/20000 [00:08<00:21, 674.32it/s] 27%|██▋       | 5375/20000 [00:08<00:22, 636.51it/s] 27%|██▋       | 5453/20000 [00:08<00:21, 675.30it/s] 28%|██▊       | 5522/20000 [00:08<00:22, 651.64it/s] 28%|██▊       | 5588/20000 [00:08<00:22, 633.89it/s] 28%|██▊       | 5652/20000 [00:08<00:23, 610.11it/s] 29%|██▉       | 5752/20000 [00:09<00:19, 718.56it/s] 29%|██▉       | 5825/20000 [00:09<00:20, 698.13it/s] 29%|██▉       | 5896/20000 [00:09<00:20, 679.18it/s] 30%|██▉       | 5968/20000 [00:09<00:20, 688.51it/s] 30%|███       | 6038/20000 [00:09<00:20, 683.89it/s] 31%|███       | 6107/20000 [00:09<00:20, 671.40it/s] 31%|███       | 6202/20000 [00:09<00:18, 750.35it/s] 32%|███▏      | 6329/20000 [00:09<00:15, 899.19it/s] 32%|███▏      | 6455/20000 [00:09<00:13, 1004.51it/s] 33%|███▎      | 6576/20000 [00:09<00:12, 1063.39it/s] 34%|███▎      | 6727/20000 [00:10<00:11, 1195.13it/s] 34%|███▍      | 6848/20000 [00:10<00:11, 1185.54it/s] 35%|███▍      | 6990/20000 [00:10<00:10, 1250.95it/s] 36%|███▌      | 7128/20000 [00:10<00:09, 1289.12it/s] 36%|███▋      | 7293/20000 [00:10<00:09, 1394.04it/s] 38%|███▊      | 7509/20000 [00:10<00:07, 1622.09it/s] 38%|███▊      | 7672/20000 [00:10<00:08, 1436.24it/s] 39%|███▉      | 7820/20000 [00:10<00:08, 1374.09it/s] 40%|███▉      | 7968/20000 [00:10<00:08, 1401.74it/s] 41%|████      | 8111/20000 [00:11<00:08, 1371.34it/s] 41%|████▏     | 8258/20000 [00:11<00:08, 1397.09it/s] 42%|████▏     | 8400/20000 [00:11<00:08, 1385.78it/s] 43%|████▎     | 8553/20000 [00:11<00:08, 1424.76it/s] 43%|████▎     | 8697/20000 [00:11<00:08, 1382.20it/s] 44%|████▍     | 8838/20000 [00:11<00:08, 1389.30it/s] 45%|████▍     | 8978/20000 [00:11<00:08, 1307.81it/s] 46%|████▌     | 9111/20000 [00:11<00:08, 1310.66it/s] 46%|████▋     | 9272/20000 [00:11<00:07, 1395.35it/s] 47%|████▋     | 9413/20000 [00:12<00:08, 1320.41it/s] 48%|████▊     | 9547/20000 [00:12<00:08, 1217.81it/s] 48%|████▊     | 9671/20000 [00:12<00:08, 1215.72it/s] 49%|████▉     | 9795/20000 [00:12<00:08, 1210.27it/s] 50%|████▉     | 9944/20000 [00:12<00:07, 1283.23it/s] 51%|█████     | 10121/20000 [00:12<00:06, 1421.65it/s] 51%|█████▏    | 10266/20000 [00:12<00:06, 1426.05it/s] 52%|█████▏    | 10412/20000 [00:12<00:06, 1435.92it/s] 53%|█████▎    | 10613/20000 [00:12<00:05, 1604.78it/s] 54%|█████▍    | 10775/20000 [00:12<00:05, 1557.05it/s] 55%|█████▍    | 10932/20000 [00:13<00:05, 1531.61it/s] 55%|█████▌    | 11086/20000 [00:13<00:05, 1488.82it/s] 56%|█████▌    | 11236/20000 [00:13<00:06, 1460.56it/s] 57%|█████▋    | 11383/20000 [00:13<00:05, 1455.08it/s] 58%|█████▊    | 11529/20000 [00:13<00:06, 1393.23it/s] 58%|█████▊    | 11669/20000 [00:13<00:06, 1345.61it/s] 59%|█████▉    | 11805/20000 [00:13<00:08, 930.33it/s]  60%|█████▉    | 11971/20000 [00:13<00:07, 1088.06it/s] 61%|██████    | 12204/20000 [00:14<00:05, 1381.14it/s] 62%|██████▏   | 12435/20000 [00:14<00:04, 1613.59it/s] 63%|██████▎   | 12636/20000 [00:14<00:04, 1717.52it/s] 64%|██████▍   | 12842/20000 [00:14<00:03, 1808.98it/s] 65%|██████▌   | 13034/20000 [00:14<00:03, 1789.14it/s] 66%|██████▌   | 13240/20000 [00:14<00:03, 1863.55it/s] 67%|██████▋   | 13459/20000 [00:14<00:03, 1953.26it/s] 68%|██████▊   | 13659/20000 [00:14<00:03, 1876.16it/s] 69%|██████▉   | 13851/20000 [00:15<00:04, 1294.53it/s] 70%|███████   | 14007/20000 [00:15<00:05, 1112.51it/s] 71%|███████   | 14163/20000 [00:15<00:04, 1203.11it/s] 72%|███████▏  | 14332/20000 [00:15<00:04, 1311.16it/s] 73%|███████▎  | 14504/20000 [00:15<00:03, 1410.01it/s] 73%|███████▎  | 14660/20000 [00:15<00:03, 1435.33it/s] 74%|███████▍  | 14815/20000 [00:15<00:03, 1464.26it/s] 75%|███████▍  | 14969/20000 [00:15<00:03, 1384.21it/s] 76%|███████▌  | 15114/20000 [00:16<00:03, 1362.98it/s] 76%|███████▋  | 15255/20000 [00:16<00:03, 1332.19it/s] 77%|███████▋  | 15408/20000 [00:16<00:03, 1385.21it/s] 78%|███████▊  | 15567/20000 [00:16<00:03, 1441.72it/s] 79%|███████▊  | 15727/20000 [00:16<00:02, 1486.57it/s] 79%|███████▉  | 15878/20000 [00:16<00:02, 1469.69it/s] 80%|████████  | 16032/20000 [00:16<00:02, 1489.50it/s] 81%|████████  | 16188/20000 [00:16<00:02, 1507.94it/s] 82%|████████▏ | 16370/20000 [00:16<00:02, 1594.76it/s] 83%|████████▎ | 16531/20000 [00:16<00:02, 1488.50it/s] 83%|████████▎ | 16683/20000 [00:17<00:02, 1496.53it/s] 84%|████████▍ | 16834/20000 [00:17<00:02, 1497.69it/s] 85%|████████▍ | 16985/20000 [00:17<00:02, 1483.42it/s] 86%|████████▌ | 17134/20000 [00:17<00:02, 1386.81it/s] 87%|████████▋ | 17316/20000 [00:17<00:01, 1507.61it/s] 88%|████████▊ | 17575/20000 [00:17<00:01, 1812.86it/s] 89%|████████▉ | 17760/20000 [00:17<00:01, 1681.75it/s] 90%|████████▉ | 17932/20000 [00:17<00:01, 1622.36it/s] 90%|█████████ | 18097/20000 [00:17<00:01, 1567.33it/s] 91%|█████████▏| 18256/20000 [00:18<00:01, 1544.05it/s] 92%|█████████▏| 18412/20000 [00:18<00:01, 1542.87it/s] 93%|█████████▎| 18568/20000 [00:18<00:00, 1465.23it/s] 94%|█████████▎| 18726/20000 [00:18<00:00, 1494.42it/s] 94%|█████████▍| 18884/20000 [00:18<00:00, 1518.11it/s] 95%|█████████▌| 19037/20000 [00:18<00:00, 1498.13it/s] 96%|█████████▌| 19189/20000 [00:18<00:00, 1503.48it/s] 97%|█████████▋| 19340/20000 [00:18<00:00, 1493.00it/s] 97%|█████████▋| 19490/20000 [00:18<00:00, 1446.44it/s] 99%|█████████▊| 19741/20000 [00:19<00:00, 1752.27it/s]100%|█████████▉| 19918/20000 [00:19<00:00, 1657.80it/s]100%|██████████| 20000/20000 [00:19<00:00, 1042.54it/s]
+number of files  47149
+normalization used =>  imagenet
+Retrieval Evaluation Starts
+
+NOT SAVING IT THE EMBEDDINGS!!!
+XRay Feature Extraction:   0%|          | 0/46 [00:00<?, ?it/s]XRay Feature Extraction:   2%|▏         | 1/46 [00:21<16:08, 21.51s/it]XRay Feature Extraction:   4%|▍         | 2/46 [00:22<06:49,  9.30s/it]XRay Feature Extraction:   7%|▋         | 3/46 [00:22<03:50,  5.37s/it]XRay Feature Extraction:   9%|▊         | 4/46 [00:23<02:27,  3.52s/it]XRay Feature Extraction:  11%|█         | 5/46 [00:24<01:42,  2.50s/it]XRay Feature Extraction:  13%|█▎        | 6/46 [00:25<01:15,  1.89s/it]XRay Feature Extraction:  15%|█▌        | 7/46 [00:25<00:58,  1.50s/it]XRay Feature Extraction:  17%|█▋        | 8/46 [00:26<00:47,  1.24s/it]XRay Feature Extraction:  20%|█▉        | 9/46 [00:27<00:39,  1.07s/it]XRay Feature Extraction:  22%|██▏       | 10/46 [00:27<00:34,  1.05it/s]XRay Feature Extraction:  24%|██▍       | 11/46 [00:31<01:07,  1.93s/it]XRay Feature Extraction:  26%|██▌       | 12/46 [00:32<00:52,  1.55s/it]XRay Feature Extraction:  28%|██▊       | 13/46 [00:33<00:42,  1.29s/it]XRay Feature Extraction:  30%|███       | 14/46 [00:34<00:36,  1.15s/it]XRay Feature Extraction:  33%|███▎      | 15/46 [00:34<00:32,  1.05s/it]XRay Feature Extraction:  35%|███▍      | 16/46 [00:35<00:29,  1.02it/s]XRay Feature Extraction:  37%|███▋      | 17/46 [00:36<00:26,  1.08it/s]XRay Feature Extraction:  39%|███▉      | 18/46 [00:37<00:24,  1.12it/s]XRay Feature Extraction:  41%|████▏     | 19/46 [00:38<00:23,  1.15it/s]XRay Feature Extraction:  43%|████▎     | 20/46 [00:39<00:22,  1.18it/s]XRay Feature Extraction:  46%|████▌     | 21/46 [00:44<00:55,  2.22s/it]XRay Feature Extraction:  48%|████▊     | 22/46 [00:45<00:42,  1.77s/it]XRay Feature Extraction:  50%|█████     | 23/46 [00:45<00:33,  1.45s/it]XRay Feature Extraction:  52%|█████▏    | 24/46 [00:46<00:26,  1.22s/it]XRay Feature Extraction:  54%|█████▍    | 25/46 [00:47<00:22,  1.06s/it]XRay Feature Extraction:  57%|█████▋    | 26/46 [00:47<00:19,  1.05it/s]XRay Feature Extraction:  59%|█████▊    | 27/46 [00:48<00:16,  1.15it/s]XRay Feature Extraction:  61%|██████    | 28/46 [00:49<00:14,  1.22it/s]XRay Feature Extraction:  63%|██████▎   | 29/46 [00:49<00:13,  1.28it/s]XRay Feature Extraction:  65%|██████▌   | 30/46 [00:50<00:12,  1.33it/s]XRay Feature Extraction:  67%|██████▋   | 31/46 [00:58<00:44,  2.95s/it]XRay Feature Extraction:  70%|██████▉   | 32/46 [00:59<00:31,  2.27s/it]XRay Feature Extraction:  72%|███████▏  | 33/46 [01:00<00:23,  1.80s/it]XRay Feature Extraction:  74%|███████▍  | 34/46 [01:00<00:17,  1.46s/it]XRay Feature Extraction:  76%|███████▌  | 35/46 [01:01<00:13,  1.23s/it]XRay Feature Extraction:  78%|███████▊  | 36/46 [01:02<00:10,  1.07s/it]XRay Feature Extraction:  80%|████████  | 37/46 [01:02<00:08,  1.05it/s]XRay Feature Extraction:  83%|████████▎ | 38/46 [01:03<00:06,  1.15it/s]XRay Feature Extraction:  85%|████████▍ | 39/46 [01:04<00:05,  1.22it/s]XRay Feature Extraction:  87%|████████▋ | 40/46 [01:04<00:04,  1.29it/s]XRay Feature Extraction:  89%|████████▉ | 41/46 [01:10<00:10,  2.11s/it]XRay Feature Extraction:  91%|█████████▏| 42/46 [01:10<00:06,  1.68s/it]XRay Feature Extraction:  93%|█████████▎| 43/46 [01:11<00:04,  1.39s/it]XRay Feature Extraction:  96%|█████████▌| 44/46 [01:12<00:02,  1.18s/it]XRay Feature Extraction:  98%|█████████▊| 45/46 [01:12<00:01,  1.03s/it]XRay Feature Extraction: 100%|██████████| 46/46 [01:13<00:00,  1.08it/s]XRay Feature Extraction: 47it [01:13,  1.35it/s]                                                                        Xray feature extraction completed
+Weights of the linear layer:
+Parameter containing:
+tensor([[ 0.0212, -0.0338, -0.0058,  ..., -0.0287, -0.0067,  0.0109],
+        [-0.0333,  0.0344,  0.0294,  ...,  0.0265,  0.0294, -0.0076],
+        [-0.0370,  0.0189, -0.0121,  ...,  0.0231, -0.0167, -0.0012],
+        ...,
+        [ 0.0133,  0.0317,  0.0233,  ...,  0.0370, -0.0024, -0.0179],
+        [-0.0063, -0.0150,  0.0286,  ..., -0.0360, -0.0229,  0.0042],
+        [ 0.0341, -0.0156,  0.0081,  ..., -0.0414, -0.0254, -0.0074]],
+       requires_grad=True)
+Number of learnable parameters: 5643
+  0%|          | 0/20000 [00:00<?, ?it/s]  0%|          | 20/20000 [00:00<01:41, 196.58it/s]  0%|          | 40/20000 [00:00<01:43, 192.65it/s]  0%|          | 63/20000 [00:00<01:35, 208.19it/s]  0%|          | 87/20000 [00:00<01:31, 218.79it/s]  1%|          | 111/20000 [00:00<01:28, 224.77it/s]  1%|          | 135/20000 [00:00<01:27, 228.21it/s]  1%|          | 158/20000 [00:00<01:29, 222.49it/s]  1%|          | 181/20000 [00:00<01:33, 213.10it/s]  1%|          | 203/20000 [00:00<01:40, 197.85it/s]  1%|          | 225/20000 [00:01<01:37, 202.80it/s]  1%|▏         | 250/20000 [00:01<01:31, 214.93it/s]  1%|▏         | 272/20000 [00:01<01:32, 213.50it/s]  1%|▏         | 297/20000 [00:01<01:31, 214.36it/s]  2%|▏         | 320/20000 [00:01<01:31, 214.04it/s]  2%|▏         | 343/20000 [00:01<01:30, 216.29it/s]  2%|▏         | 365/20000 [00:01<01:33, 210.15it/s]  2%|▏         | 390/20000 [00:01<01:28, 221.05it/s]  2%|▏         | 416/20000 [00:01<01:24, 231.78it/s]  2%|▏         | 440/20000 [00:02<01:29, 219.77it/s]  2%|▏         | 463/20000 [00:02<01:29, 218.20it/s]  2%|▏         | 485/20000 [00:02<01:32, 210.56it/s]  3%|▎         | 512/20000 [00:02<01:25, 226.84it/s]  3%|▎         | 535/20000 [00:02<01:28, 219.98it/s]  3%|▎         | 558/20000 [00:02<01:32, 210.21it/s]  3%|▎         | 580/20000 [00:02<01:32, 209.88it/s]  3%|▎         | 602/20000 [00:02<01:40, 193.96it/s]  3%|▎         | 627/20000 [00:02<01:32, 208.42it/s]  3%|▎         | 649/20000 [00:03<01:34, 205.32it/s]  3%|▎         | 675/20000 [00:03<01:28, 218.30it/s]  4%|▎         | 701/20000 [00:03<01:24, 228.76it/s]  4%|▎         | 725/20000 [00:03<01:23, 230.19it/s]  4%|▎         | 749/20000 [00:03<01:24, 227.44it/s]  4%|▍         | 772/20000 [00:03<01:24, 226.66it/s]  4%|▍         | 796/20000 [00:03<01:23, 229.44it/s]  4%|▍         | 820/20000 [00:03<01:23, 229.79it/s]  4%|▍         | 844/20000 [00:03<01:30, 211.62it/s]  4%|▍         | 866/20000 [00:04<01:35, 199.65it/s]  4%|▍         | 892/20000 [00:04<01:29, 214.18it/s]  5%|▍         | 918/20000 [00:04<01:25, 222.95it/s]  5%|▍         | 941/20000 [00:04<01:27, 217.19it/s]  5%|▍         | 963/20000 [00:04<01:28, 214.31it/s]  5%|▍         | 985/20000 [00:04<01:29, 212.11it/s]  5%|▌         | 1008/20000 [00:04<01:27, 216.15it/s]  5%|▌         | 1031/20000 [00:04<01:26, 219.15it/s]  5%|▌         | 1056/20000 [00:04<01:23, 227.38it/s]  5%|▌         | 1079/20000 [00:04<01:24, 224.04it/s]  6%|▌         | 1106/20000 [00:05<01:20, 234.91it/s]  6%|▌         | 1132/20000 [00:05<01:18, 239.94it/s]  6%|▌         | 1159/20000 [00:05<01:16, 245.98it/s]  6%|▌         | 1184/20000 [00:05<01:16, 245.99it/s]  6%|▌         | 1209/20000 [00:05<01:17, 242.43it/s]  6%|▌         | 1234/20000 [00:05<01:19, 237.24it/s]  6%|▋         | 1258/20000 [00:05<01:27, 215.36it/s]  6%|▋         | 1282/20000 [00:05<01:24, 220.91it/s]  7%|▋         | 1310/20000 [00:05<01:19, 234.30it/s]  7%|▋         | 1334/20000 [00:06<01:20, 233.26it/s]  7%|▋         | 1358/20000 [00:06<01:21, 227.57it/s]  7%|▋         | 1381/20000 [00:06<01:22, 224.90it/s]  7%|▋         | 1404/20000 [00:06<01:25, 218.31it/s]  7%|▋         | 1426/20000 [00:06<01:26, 213.94it/s]  7%|▋         | 1448/20000 [00:06<01:30, 204.73it/s]  7%|▋         | 1469/20000 [00:06<01:30, 205.18it/s]  7%|▋         | 1490/20000 [00:06<01:30, 204.04it/s]  8%|▊         | 1511/20000 [00:06<01:36, 191.62it/s]  8%|▊         | 1531/20000 [00:07<01:37, 188.53it/s]  8%|▊         | 1555/20000 [00:07<01:31, 201.01it/s]  8%|▊         | 1576/20000 [00:07<01:34, 195.52it/s]  8%|▊         | 1600/20000 [00:07<01:28, 207.03it/s]  8%|▊         | 1625/20000 [00:07<01:24, 218.55it/s]  8%|▊         | 1648/20000 [00:07<01:29, 204.22it/s]  8%|▊         | 1670/20000 [00:07<01:28, 207.72it/s]  8%|▊         | 1695/20000 [00:07<01:23, 218.14it/s]  9%|▊         | 1718/20000 [00:07<01:23, 219.45it/s]  9%|▊         | 1741/20000 [00:08<01:23, 217.86it/s]  9%|▉         | 1765/20000 [00:08<01:22, 221.79it/s]  9%|▉         | 1788/20000 [00:08<01:24, 215.00it/s]  9%|▉         | 1810/20000 [00:08<01:26, 210.44it/s]  9%|▉         | 1832/20000 [00:08<01:25, 213.01it/s]  9%|▉         | 1854/20000 [00:08<01:25, 212.61it/s]  9%|▉         | 1876/20000 [00:08<01:25, 213.00it/s]  9%|▉         | 1899/20000 [00:08<01:23, 216.05it/s] 10%|▉         | 1924/20000 [00:08<01:20, 224.70it/s] 10%|▉         | 1947/20000 [00:08<01:20, 224.35it/s] 10%|▉         | 1970/20000 [00:09<01:21, 222.49it/s] 10%|▉         | 1995/20000 [00:09<01:18, 229.87it/s] 10%|█         | 2019/20000 [00:09<01:17, 231.74it/s] 10%|█         | 2043/20000 [00:09<01:17, 232.19it/s] 10%|█         | 2069/20000 [00:09<01:14, 240.03it/s] 10%|█         | 2094/20000 [00:09<01:18, 228.68it/s] 11%|█         | 2118/20000 [00:09<01:18, 227.17it/s] 11%|█         | 2145/20000 [00:09<01:16, 234.71it/s] 11%|█         | 2171/20000 [00:09<01:14, 240.59it/s] 11%|█         | 2196/20000 [00:10<01:19, 224.11it/s] 11%|█         | 2219/20000 [00:10<01:19, 222.56it/s] 11%|█         | 2244/20000 [00:10<01:17, 227.90it/s] 11%|█▏        | 2267/20000 [00:10<01:20, 220.67it/s] 11%|█▏        | 2290/20000 [00:10<01:20, 220.20it/s] 12%|█▏        | 2313/20000 [00:10<01:25, 207.19it/s] 12%|█▏        | 2336/20000 [00:10<01:22, 212.83it/s] 12%|█▏        | 2361/20000 [00:10<01:19, 222.26it/s] 12%|█▏        | 2385/20000 [00:10<01:18, 225.26it/s] 12%|█▏        | 2411/20000 [00:11<01:14, 235.03it/s] 12%|█▏        | 2435/20000 [00:11<01:21, 214.55it/s] 12%|█▏        | 2460/20000 [00:11<01:18, 223.98it/s] 12%|█▏        | 2483/20000 [00:11<01:19, 219.30it/s] 13%|█▎        | 2508/20000 [00:11<01:17, 226.58it/s] 13%|█▎        | 2534/20000 [00:11<01:14, 234.67it/s] 13%|█▎        | 2558/20000 [00:11<01:14, 233.77it/s] 13%|█▎        | 2582/20000 [00:11<01:19, 217.91it/s] 13%|█▎        | 2605/20000 [00:11<01:21, 212.74it/s] 13%|█▎        | 2627/20000 [00:12<01:22, 210.60it/s] 13%|█▎        | 2649/20000 [00:12<01:22, 211.53it/s] 13%|█▎        | 2671/20000 [00:12<01:22, 209.53it/s] 13%|█▎        | 2695/20000 [00:12<01:21, 213.61it/s] 14%|█▎        | 2719/20000 [00:12<01:18, 218.77it/s] 14%|█▎        | 2741/20000 [00:12<01:18, 218.55it/s] 14%|█▍        | 2767/20000 [00:12<01:15, 228.11it/s] 14%|█▍        | 2790/20000 [00:12<01:15, 227.38it/s] 14%|█▍        | 2815/20000 [00:12<01:13, 233.47it/s] 14%|█▍        | 2839/20000 [00:12<01:12, 235.27it/s] 14%|█▍        | 2865/20000 [00:13<01:13, 232.15it/s] 14%|█▍        | 2892/20000 [00:13<01:10, 242.47it/s] 15%|█▍        | 2917/20000 [00:13<01:19, 214.70it/s] 15%|█▍        | 2940/20000 [00:13<01:19, 214.89it/s] 15%|█▍        | 2962/20000 [00:13<01:19, 215.26it/s] 15%|█▍        | 2986/20000 [00:13<01:17, 220.70it/s] 15%|█▌        | 3011/20000 [00:13<01:14, 226.74it/s] 15%|█▌        | 3034/20000 [00:13<01:16, 223.16it/s] 15%|█▌        | 3058/20000 [00:13<01:14, 226.59it/s] 15%|█▌        | 3081/20000 [00:14<01:18, 216.35it/s] 16%|█▌        | 3107/20000 [00:14<01:14, 227.11it/s] 16%|█▌        | 3130/20000 [00:14<01:15, 223.26it/s] 16%|█▌        | 3153/20000 [00:14<01:24, 199.95it/s] 16%|█▌        | 3174/20000 [00:14<01:25, 195.78it/s] 16%|█▌        | 3199/20000 [00:14<01:22, 204.41it/s] 16%|█▌        | 3224/20000 [00:14<01:17, 215.68it/s] 16%|█▌        | 3248/20000 [00:14<01:15, 222.31it/s] 16%|█▋        | 3271/20000 [00:14<01:16, 218.15it/s] 16%|█▋        | 3294/20000 [00:15<01:15, 221.13it/s] 17%|█▋        | 3318/20000 [00:15<01:13, 225.54it/s] 17%|█▋        | 3342/20000 [00:15<01:12, 229.37it/s] 17%|█▋        | 3366/20000 [00:15<01:12, 228.98it/s] 17%|█▋        | 3389/20000 [00:15<01:17, 214.88it/s] 17%|█▋        | 3411/20000 [00:15<01:19, 207.39it/s] 17%|█▋        | 3436/20000 [00:15<01:17, 214.96it/s] 17%|█▋        | 3459/20000 [00:15<01:16, 217.01it/s] 17%|█▋        | 3483/20000 [00:15<01:14, 221.14it/s] 18%|█▊        | 3506/20000 [00:16<01:22, 199.65it/s] 18%|█▊        | 3531/20000 [00:16<01:17, 212.87it/s] 18%|█▊        | 3556/20000 [00:16<01:14, 219.63it/s] 18%|█▊        | 3585/20000 [00:16<01:09, 237.09it/s] 18%|█▊        | 3610/20000 [00:16<01:10, 233.16it/s] 18%|█▊        | 3634/20000 [00:16<01:11, 230.40it/s] 18%|█▊        | 3658/20000 [00:16<01:12, 225.16it/s] 18%|█▊        | 3682/20000 [00:16<01:11, 227.85it/s] 19%|█▊        | 3707/20000 [00:16<01:10, 232.19it/s] 19%|█▊        | 3731/20000 [00:16<01:11, 227.09it/s] 19%|█▉        | 3756/20000 [00:17<01:10, 231.95it/s] 19%|█▉        | 3783/20000 [00:17<01:07, 241.09it/s] 19%|█▉        | 3808/20000 [00:17<01:10, 231.03it/s] 19%|█▉        | 3832/20000 [00:17<01:11, 226.75it/s] 19%|█▉        | 3855/20000 [00:17<01:12, 221.88it/s] 19%|█▉        | 3878/20000 [00:17<01:12, 222.70it/s] 20%|█▉        | 3901/20000 [00:17<01:14, 214.92it/s] 20%|█▉        | 3923/20000 [00:17<01:14, 216.25it/s] 20%|█▉        | 3945/20000 [00:17<01:16, 209.51it/s] 20%|█▉        | 3967/20000 [00:18<01:23, 192.45it/s] 20%|█▉        | 3991/20000 [00:18<01:18, 204.88it/s] 20%|██        | 4017/20000 [00:18<01:12, 219.42it/s] 20%|██        | 4041/20000 [00:18<01:10, 225.14it/s] 20%|██        | 4064/20000 [00:18<01:10, 224.82it/s] 20%|██        | 4090/20000 [00:18<01:08, 233.45it/s] 21%|██        | 4114/20000 [00:18<01:08, 233.06it/s] 21%|██        | 4138/20000 [00:18<01:09, 227.03it/s] 21%|██        | 4165/20000 [00:18<01:06, 236.92it/s] 21%|██        | 4189/20000 [00:19<01:07, 234.00it/s] 21%|██        | 4216/20000 [00:19<01:05, 240.15it/s] 21%|██        | 4241/20000 [00:19<01:06, 237.45it/s] 21%|██▏       | 4265/20000 [00:19<01:06, 236.87it/s] 21%|██▏       | 4289/20000 [00:19<01:07, 233.70it/s] 22%|██▏       | 4313/20000 [00:19<01:09, 226.91it/s] 22%|██▏       | 4336/20000 [00:19<01:14, 210.06it/s] 22%|██▏       | 4358/20000 [00:19<01:18, 198.69it/s] 22%|██▏       | 4379/20000 [00:19<01:25, 182.69it/s] 22%|██▏       | 4405/20000 [00:20<01:17, 200.97it/s] 22%|██▏       | 4430/20000 [00:20<01:13, 212.15it/s] 22%|██▏       | 4452/20000 [00:20<01:12, 213.05it/s] 22%|██▏       | 4475/20000 [00:20<01:11, 217.48it/s] 22%|██▏       | 4498/20000 [00:20<01:13, 210.27it/s] 23%|██▎       | 4523/20000 [00:20<01:10, 219.24it/s] 23%|██▎       | 4546/20000 [00:20<01:10, 218.81it/s] 23%|██▎       | 4569/20000 [00:20<01:11, 215.63it/s] 23%|██▎       | 4594/20000 [00:20<01:08, 223.55it/s] 23%|██▎       | 4617/20000 [00:21<01:12, 212.73it/s] 23%|██▎       | 4640/20000 [00:21<01:11, 215.99it/s] 23%|██▎       | 4662/20000 [00:21<01:16, 201.12it/s] 23%|██▎       | 4686/20000 [00:21<01:12, 210.43it/s] 24%|██▎       | 4711/20000 [00:21<01:09, 219.92it/s] 24%|██▎       | 4734/20000 [00:21<01:09, 219.46it/s] 24%|██▍       | 4757/20000 [00:21<01:13, 206.31it/s] 24%|██▍       | 4778/20000 [00:21<01:14, 205.67it/s] 24%|██▍       | 4799/20000 [00:21<01:13, 206.20it/s] 24%|██▍       | 4824/20000 [00:22<01:09, 218.41it/s] 24%|██▍       | 4846/20000 [00:22<01:10, 216.35it/s] 24%|██▍       | 4868/20000 [00:22<01:11, 211.73it/s] 24%|██▍       | 4890/20000 [00:22<01:18, 192.90it/s] 25%|██▍       | 4913/20000 [00:22<01:14, 202.80it/s] 25%|██▍       | 4938/20000 [00:22<01:10, 214.50it/s] 25%|██▍       | 4963/20000 [00:22<01:07, 222.75it/s] 25%|██▍       | 4986/20000 [00:22<01:07, 222.08it/s] 25%|██▌       | 5011/20000 [00:22<01:05, 229.38it/s] 25%|██▌       | 5038/20000 [00:22<01:02, 238.67it/s] 25%|██▌       | 5062/20000 [00:23<01:07, 219.72it/s] 25%|██▌       | 5085/20000 [00:23<01:14, 199.88it/s] 26%|██▌       | 5106/20000 [00:23<01:16, 194.68it/s] 26%|██▌       | 5130/20000 [00:23<01:12, 204.77it/s] 26%|██▌       | 5158/20000 [00:23<01:06, 223.38it/s] 26%|██▌       | 5184/20000 [00:23<01:03, 232.53it/s] 26%|██▌       | 5208/20000 [00:23<01:07, 220.50it/s] 26%|██▌       | 5234/20000 [00:23<01:04, 229.18it/s] 26%|██▋       | 5259/20000 [00:23<01:02, 234.20it/s] 26%|██▋       | 5285/20000 [00:24<01:01, 240.61it/s]slurmstepd: error: *** JOB 1142936 ON node149 CANCELLED AT 2025-01-31T20:44:55 ***

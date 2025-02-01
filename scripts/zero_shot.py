@@ -3,7 +3,7 @@ from shutil import rmtree
 from transformer_maskgit.optimizer import get_optimizer
 from transformers import BertTokenizer, BertModel
 
-from data import CTReportDataset, CTReportXRayDataset, MimicCTReportXRayDataset
+from data import CTReportDataset, CTReportXRayDataset, MimicCTReportXRayDataset, VinBigDataChestXrayDataset
 from eval import evaluate_internal, plot_roc, accuracy, sigmoid, bootstrap, compute_cis
 
 from sklearn.metrics import classification_report, confusion_matrix, multilabel_confusion_matrix, f1_score, accuracy_score
@@ -140,6 +140,121 @@ class CosineAnnealingWarmUpRestarts(lr_scheduler._LRScheduler):
             self.T_0 *= self.T_mult
             self.eta_max *= self.gamma
 
+
+
+class VinBigDataChestXrayInference(nn.Module):
+    """
+    use the VinBigDataChestXrayDataset class from data.py
+
+    only care about xray.
+    """
+    def __init__(
+        self,
+        CTClip: CTCLIPwithXray,
+        *,
+        split,
+        tokenizer,
+        batch_size,
+        cfg=None,
+        num_workers = 1,
+        feature_extraction_mode = True,
+        data_folder = "external_valid",
+        labels = "labels.csv",
+        accelerate_kwargs: dict = dict()
+        ):
+        super().__init__()
+
+        assert split in ['train', 'test']
+
+        ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+        self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], **accelerate_kwargs)
+        self.CTClip = CTClip
+        self.tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized', do_lower_case=True) if not tokenizer else tokenizer
+        self.register_buffer('steps', torch.Tensor([0]))
+        self.batch_size = batch_size
+        self.split = split
+
+        # Load the pre-trained weights
+        self.ds = VinBigDataChestXrayDataset(
+            cfg=cfg,
+            data_folder=data_folder,
+            labels=labels, 
+            model_type=CTClip.xray_model_type,
+            split=split)
+
+        # Split dataset into train and validation sets
+        self.dl = DataLoader(
+            self.ds,
+            num_workers=num_workers,
+            batch_size=batch_size,
+            shuffle = True,
+        )
+
+        self.split = 'valid' # default
+        self.feature_extraction_mode = feature_extraction_mode
+        # prepare with accelerator
+        self.device = self.accelerator.device
+        self.CTClip.to(self.device)
+
+    @property
+    def is_main(self):
+        return self.accelerator.is_main_process
+
+    def save(self, path):
+        if not self.accelerator.is_local_main_process:
+            return
+
+        pkg = dict(
+            model=self.accelerator.get_state_dict(self.CTClip),
+            optim=self.optim.state_dict(),
+        )
+        torch.save(pkg, path)
+
+    def load(self, path):
+        path = Path(path)
+        assert path.exists()
+        pkg = torch.load(path)
+
+        CTClip = self.accelerator.unwrap_model(self.CTClip)
+        CTClip.load_state_dict(pkg['model'])
+
+        self.optim.load_state_dict(pkg['optim'])
+    
+    def extract_xray_features(self, directory, pth_name='xray_features.pth', append=True):
+        # save the correct split directory
+        saving_directory = os.path.join(directory, self.split)
+        # make sure the file have the correct name under the directory
+        xray_feature_path = os.path.join(saving_directory, pth_name)
+
+        if not append:
+            print('NOT SAVING IT THE EMBEDDINGS!!!')
+
+        xray_features = {}
+        device = self.device
+        with torch.no_grad():
+            self.CTClip.eval()
+            for batch_data in tqdm.tqdm(self.dl, desc="Xray Feature Extraction", leave=False):
+                xrays, _, _, instance_name = batch_data
+
+                # forward the input
+                xrays = xrays.to(device)
+                xray_latents = self.CTClip.get_xray_latents(xrays)
+                xray_latents = xray_latents.cpu().numpy()
+
+                # Assign the features to the respective dictionaries
+                for i, key in enumerate(instance_name):
+                    xray_features[key] = xray_latents[i, :]
+
+        # save the remaining.
+        if append:
+            os.makedirs(saving_directory, exist_ok=True)
+            torch.save(self.xray_features, xray_feature_path)
+
+        #sanity check
+        loaded_img_features = torch.load(os.path.join(saving_directory, 'xray_features.pth'))
+        print(f'size of xray features {len(loaded_img_features)}')
+        return xray_features
+
 class MimicCTClipInference(nn.Module):
     """
     use the MimicCTReportXRayDataset class from data.py
@@ -200,12 +315,12 @@ class MimicCTClipInference(nn.Module):
         self.device = self.accelerator.device
         self.CTClip.to(self.device)
 
-        self.save_model_every = save_model_every
-        self.save_results_every = save_results_every
-        self.result_folder_txt = self.results_folder
-        self.results_folder = Path(results_folder)
+        # self.save_model_every = save_model_every
+        # self.save_results_every = save_results_every
+        # self.result_folder_txt = self.results_folder
+        # self.results_folder = Path(results_folder)
 
-        self.results_folder.mkdir(parents=True, exist_ok=True)
+        # self.results_folder.mkdir(parents=True, exist_ok=True)
 
     @property
     def is_main(self):
@@ -378,23 +493,6 @@ class CTClipInference(nn.Module):
         self.dl_iter=cycle(self.dl)
         self.device = self.accelerator.device
         self.CTClip.to(self.device)
-        # self.lr_scheduler = CosineAnnealingWarmUpRestarts(self.optim,
-        #                                           T_0=4000000,    # Maximum number of iterations
-        #                                           T_warmup=10000, # Number of warmup steps NOTE: TODO: verify this 
-        #                                           eta_max=lr)   # Maximum learning rate
-
-
-        # (
- 		# 	self.dl_iter,
-        #     self.CTClip,
-        #     self.optim,
-        #     self.lr_scheduler
-        # ) = self.accelerator.prepare(
-        #     self.dl_iter,
-        #     self.CTClip,
-        #     self.optim,
-        #     self.lr_scheduler
-        # )
 
         self.save_model_every = save_model_every
         self.save_results_every = save_results_every

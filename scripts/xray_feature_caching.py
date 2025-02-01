@@ -14,7 +14,7 @@ from transformers import BertModel
 from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
-from zero_shot import CTClipInference
+from zero_shot import CTClipInference, VinBigDataChestXrayInference
 
 @hydra.main(
         version_base=None,
@@ -146,10 +146,39 @@ def run(cfg_dot):
         print(f'Finished caching the xray feature extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
 
     elif cfg_dot.xray_feature_caching_params.evaluation_dataset == 'vinBig':
-        pass
+        split = 'train'
+        vinBigChestXray_train_evaluator = vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+        vinBigChestXray_train_evaluator.extract_xray_features(
+            directory=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/xray_features_embeddings/',
+            pth_name=pth_base_name, 
+            append=True
+        )
+
+        split = 'test'
+        vinBigChestXray_test_evaluator = vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+        vinBigChestXray_test_evaluator.extract_xray_features(
+            directory=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/xray_features_embeddings/',
+            pth_name=pth_base_name, 
+            append=True
+        )
     else:
         print(f'NOT XRAY FEATURE EXTRACTION, THE DATASET {cfg_dot.xray_feature_caching_params.evaluation_dataset} IS NOT SUPPORTED')
 
+def vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer):
+
+    vinBigChestXray_evaluator = VinBigDataChestXrayInference(
+        clip_xray,
+        split=split,
+        cfg=cfg,
+        tokenizer=tokenizer,
+        data_folder= f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
+        labels = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv',
+        batch_size = cfg_dot.xray_feature_caching_params.batch_size,
+        num_workers = cfg_dot.xray_feature_caching_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        feature_extraction_mode = True # might be optional
+    )
+
+    return vinBigChestXray_evaluator
 
 def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
 

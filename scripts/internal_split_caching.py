@@ -134,7 +134,9 @@ def run(cfg_dot):
         # TODO:
         pass
     elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'vinBig': # the ct dataset
-        print('not implemented yet')
+        # base on the baseline model, load the corresponding xray features
+        # xray_feature_path = f''
+        # train_xray_features = torch.load(xray_feature_path)
         pass
 
 # Example usage
