@@ -1,0 +1,2 @@
+- linear_probing_params.train_data_portion=1
+- linear_probing_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch
