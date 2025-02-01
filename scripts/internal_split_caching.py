@@ -6,7 +6,7 @@ you only do the split on the training set, never touches the test set
 
 import torch
 
-from data import CTReportDataSplitter, CTReportXRayClassificationDataset
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter
 import os
 from cxr_clip_utils import convert_dictconfig_to_dict
 import hydra
@@ -117,30 +117,67 @@ def run(cfg_dot):
             model_type=xray_model_type,
             split='train'
         )
-
-        # save as a dictionary
-        results = {
-            'dataset': cfg_dot.internal_split_caching_params.evaluation_dataset,
-            'model': cfg_dot.internal_split_caching_params.baseline_type,
-            'proportion': cfg_dot.internal_split_caching_params.train_data_portion,
-            'train_split': train_dataset,
-            'internal_val_split': internal_val_dataset
-        }
         
         # NOTE: save the object so that it is differentateid based on dataset, proportion, and baseline.
         file_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_mimic_splits/{proportion_mapping(cfg_dot.internal_split_caching_params.train_data_portion)}/'
-        os.makedirs(file_dir, exist_ok=True)
-        file_path = os.path.join(file_dir, saving_base_name)
-        torch.save(results, file_path)
+
+
     elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'ct-rate':
         # TODO:
         pass
     elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'vinBig': # the ct dataset
+
+        split = 'train'
         # base on the baseline model, load the corresponding xray features
         xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/xray_features_embeddings/train/{pth_base_name}'
         train_xray_features = torch.load(xray_feature_path)
 
-        pass
+        train_data_splitter = VinBigChestXrayDataSplitter(
+            labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', #NOTE: the label need to be the mha version
+            data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
+        )
+        train_sample, internal_val_samples = train_data_splitter.prepare_samples(
+            train_split=cfg_dot.internal_split_caching_params.train_data_portion,
+            val_split=0.2
+        ) # validation split is always, train_split is controlable
+
+
+        train_dataset = VinBigChestXrayClassificationDataset(
+            cfg=cfg,
+            data=train_sample, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split=split
+        )
+
+        internal_val_dataset = VinBigChestXrayClassificationDataset(
+            cfg=cfg,
+            data=internal_val_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split=split
+        )
+        
+        file_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/lp_train_splits/{proportion_mapping(cfg_dot.internal_split_caching_params.train_data_portion)}/'
+
+
+    # same operation across datasets
+
+    # save as a dictionary
+    results = {
+        'dataset': cfg_dot.internal_split_caching_params.evaluation_dataset,
+        'model': cfg_dot.internal_split_caching_params.baseline_type,
+        'proportion': cfg_dot.internal_split_caching_params.train_data_portion,
+        'train_split': train_dataset,
+        'internal_val_split': internal_val_dataset
+    }
+
+    os.makedirs(file_dir, exist_ok=True)
+    file_path = os.path.join(file_dir, saving_base_name)
+    torch.save(results, file_path)
+
+    return 
+    
 
 # Example usage
 if __name__ == "__main__":

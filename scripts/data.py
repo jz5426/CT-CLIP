@@ -279,7 +279,72 @@ class CTReportDataSplitter:
         print(f'internal test size: {len(samples)}')
         return samples
 
-class CTReportXRayClassificationDataset:
+class VinBigChestXrayDataSplitter:
+    """mainly for the evaluation experiment"""
+    def __init__(self, 
+                labels, 
+                data_folder, 
+                xray_embeddings=None):
+        self.labels = labels
+        self.xray_paths = []
+        self.data_folder = data_folder
+        self.parent_folder = os.path.basename(data_folder)
+        self.file_extension = 'mha' # make sure the xray data file path are the .mha file
+
+        # optionally have the text and ct embeddings
+        if xray_embeddings:
+            self.xray_embeddings = torch.load(xray_embeddings)
+
+        assert self.file_extension in data_folder
+
+    def prepare_samples(self, train_split=1., val_split=0.2):
+        """
+        this prepare the xray data in a dictionary format
+        """
+        samples = prepare_vinbig_samples(self.data_folder, self.labels, self.file_extension)
+        
+        # if the training size is smaller than 1, the internal validation should be extracted based on the splitted training set
+        if train_split < 1.0:
+            assert(val_split > 0)
+            sample_data, sample_labels = [s[0] for s in samples], [s[1] for s in samples]
+            # First split to retain `train_split` amount of data
+            train_data, train_label, _, _ = iterative_train_test_split(
+                np.array(sample_data).reshape(-1, 1), 
+                np.array(sample_labels), 
+                test_size=(1.0 - train_split)
+            )
+            
+            # Further split train_samples into train and validation using val_split
+            train_data, train_label, val_data, val_label = iterative_train_test_split(
+                np.array(train_data).reshape(-1, 1), 
+                np.array(train_label), 
+                test_size=val_split
+            )
+            
+            train_split_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+            val_split_samples = [(x[0], np.array(y)) for x, y in zip(val_data.tolist(), val_label.tolist())]
+
+            print(f'training size: {len(train_split_samples)} validation size: {len(val_split_samples)}')
+            return train_split_samples, val_split_samples
+
+            # # If no val_split is desired, return the train samples
+            # train_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+            # return train_samples
+
+        elif train_split == 1. and val_split > 0.:
+            sample_data, sample_labels = [ s[0] for s in samples], [ s[-1] for s in samples]
+            train_data, train_label, test_data, test_labels = iterative_train_test_split(np.array(sample_data).reshape(-1,1), np.array(sample_labels), test_size=val_split)
+            val_split = [(x[0], np.array(y)) for x, y in zip(test_data.tolist(), test_labels.tolist())]
+            train_split = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+
+            print(f'training size: {len(train_split)} validation size: {len(val_split)}')
+            return train_split, val_split
+
+        # return full results
+        print(f'internal test size: {len(samples)}')
+        return samples
+
+class XrayClassificationDataset:
 
     def __init__(self,
                  cfg, 
@@ -334,6 +399,63 @@ class CTReportXRayClassificationDataset:
         return rgb_image
 
     def __getitem__(self, key_id):
+        # TODO: to be implemented in downstream classes
+        pass
+
+    def __len__(self):
+        return len(self.samples)
+
+class VinBigChestXrayClassificationDataset(XrayClassificationDataset):
+
+    def __init__(self,
+                 cfg, 
+                 data, # list of data processed from the prepare_sample
+                 model_type,
+                 data_embeddings=None,
+                 split='train'):
+        super().__init__(
+            cfg,
+            data,
+            model_type,
+            data_embeddings,
+            split
+        )
+
+    def __getitem__(self, key_id):
+
+        selected_sample = self.samples[key_id] # based on index
+        xray_file, label, image_id = selected_sample
+
+        # get the corresonding embeddings
+        name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
+        xray_embedding = self.embeddings[name_acc]
+
+        # transformation borrowed from cxr_clip
+        # xray_image = self.xray_to_rgb(xray_file)
+        # xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+        # return xray_image, label
+
+        label = torch.from_numpy(label)
+        return xray_embedding, label
+
+
+class CTReportXRayClassificationDataset(XrayClassificationDataset):
+
+    def __init__(self,
+                 cfg, 
+                 data, # list of data processed from the prepare_sample
+                 model_type,
+                 data_embeddings=None,
+                 split='train'):
+        super().__init__(
+            cfg,
+            data,
+            model_type,
+            data_embeddings,
+            split
+        )
+
+    def __getitem__(self, key_id):
 
         selected_sample = self.samples[key_id] # based on index
         xray_file, label = selected_sample
@@ -349,9 +471,6 @@ class CTReportXRayClassificationDataset:
 
         label = torch.from_numpy(label)
         return xray_embedding, label
-
-    def __len__(self):
-        return len(self.samples)
 
 class MimicCTReportXRayDataset:
     """mainly used in retrieval evaluation and linear probe evaluation in the MimicCTClipInference class"""
@@ -517,38 +636,43 @@ class VinBigDataChestXrayDataset:
         return xray_image, label, image_id # the instance_name
 
     def prepare_samples(self, data_folder):
-        label_df = pd.read_csv(self.labels)
-        label_df = label_df[label_df["No finding"] != 1] # drop from 45000 to 133.. if uncomment this, the size of the sample is the same as the size of this.
-        label_df = label_df.drop(columns=["No finding"])
-        if "rad_id" in label_df.columns:
-            label_df = label_df.drop(columns=["rad_id"])
-        if "Other lesion" in label_df.columns:
-            label_df = label_df.drop(columns=["Other lesion"])
-        if "Other lesions" in label_df.columns:
-            label_df = label_df.drop(columns=["Other lesions"])
-        if "Other diseases" in label_df.columns:
-            label_df = label_df.drop(columns=["Other diseases"])
-        if "Other disease" in label_df.columns:
-            label_df = label_df.drop(columns=["Other disease"])
-        test_label_cols = list(label_df.columns[1:])
-        assert len(test_label_cols) == 25 # total number of unique diseases
-        label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
-
-        samples = []
-        # for each file in the directory and look for the image id
-        for xray_file in tqdm.tqdm(glob.glob(os.path.join(data_folder, f'*.{self.file_extension}'))):
-            image_id = os.path.basename(xray_file) # hadm_id.mha with extension
-            image_id = image_id[:-len(f'.{self.file_extension}')] # hadm_id
-
-            onehotlabels = label_df[label_df["image_id"] == image_id]["one_hot_labels"].values
-            if len(onehotlabels) == 0:
-                continue
-            samples.append((xray_file, onehotlabels[0], image_id))
-            # make sure the no find column is removed
-        return samples #4522 only
+        return prepare_vinbig_samples(data_folder, self.labels, self.file_extension)
 
     def __len__(self):
         return len(self.samples)
+    
+def prepare_vinbig_samples(data_folder, labels, file_extension):
+    label_df = pd.read_csv(labels)
+    label_df = label_df[label_df["No finding"] != 1] # drop from 45000 to 133.. if uncomment this, the size of the sample is the same as the size of this.
+    label_df = label_df.drop(columns=["No finding"])
+    # TODO: DOUBLE CHECK THE UNIQUES
+    if "rad_id" in label_df.columns:
+        label_df = label_df.drop(columns=["rad_id"])
+    if "Other lesion" in label_df.columns:
+        label_df = label_df.drop(columns=["Other lesion"])
+    if "Other lesions" in label_df.columns:
+        label_df = label_df.drop(columns=["Other lesions"])
+    if "Other diseases" in label_df.columns:
+        label_df = label_df.drop(columns=["Other diseases"])
+    if "Other disease" in label_df.columns:
+        label_df = label_df.drop(columns=["Other disease"])
+    test_label_cols = list(label_df.columns[1:])
+    assert len(test_label_cols) == 25 # total number of unique diseases
+    label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
+
+    samples = []
+    # for each file in the directory and look for the image id
+    for xray_file in tqdm.tqdm(glob.glob(os.path.join(data_folder, f'*.{file_extension}'))):
+        image_id = os.path.basename(xray_file) # hadm_id.mha with extension
+        image_id = image_id[:-len(f'.{file_extension}')] # hadm_id
+
+        onehotlabels = label_df[label_df["image_id"] == image_id]["one_hot_labels"].values
+        if len(onehotlabels) == 0:
+            continue
+        samples.append((xray_file, onehotlabels[0], image_id))
+        # make sure the no find column is removed
+    return samples #4522 only
+
 
 class CTReportXRayDataset(CTReportDataset):
 
