@@ -54,7 +54,7 @@ linear_probing_params:
   progress_window: 2
   num_workers: 10
   train_data_portion: 0.1
-  evaluation_dataset: 'vinBig' # ct-rate, mimic, vinBig
+  evaluation_dataset: 'vinBig_ct' # ct-rate, mimic, vinBig
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
 
 # linear_probing_params:

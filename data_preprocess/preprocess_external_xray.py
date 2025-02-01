@@ -15,7 +15,7 @@ from functools import partial
 import pydicom
 
 XRAY_DATA_TYPE = 'vinbigxray'
-MIRROR = False
+MIRROR = True
 SPLIT = 'test'
 
 def read_mimic_dcm_files(csv_file_path):

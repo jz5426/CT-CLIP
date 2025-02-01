@@ -178,7 +178,7 @@ def run(cfg_dot):
 
     os.makedirs(file_dir, exist_ok=True)
     file_path = os.path.join(file_dir, saving_base_name)
-    torch.save(results, file_path)
+    # torch.save(results, file_path)
 
     return 
     

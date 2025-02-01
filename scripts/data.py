@@ -671,6 +671,8 @@ def prepare_vinbig_samples(data_folder, labels, file_extension, label_variant='v
         onehotlabels = label_df[label_df["image_id"] == image_id]["one_hot_labels"].values
         if len(onehotlabels) == 0:
             continue
+        if np.sum(onehotlabels[0]).item() == 0: # get rid of non-labeled instances
+            continue
         samples.append((xray_file, onehotlabels[0], image_id))
         # make sure the no find column is removed
     return samples #4522 only
