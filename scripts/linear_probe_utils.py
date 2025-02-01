@@ -58,7 +58,10 @@ def get_train_internal_split(dataset, model, proportion):
         results = torch.load(target_file_path)
         print('internal split loaded')
         return results['train_split'], results['internal_val_split']
+    elif dataset == 'ct-rate':
+        pass
     elif dataset == 'vinBig':
+        #TODO: load from the correct destination after the internal split operatino
         return None
 
 
@@ -96,8 +99,33 @@ def get_pathologies(dataset='ct-rate'):
 						'Bronchiectasis', #
 						'Interlobular septal thickening']#
     elif dataset == 'vinBig':
-        pathologies = []
-        # TODO:
+        pathologies = [
+            'Aortic enlargement',
+            'Atelectasis',
+            'Calcification',
+            'Cardiomegaly',
+            'Clavicle fracture',
+            'Consolidation',
+            'Edema',
+            'Emphysema',
+            'Enlarged PA',
+            'ILD',
+            'Infiltration',
+            'Lung Opacity',
+            'Lung cavity',
+            'Lung cyst',
+            'Mediastinal shift',
+            'Nodule/Mass',
+            'Pleural effusion',
+            'Pleural thickening',
+            'Pneumothorax',
+            'Pulmonary fibrosis',
+            'Rib fracture',
+            'COPD',
+            'Lung tumor',
+            'Pneumonia',
+            'Tuberculosis'
+        ]
 
     return pathologies
 
@@ -261,6 +289,7 @@ def evaluate_classifier(params):
         return test_loop(test_params)
 
     elif dataset == 'vinBig':
+        #TODO: verify
         #NOTE: follow similarly to the mimic external validaion.
         split = 'test'
         test_dataset = VinBigDataChestXrayDataset(
