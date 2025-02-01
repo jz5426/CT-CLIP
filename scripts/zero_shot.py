@@ -155,6 +155,7 @@ class VinBigDataChestXrayInference(nn.Module):
         split,
         tokenizer,
         batch_size,
+        label_variant,
         cfg=None,
         num_workers = 1,
         feature_extraction_mode = True,
@@ -180,6 +181,7 @@ class VinBigDataChestXrayInference(nn.Module):
             data_folder=data_folder,
             labels=labels, 
             model_type=CTClip.xray_model_type,
+            label_variant=label_variant,
             split=split)
 
         # Split dataset into train and validation sets
@@ -233,7 +235,7 @@ class VinBigDataChestXrayInference(nn.Module):
         with torch.no_grad():
             self.CTClip.eval()
             for batch_data in tqdm.tqdm(self.dl, desc="Xray Feature Extraction", leave=False):
-                xrays, _, instance_name = batch_data
+                xrays, _, _, instance_name = batch_data
 
                 # forward the input
                 xrays = xrays.to(device)

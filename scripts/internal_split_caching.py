@@ -126,16 +126,19 @@ def run(cfg_dot):
     elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'ct-rate':
         # TODO:
         pass
-    elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'vinBig': # the ct dataset
-        print('Splitting vinBig dataset')
+    elif 'vinBig' in cfg_dot.internal_split_caching_params.evaluation_dataset: # the ct dataset
+        print(f'Splitting {cfg_dot.internal_split_caching_params.evaluation_dataset} dataset')
+    
+        dataset = cfg_dot.internal_split_caching_params.evaluation_dataset
         split = 'train'
         # base on the baseline model, load the corresponding xray features
-        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/xray_features_embeddings/train/{pth_base_name}'
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{dataset}/xray_features_embeddings/train/{pth_base_name}'
         train_xray_features = torch.load(xray_feature_path)
 
         train_data_splitter = VinBigChestXrayDataSplitter(
             labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', #NOTE: the label need to be the mha version
             data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
+            label_variant=cfg_dot.internal_split_caching_params.evaluation_dataset
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
             train_split=cfg_dot.internal_split_caching_params.train_data_portion,
@@ -159,7 +162,7 @@ def run(cfg_dot):
             split=split
         )
         
-        file_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/lp_train_splits/{proportion_mapping(cfg_dot.internal_split_caching_params.train_data_portion)}/'
+        file_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{dataset}/lp_train_splits/{proportion_mapping(cfg_dot.internal_split_caching_params.train_data_portion)}/'
 
 
     ## same operation across datasets

@@ -283,20 +283,21 @@ class VinBigChestXrayDataSplitter:
     """mainly for the evaluation experiment"""
     def __init__(self, 
                 labels, 
-                data_folder):
+                data_folder,
+                label_variant):
         self.labels = labels
         self.xray_paths = []
         self.data_folder = data_folder
         self.parent_folder = os.path.basename(data_folder)
         self.file_extension = 'mha' # make sure the xray data file path are the .mha file
-
+        self.label_variant = label_variant
         assert self.file_extension in data_folder
 
     def prepare_samples(self, train_split=1., val_split=0.2):
         """
         this prepare the xray data in a dictionary format
         """
-        samples = prepare_vinbig_samples(self.data_folder, self.labels, self.file_extension)
+        samples = prepare_vinbig_samples(self.data_folder, self.labels, self.file_extension, self.label_variant)
         
         # if the training size is smaller than 1, the internal validation should be extracted based on the splitted training set
         if train_split < 1.0:
@@ -581,6 +582,7 @@ class VinBigDataChestXrayDataset:
                  data_folder, # list of data processed from the prepare_sample
                  labels,
                  model_type,
+                 label_variant,
                  split):
         super().__init__()
         # self.image_ids = dataframe["image_id"].unique()
@@ -592,7 +594,11 @@ class VinBigDataChestXrayDataset:
         self.cfg = cfg
         self.labels = labels
 
-        self.samples = self.prepare_samples(data_folder)
+        # each variant corresponds to different set of disease labels
+        self.label_variant = label_variant
+        assert label_variant in ['vinBig', 'vinBig_ct', 'vinBig_ct_and_related']
+
+        self.samples = self.prepare_samples(data_folder, label_variant)
         self.normalize = 'huggingface' if 'swin' in model_type.lower() or 'vit' in model_type.lower() else 'imagenet' # when use swin or non-resnet architecture
         print('normalization used => ', self.normalize)
 
@@ -628,16 +634,18 @@ class VinBigDataChestXrayDataset:
         label = torch.from_numpy(label)
 
         # return the file path, the multi-hot label, and the instance image id
-        return xray_image, 'vinBig', label, image_id # the instance_name
+        return xray_image, self.label_variant, label, image_id # the instance_name
 
-    def prepare_samples(self, data_folder):
-        return prepare_vinbig_samples(data_folder, self.labels, self.file_extension)
+    def prepare_samples(self, data_folder, label_variant):
+        return prepare_vinbig_samples(data_folder, self.labels, self.file_extension, label_variant)
 
     def __len__(self):
         return len(self.samples)
     
 def prepare_vinbig_samples(data_folder, labels, file_extension, label_variant='vinBig'):
     label_df = pd.read_csv(labels)
+
+    # we do not need the no finding and rad_id columns for all variants
     label_df = label_df[label_df["No finding"] != 1] # drop from 45000 to 133.. if uncomment this, the size of the sample is the same as the size of this.
     label_df = label_df.drop(columns=["No finding"])
     if "rad_id" in label_df.columns:
@@ -647,7 +655,8 @@ def prepare_vinbig_samples(data_folder, labels, file_extension, label_variant='v
     label_df = extract_label_variants(label_df, label_variant)
 
     test_label_cols = list(label_df.columns[1:])
-    assert len(test_label_cols) == 25 # total number of unique diseases
+    # assert len(test_label_cols) == 25 # will be different for each variants
+
     # NOTE: might want to check out this link for labels: https://www.kaggle.com/competitions/vinbigdata-chest-xray-abnormalities-detection/discussion/251250
         # based on the notes, might want to filter additional column value before merging
     label_df = label_df.groupby('image_id', as_index=False).max() # merge the labels

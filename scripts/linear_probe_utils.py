@@ -60,8 +60,8 @@ def get_train_internal_split(dataset, model, proportion):
         return results['train_split'], results['internal_val_split']
     elif dataset == 'ct-rate':
         pass
-    elif dataset == 'vinBig':
-        internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/lp_train_splits/{proportion_mapping(proportion)}/'
+    elif 'vinBig' in dataset:
+        internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{dataset}/lp_train_splits/{proportion_mapping(proportion)}/'
         target_file_path = os.path.join(internal_split_dir, saving_base_name)
         results = torch.load(target_file_path)
         print('internal split loaded')
@@ -129,6 +129,8 @@ def get_pathologies(dataset='ct-rate'):
             'Pneumonia',
             'Tuberculosis'
         ]
+    elif dataset == 'vinBig_ct':
+        pathologies = ['Atelectasis', 'Cardiomegaly', 'Consolidation', 'Emphysema', 'Lung Opacity', 'Pleural effusion']
 
     return pathologies
 
@@ -291,7 +293,7 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
 
-    elif dataset == 'vinBig':
+    elif 'vinBig' in dataset:
         #TODO: verify
         #NOTE: follow similarly to the mimic external validaion.
         split = 'test'
@@ -300,6 +302,7 @@ def evaluate_classifier(params):
             data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
             labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', 
             model_type=xray_model_type,
+            label_variant=dataset,
             split=split)
 
         # Split dataset into train and validation sets
@@ -323,8 +326,8 @@ def evaluate_classifier(params):
             'model': classification_model,
             'full_forward_pass': True,
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-            'metric_saving_path': f'./lp_evaluation_results/vinBig/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
-            'delong_stats_saving_path': f'./lp_evaluation_results/vinBig/delong_stats/{pth_base_name}_data.pkl'
+            'metric_saving_path': f'./lp_evaluation_results/{dataset}/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
+            'delong_stats_saving_path': f'./lp_evaluation_results/{dataset}/delong_stats/{pth_base_name}_data.pkl' # where to save the files
         }
         return test_loop(test_params)
 

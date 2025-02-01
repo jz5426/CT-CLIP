@@ -144,32 +144,30 @@ def run(cfg_dot):
             append=True
         )
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
+        return 
+    
+    if 'vinBig' in cfg_dot.xray_feature_caching_params.evaluation_dataset: # the full set of vinBig label 
 
-    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == 'vinBig': # the full set of vinBig label
         split = 'train'
-        vinBigChestXray_train_evaluator = vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+        vinBigChestXray_train_evaluator = vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer, cfg_dot.xray_feature_caching_params.evaluation_dataset)
         vinBigChestXray_train_evaluator.extract_xray_features(
-            directory=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/xray_features_embeddings/',
+            directory=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/',
             pth_name=pth_base_name, 
             append=True
         )
 
         split = 'test'
-        vinBigChestXray_test_evaluator = vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+        vinBigChestXray_test_evaluator = vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer, cfg_dot.xray_feature_caching_params.evaluation_dataset)
         vinBigChestXray_test_evaluator.extract_xray_features(
-            directory=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/xray_features_embeddings/',
+            directory=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/',
             pth_name=pth_base_name, 
             append=True
         )
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
-    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == 'vinBig_ct': # subset of labels that matches ct-rate
-        pass
-    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == 'vinBig_ct_and_related': # subset of label that matches ct-rate + related disease (similiar clinical condition between ct and xray)
-        pass
     else:
         print(f'NOT XRAY FEATURE EXTRACTION, THE DATASET {cfg_dot.xray_feature_caching_params.evaluation_dataset} IS NOT SUPPORTED')
 
-def vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer):
+def vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer, label_variant):
 
     vinBigChestXray_evaluator = VinBigDataChestXrayInference(
         clip_xray,
@@ -179,6 +177,7 @@ def vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer):
         data_folder= f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
         labels = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv',
         batch_size = cfg_dot.xray_feature_caching_params.batch_size,
+        label_variant=label_variant,
         num_workers = cfg_dot.xray_feature_caching_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         feature_extraction_mode = True # might be optional
     )
