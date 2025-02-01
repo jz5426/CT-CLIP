@@ -161,7 +161,7 @@ def run(cfg_dot):
         file_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/lp_train_splits/{proportion_mapping(cfg_dot.internal_split_caching_params.train_data_portion)}/'
 
 
-    # same operation across datasets
+    ## same operation across datasets
 
     # save as a dictionary
     results = {

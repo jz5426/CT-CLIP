@@ -658,6 +658,9 @@ def prepare_vinbig_samples(data_folder, labels, file_extension):
         label_df = label_df.drop(columns=["Other disease"])
     test_label_cols = list(label_df.columns[1:])
     assert len(test_label_cols) == 25 # total number of unique diseases
+    # NOTE: might want to check out this link for labels: https://www.kaggle.com/competitions/vinbigdata-chest-xray-abnormalities-detection/discussion/251250
+        # based on the notes, might want to filter additional column value before merging
+    label_df = label_df.groupby('image_id', as_index=False).max() # merge the labels
     label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
 
     samples = []
