@@ -671,6 +671,9 @@ def prepare_vinbig_samples(data_folder, labels, file_extension, label_variant='v
         onehotlabels = label_df[label_df["image_id"] == image_id]["one_hot_labels"].values
         if len(onehotlabels) == 0:
             continue
+        if len(onehotlabels) > 1:
+            print('SHOULD NOT HAVE MORE THAN ONE ONE-HOT LABEL')
+            assert False
         if np.sum(onehotlabels[0]).item() == 0: # get rid of non-labeled instances
             continue
         samples.append((xray_file, onehotlabels[0], image_id))
