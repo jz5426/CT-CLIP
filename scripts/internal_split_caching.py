@@ -1,5 +1,7 @@
 """
 cache the internal split for each model baseline, for each dataset (external or internal), mainly used for linear probe evaluation
+
+you only do the split on the training set, never touches the test set
 """
 
 import torch
@@ -135,8 +137,9 @@ def run(cfg_dot):
         pass
     elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'vinBig': # the ct dataset
         # base on the baseline model, load the corresponding xray features
-        # xray_feature_path = f''
-        # train_xray_features = torch.load(xray_feature_path)
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/xray_features_embeddings/train/{pth_base_name}'
+        train_xray_features = torch.load(xray_feature_path)
+
         pass
 
 # Example usage
