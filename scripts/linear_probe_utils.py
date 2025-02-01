@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, VinBigDataChestXrayDataset
 from eval_utils import XrayClassificationModel, proportion_mapping
 import os
 import torch
@@ -260,9 +260,42 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
 
-    elif dataset == 'vin':
-        pass
+    elif dataset == 'vinBig':
+        #NOTE: follow similarly to the mimic external validaion.
+        split = 'test'
+        test_dataset = VinBigDataChestXrayDataset(
+            cfg=cfg,
+            data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
+            labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', 
+            model_type=xray_model_type,
+            split=split)
+
+        # Split dataset into train and validation sets
+        test_loader = DataLoader(
+            test_dataset,
+            num_workers=cfg_dot.linear_probing_params.num_workers,
+            batch_size=cfg_dot.linear_probing_params.batch_size,
+            shuffle=False)
     
+        classification_model = XrayClassificationModel(
+            vision_model=clip_xray.xray_encoder, 
+            feature_projector=clip_xray.to_xray_latent, 
+            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded soon
+            vision_model_type=xray_model_type
+        )
+        classification_model.to(device)
+
+        test_params = {
+            'test_loader': test_loader,
+            'device': device,
+            'model': classification_model,
+            'full_forward_pass': True,
+            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
+            'metric_saving_path': f'./lp_evaluation_results/vinBig/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
+            'delong_stats_saving_path': f'./lp_evaluation_results/vinBig/delong_stats/{pth_base_name}_data.pkl'
+        }
+        return test_loop(test_params)
+
     print('Finished probing evaluation without error :)')
 
 

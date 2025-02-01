@@ -461,13 +461,13 @@ class MimicCTReportXRayDataset:
     def __len__(self):
         return len(self.samples)
     
-class VinBigDataChestXrayDataset(Dataset):
+class VinBigDataChestXrayDataset:
     def __init__(self, 
                  cfg, 
                  data_folder, # list of data processed from the prepare_sample
                  labels,
                  model_type,
-                 split='valid'):
+                 split):
         super().__init__()
         # self.image_ids = dataframe["image_id"].unique()
         # self.df = dataframe
@@ -517,21 +517,38 @@ class VinBigDataChestXrayDataset(Dataset):
         return xray_image, label, image_id # the instance_name
 
     def prepare_samples(self, data_folder):
-        label_df = pd.read_csv(self.labels).unique()
-        test_label_cols = list(label_df.columns[2:])
+        label_df = pd.read_csv(self.labels)
+        label_df = label_df[label_df["No finding"] != 1] # drop from 45000 to 133.. if uncomment this, the size of the sample is the same as the size of this.
+        label_df = label_df.drop(columns=["No finding"])
+        if "rad_id" in label_df.columns:
+            label_df = label_df.drop(columns=["rad_id"])
+        if "Other lesion" in label_df.columns:
+            label_df = label_df.drop(columns=["Other lesion"])
+        if "Other lesions" in label_df.columns:
+            label_df = label_df.drop(columns=["Other lesions"])
+        if "Other diseases" in label_df.columns:
+            label_df = label_df.drop(columns=["Other diseases"])
+        if "Other disease" in label_df.columns:
+            label_df = label_df.drop(columns=["Other disease"])
+        test_label_cols = list(label_df.columns[1:])
+        assert len(test_label_cols) == 25 # total number of unique diseases
         label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
 
         samples = []
+        # for each file in the directory and look for the image id
         for xray_file in tqdm.tqdm(glob.glob(os.path.join(data_folder, f'*.{self.file_extension}'))):
             image_id = os.path.basename(xray_file) # hadm_id.mha with extension
             image_id = image_id[:-len(f'.{self.file_extension}')] # hadm_id
 
             onehotlabels = label_df[label_df["image_id"] == image_id]["one_hot_labels"].values
             if len(onehotlabels) == 0:
-                assert False
+                continue
             samples.append((xray_file, onehotlabels[0], image_id))
-            # TODO: filter out the data that has no findings (the vectors are all zeros)
-        return samples
+            # make sure the no find column is removed
+        return samples #4522 only
+
+    def __len__(self):
+        return len(self.samples)
 
 class CTReportXRayDataset(CTReportDataset):
 

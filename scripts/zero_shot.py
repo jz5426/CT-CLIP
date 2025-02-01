@@ -190,7 +190,6 @@ class VinBigDataChestXrayInference(nn.Module):
             shuffle = True,
         )
 
-        self.split = 'valid' # default
         self.feature_extraction_mode = feature_extraction_mode
         # prepare with accelerator
         self.device = self.accelerator.device
@@ -234,7 +233,7 @@ class VinBigDataChestXrayInference(nn.Module):
         with torch.no_grad():
             self.CTClip.eval()
             for batch_data in tqdm.tqdm(self.dl, desc="Xray Feature Extraction", leave=False):
-                xrays, _, _, instance_name = batch_data
+                xrays, _, instance_name = batch_data
 
                 # forward the input
                 xrays = xrays.to(device)
@@ -248,10 +247,10 @@ class VinBigDataChestXrayInference(nn.Module):
         # save the remaining.
         if append:
             os.makedirs(saving_directory, exist_ok=True)
-            torch.save(self.xray_features, xray_feature_path)
+            torch.save(xray_features, xray_feature_path)
 
         #sanity check
-        loaded_img_features = torch.load(os.path.join(saving_directory, 'xray_features.pth'))
+        loaded_img_features = torch.load(xray_feature_path)
         print(f'size of xray features {len(loaded_img_features)}')
         return xray_features
 

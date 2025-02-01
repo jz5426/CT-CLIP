@@ -143,7 +143,7 @@ def run(cfg_dot):
             pth_name=pth_base_name, 
             append=True
         )
-        print(f'Finished caching the xray feature extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
+        print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
 
     elif cfg_dot.xray_feature_caching_params.evaluation_dataset == 'vinBig':
         split = 'train'
@@ -161,6 +161,8 @@ def run(cfg_dot):
             pth_name=pth_base_name, 
             append=True
         )
+        print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
+
     else:
         print(f'NOT XRAY FEATURE EXTRACTION, THE DATASET {cfg_dot.xray_feature_caching_params.evaluation_dataset} IS NOT SUPPORTED')
 
