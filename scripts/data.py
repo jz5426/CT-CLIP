@@ -327,7 +327,7 @@ class VinBigChestXrayDataSplitter:
             # return train_samples
 
         elif train_split == 1. and val_split > 0.:
-            sample_data, sample_labels = [ s[0] for s in samples], [ s[-1] for s in samples]
+            sample_data, sample_labels = [ s[0] for s in samples], [ s[1] for s in samples]
             train_data, train_label, test_data, test_labels = iterative_train_test_split(np.array(sample_data).reshape(-1,1), np.array(sample_labels), test_size=val_split)
             val_split = [(x[0], np.array(y)) for x, y in zip(test_data.tolist(), test_labels.tolist())]
             train_split = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
@@ -419,7 +419,7 @@ class VinBigChestXrayClassificationDataset(XrayClassificationDataset):
     def __getitem__(self, key_id):
 
         selected_sample = self.samples[key_id] # based on index
-        xray_file, label, image_id = selected_sample
+        xray_file, label = selected_sample
 
         # get the corresonding embeddings
         name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
@@ -628,7 +628,7 @@ class VinBigDataChestXrayDataset:
         label = torch.from_numpy(label)
 
         # return the file path, the multi-hot label, and the instance image id
-        return xray_image, label, image_id # the instance_name
+        return xray_image, 'vinBig', label, image_id # the instance_name
 
     def prepare_samples(self, data_folder):
         return prepare_vinbig_samples(data_folder, self.labels, self.file_extension)

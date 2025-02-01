@@ -183,6 +183,10 @@ def run(cfg_dot):
         parent_dir = 'mimic_ct'
     elif cfg_dot.linear_probing_params.evaluation_dataset == 'ct-rate':
         parent_dir = 'ct-rate'
+    elif cfg_dot.linear_probing_params.evaluation_dataset == 'vinBig':
+        parent_dir = 'vinBig'
+    else:
+        assert False
 
     ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, parent_dir)
     best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{pth_base_name}_best_model.pth')

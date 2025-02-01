@@ -61,8 +61,11 @@ def get_train_internal_split(dataset, model, proportion):
     elif dataset == 'ct-rate':
         pass
     elif dataset == 'vinBig':
-        #TODO: load from the correct destination after the internal split operatino
-        return None
+        internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/lp_train_splits/{proportion_mapping(proportion)}/'
+        target_file_path = os.path.join(internal_split_dir, saving_base_name)
+        results = torch.load(target_file_path)
+        print('internal split loaded')
+        return results['train_split'], results['internal_val_split']
 
 
 def get_pathologies(dataset='ct-rate'):
@@ -307,9 +310,9 @@ def evaluate_classifier(params):
             shuffle=False)
     
         classification_model = XrayClassificationModel(
-            vision_model=clip_xray.xray_encoder, 
-            feature_projector=clip_xray.to_xray_latent, 
-            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded soon
+            vision_model=clip_xray.xray_encoder, # from pretrained
+            feature_projector=clip_xray.to_xray_latent, # from pretrained
+            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded in test_loop function
             vision_model_type=xray_model_type
         )
         classification_model.to(device)
@@ -483,7 +486,6 @@ def train_loop(params):
         total_loss += loss.item()
         if idx % progress_window == 0:
             print(f"Epoch [{epoch}/{num_epochs}], Batch [{idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
-
     print(f"Epoch {epoch+1}/{num_epochs}, Training Loss: {total_loss/len(train_loader):.4f}")
 
 
