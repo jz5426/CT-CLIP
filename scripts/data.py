@@ -283,17 +283,12 @@ class VinBigChestXrayDataSplitter:
     """mainly for the evaluation experiment"""
     def __init__(self, 
                 labels, 
-                data_folder, 
-                xray_embeddings=None):
+                data_folder):
         self.labels = labels
         self.xray_paths = []
         self.data_folder = data_folder
         self.parent_folder = os.path.basename(data_folder)
         self.file_extension = 'mha' # make sure the xray data file path are the .mha file
-
-        # optionally have the text and ct embeddings
-        if xray_embeddings:
-            self.xray_embeddings = torch.load(xray_embeddings)
 
         assert self.file_extension in data_folder
 
@@ -645,7 +640,7 @@ def prepare_vinbig_samples(data_folder, labels, file_extension):
     label_df = pd.read_csv(labels)
     label_df = label_df[label_df["No finding"] != 1] # drop from 45000 to 133.. if uncomment this, the size of the sample is the same as the size of this.
     label_df = label_df.drop(columns=["No finding"])
-    # TODO: DOUBLE CHECK THE UNIQUES
+    # TODO: DOUBLE CHECK THE UNIQUES: DONE
     if "rad_id" in label_df.columns:
         label_df = label_df.drop(columns=["rad_id"])
     if "Other lesion" in label_df.columns:

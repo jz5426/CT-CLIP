@@ -85,6 +85,7 @@ def run(cfg_dot):
         saving_base_name = f'{xray_model_type}_datasplit.pth'
 
     if cfg_dot.internal_split_caching_params.evaluation_dataset == 'mimic':
+        print('Splitting ct-rate mimic version dataset')
 
         # base on the baseline model, load the corresponding xray features
         xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
@@ -126,7 +127,7 @@ def run(cfg_dot):
         # TODO:
         pass
     elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'vinBig': # the ct dataset
-
+        print('Splitting vinBig dataset')
         split = 'train'
         # base on the baseline model, load the corresponding xray features
         xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/xray_features_embeddings/train/{pth_base_name}'
