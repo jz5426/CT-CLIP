@@ -465,7 +465,6 @@ class VinBigDataChestXrayDataset(Dataset):
     def __init__(self, 
                  cfg, 
                  data_folder, # list of data processed from the prepare_sample
-                 csv_file,
                  labels,
                  model_type,
                  split='valid'):
@@ -506,22 +505,32 @@ class VinBigDataChestXrayDataset(Dataset):
         return rgb_image
 
     def __getitem__(self, index):
+        selected_sample = self.samples[index] # based on index
+        xray_file, label, image_id = selected_sample
 
-        pass
+        # transformation borrowed from cxr_clip
+        xray_image = self.xray_to_rgb(xray_file)
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+        label = torch.from_numpy(label)
+
+        # return the file path, the multi-hot label, and the instance image id
+        return xray_image, label, image_id # the instance_name
 
     def prepare_samples(self, data_folder):
         label_df = pd.read_csv(self.labels).unique()
-        test_label_cols = list(label_df.columns[1:])
+        test_label_cols = list(label_df.columns[2:])
+        label_df['one_hot_labels'] = list(label_df[test_label_cols].values)
 
         samples = []
         for xray_file in tqdm.tqdm(glob.glob(os.path.join(data_folder, f'*.{self.file_extension}'))):
-            accession_number = os.path.basename(xray_file) # hadm_id.mha with extension
-            accession_number = accession_number[:-len(f'.{self.file_extension}')] # hadm_id
-            if accession_number not in self.accession_to_text:
+            image_id = os.path.basename(xray_file) # hadm_id.mha with extension
+            image_id = image_id[:-len(f'.{self.file_extension}')] # hadm_id
+
+            onehotlabels = label_df[label_df["image_id"] == image_id]["one_hot_labels"].values
+            if len(onehotlabels) == 0:
                 assert False
-
-            
-
+            samples.append((xray_file, onehotlabels[0], image_id))
+            # TODO: filter out the data that has no findings (the vectors are all zeros)
         return samples
 
 class CTReportXRayDataset(CTReportDataset):
