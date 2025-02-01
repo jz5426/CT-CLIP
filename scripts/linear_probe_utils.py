@@ -202,7 +202,7 @@ def linear_probing_main(params):
             print("Early stopping triggered.")
             break
 
-    print("Finetuning the Xray encoder completed ==> perform external mimic-ct testing")
+    print("Finetuning the Xray encoder completed ==> perform external testing")
     return model
 
 def evaluate_classifier(params):

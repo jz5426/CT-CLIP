@@ -145,7 +145,7 @@ def run(cfg_dot):
         )
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
 
-    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == 'vinBig':
+    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == 'vinBig': # the full set of vinBig label
         split = 'train'
         vinBigChestXray_train_evaluator = vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer)
         vinBigChestXray_train_evaluator.extract_xray_features(
@@ -162,7 +162,10 @@ def run(cfg_dot):
             append=True
         )
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
-
+    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == 'vinBig_ct': # subset of labels that matches ct-rate
+        pass
+    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == 'vinBig_ct_and_related': # subset of label that matches ct-rate + related disease (similiar clinical condition between ct and xray)
+        pass
     else:
         print(f'NOT XRAY FEATURE EXTRACTION, THE DATASET {cfg_dot.xray_feature_caching_params.evaluation_dataset} IS NOT SUPPORTED')
 

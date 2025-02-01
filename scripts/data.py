@@ -636,21 +636,16 @@ class VinBigDataChestXrayDataset:
     def __len__(self):
         return len(self.samples)
     
-def prepare_vinbig_samples(data_folder, labels, file_extension):
+def prepare_vinbig_samples(data_folder, labels, file_extension, label_variant='vinBig'):
     label_df = pd.read_csv(labels)
     label_df = label_df[label_df["No finding"] != 1] # drop from 45000 to 133.. if uncomment this, the size of the sample is the same as the size of this.
     label_df = label_df.drop(columns=["No finding"])
-    # TODO: DOUBLE CHECK THE UNIQUES: DONE
     if "rad_id" in label_df.columns:
         label_df = label_df.drop(columns=["rad_id"])
-    if "Other lesion" in label_df.columns:
-        label_df = label_df.drop(columns=["Other lesion"])
-    if "Other lesions" in label_df.columns:
-        label_df = label_df.drop(columns=["Other lesions"])
-    if "Other diseases" in label_df.columns:
-        label_df = label_df.drop(columns=["Other diseases"])
-    if "Other disease" in label_df.columns:
-        label_df = label_df.drop(columns=["Other disease"])
+
+    # filter unncessary disease labels based on the label_variant
+    label_df = extract_label_variants(label_df, label_variant)
+
     test_label_cols = list(label_df.columns[1:])
     assert len(test_label_cols) == 25 # total number of unique diseases
     # NOTE: might want to check out this link for labels: https://www.kaggle.com/competitions/vinbigdata-chest-xray-abnormalities-detection/discussion/251250
@@ -670,6 +665,26 @@ def prepare_vinbig_samples(data_folder, labels, file_extension):
         samples.append((xray_file, onehotlabels[0], image_id))
         # make sure the no find column is removed
     return samples #4522 only
+
+def extract_label_variants(label_df, label_variant):
+    if "Other lesion" in label_df.columns:
+        label_df = label_df.drop(columns=["Other lesion"])
+    if "Other lesions" in label_df.columns:
+        label_df = label_df.drop(columns=["Other lesions"])
+    if "Other diseases" in label_df.columns:
+        label_df = label_df.drop(columns=["Other diseases"])
+    if "Other disease" in label_df.columns:
+        label_df = label_df.drop(columns=["Other disease"])
+
+    if label_variant == 'vinBig':
+        return label_df
+    elif label_variant == 'vinBig_ct':
+        required_columns = ['image_id', 'Atelectasis', 'Cardiomegaly', 'Consolidation', 
+                            'Emphysema', 'Lung Opacity', 'Pleural effusion']
+        label_df = label_df[required_columns]
+        return label_df
+    elif label_variant == 'vinBig_ct_and_related':
+        return
 
 
 class CTReportXRayDataset(CTReportDataset):
