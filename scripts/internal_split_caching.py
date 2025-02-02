@@ -57,40 +57,12 @@ def run(cfg_dot):
     cfg = convert_dictconfig_to_dict(cfg_dot)
     torch.cuda.empty_cache()
 
-    # # assert cfg_dot.internal_split_caching_params.baseline_type in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
-    # if 'cxr_clip' in cfg_dot.internal_split_caching_params.baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
-    #     xray_model_type = cfg_dot.internal_split_caching_params.baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
-    #     pth_base_name = 'swin_cxr_xray_features.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_features.pth'
-    #     saving_base_name = 'swin_cxr_xray_datasplit.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_datasplit.pth'
-    # elif cfg_dot.internal_split_caching_params.baseline_type == 'medclip_resnet':
-    #     xray_model_type = cfg_dot.internal_split_caching_params.baseline_type
-    #     pth_base_name = 'resnet_medclip_features.pth'
-    #     saving_base_name = 'resnet_medclip_datasplit.pth'
-    #     # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
-    # elif cfg_dot.internal_split_caching_params.baseline_type == 'medclip_vit':
-    #     xray_model_type = cfg_dot.internal_split_caching_params.baseline_type
-    #     pth_base_name = 'swin_medclip_features.pth'
-    #     saving_base_name = 'swin_medclip_datasplit.pth'
-    # elif cfg_dot.internal_split_caching_params.baseline_type == 'gloria_densenet':
-    #     xray_model_type = cfg_dot.internal_split_caching_params.baseline_type
-    #     pth_base_name = 'densenet_gloria_features.pth'
-    #     saving_base_name = 'densenet_gloria_datasplit.pth'
-    # elif cfg_dot.internal_split_caching_params.baseline_type == 'gloria_resnet':
-    #     xray_model_type = cfg_dot.internal_split_caching_params.baseline_type
-    #     pth_base_name = 'resnet_gloria_features.pth'
-    #     saving_base_name = 'resnet_gloria_datasplit.pth'
-    # else:
-    #     xray_model_type = cfg_dot.internal_split_caching_params.baseline_type
-    #     pth_base_name = f'{xray_model_type}_xray_features.pth'
-    #     saving_base_name = f'{xray_model_type}_datasplit.pth'
-
-
     # get the metadata
     dim_xray, xray_model_type, pth_base_name, latent_size = metadata_base_on_model_type(
-        cfg_dot.xray_feature_caching_params.baseline_type,
+        cfg_dot.internal_split_caching_params.baseline_type,
         pth_trailing_string='features')
     _, _, saving_base_name, _ = metadata_base_on_model_type(
-        cfg_dot.xray_feature_caching_params.baseline_type,
+        cfg_dot.internal_split_caching_params.baseline_type,
         pth_trailing_string='datasplit')
 
     if cfg_dot.internal_split_caching_params.evaluation_dataset == 'mimic':

@@ -112,7 +112,7 @@ def run(cfg_dot):
     )
 
     dim_xray, xray_model_type, pth_base_name, latent_size = metadata_base_on_model_type(
-        cfg_dot.xray_feature_caching_params.baseline_type,
+        cfg_dot.linear_probing_params.baseline_type,
         pth_trailing_string='features')
 
     clip_xray = CTCLIPwithXray(

@@ -14,7 +14,7 @@ from transformers import BertModel
 from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
-from scripts.eval_utils import metadata_base_on_model_type
+from eval_utils import metadata_base_on_model_type
 from zero_shot import CTClipInference, VinBigDataChestXrayInference
 
 @hydra.main(
@@ -78,6 +78,7 @@ def run(cfg_dot):
         heads = 8
     )
 
+    # get the necessary metadata
     dim_xray, xray_model_type, pth_base_name, latent_size = metadata_base_on_model_type(
         cfg_dot.xray_feature_caching_params.baseline_type,
         pth_trailing_string='features')
