@@ -1000,37 +1000,56 @@ class CTCLIPwithXray(nn.Module):
         if xray_model_type == 'ct_clip':
             self.xray_encoder = None
             self.to_xray_latent = None
-        elif xray_model_type == 'cxr_clip_swin': # default options.
+        elif 'cxr_clip_swin' in xray_model_type: # default options.
             # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["swin"]["image_encoder"])
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
-            if auto_load_pretrained_weights:
-                # load the cxr_clip pretrained weights to the swin encoder as well as the to_xray_latent prejection layer
-                ckpt_file_name = 'swint_mcc'
-                self.load_cxr_clip_xray_encoder(
-                    '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
-                    freeze_weights=freeze_xray_pretrained_weights
-                )
-                print('loaded xray encoder from cxr_clip SWIN')
-            else:
+            if not auto_load_pretrained_weights:
                 print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
+                return 
 
-        elif xray_model_type == 'cxr_clip_resnet':
+            if xray_model_type == 'cxr_clip_swin_m':
+                ckpt_file_name = 'swint_m'
+            elif xray_model_type == 'cxr_clip_swin_mc':
+                ckpt_file_name = 'swint_mc'
+            elif xray_model_type == 'cxr_clip_swin':
+                ckpt_file_name = 'swint_mcc'
+            else:
+                assert False
+            
+            ckpt_path = '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/cxr_clip/{}.tar'.format(ckpt_file_name)
+            self.load_cxr_clip_xray_encoder(
+                ckpt_path, # cxr-clip pretrained
+                freeze_weights=freeze_xray_pretrained_weights
+            )
+            print(f'loaded xray encoder from cxr_clip SWIN: {ckpt_path}')
+
+        elif 'cxr_clip_resnet' in xray_model_type:
             # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["resnet"]["image_encoder"])
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
-            if auto_load_pretrained_weights:
-                # load the cxr_clip pretrained weights to the resnet encoder as well as the to_xray_latent prejection layer
-                ckpt_file_name = 'r50_mcc'
-                self.load_cxr_clip_xray_encoder(
-                    '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/cxr_clip/{}.tar'.format(ckpt_file_name), # cxr-clip pretrained
-                    freeze_weights=freeze_xray_pretrained_weights
-                )
-                print('loaded xray encoder from cxr_clip RESNET')
-            else:
+            if not auto_load_pretrained_weights:
                 print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
+                return
+
+            if xray_model_type == 'cxr_clip_resnet_m':
+                ckpt_file_name = 'r50_m'
+            elif xray_model_type == 'cxr_clip_resnet_mc':
+                ckpt_file_name = 'r50_mc'
+            elif xray_model_type == 'cxr_clip_resnet':
+                ckpt_file_name = 'r50_mcc'
+            else:
+                assert False
+
+            # load the cxr_clip pretrained weights to the resnet encoder as well as the to_xray_latent prejection layer
+            ckpt_path = '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/cxr_clip/{}.tar'.format(ckpt_file_name)
+            self.load_cxr_clip_xray_encoder(
+                ckpt_path, # cxr-clip pretrained
+                freeze_weights=freeze_xray_pretrained_weights
+            )
+            print(f'loaded xray encoder from cxr_clip RESNET: {ckpt_path}')
 
         # NOTE: the rest of the baseline always load the pretrained model including the projection layer
         elif xray_model_type == 'medclip_resnet':
