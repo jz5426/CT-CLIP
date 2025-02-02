@@ -98,6 +98,62 @@ def proportion_mapping(proportion):
     if str(proportion) == '1' or str(proportion) == '1.':
         return 'hundred_percent'
 
+
+def metadata_base_on_model_type(baseline_type, pth_trailing_string='features'):
+
+    # assert baseline_type in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
+    if 'cxr_clip' in baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
+        xray_model_type = baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+        dim_xray = 768 if 'swin' in baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
+
+        # different pretrained variant of cxr_clip backbones
+        if 'cxr_clip_swin_m' == baseline_type:
+            model = 'swinM'
+        elif 'cxr_clip_swin_mc' ==  baseline_type:
+            model = 'swinMC'
+        elif 'cxr_clip_swin' == baseline_type:
+            model = 'swin'
+        elif 'cxr_clip_resnet_m' == baseline_type:
+            model = 'resnetM'
+        elif 'cxr_clip_resnet_mc' == baseline_type:
+            model = 'resnetMC'
+        elif 'cxr_clip_resnet' == baseline_type:
+            model = 'resnet'
+        else:
+            assert False
+
+        pth_base_name = f'{model}_cxr_xray_{pth_trailing_string}.pth' if 'swin' in xray_model_type else f'{model}_cxr_xray_{pth_trailing_string}.pth'
+        latent_size = 512
+    elif baseline_type == 'medclip_resnet':
+        xray_model_type = baseline_type
+        dim_xray = 2048
+        pth_base_name = f'resnet_medclip_{pth_trailing_string}.pth'
+        latent_size = 512
+        # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
+    elif baseline_type == 'medclip_vit':
+        xray_model_type = baseline_type
+        dim_xray = 768
+        pth_base_name = f'swin_medclip_{pth_trailing_string}.pth'
+        latent_size = 512
+    elif baseline_type == 'gloria_densenet':
+        xray_model_type = baseline_type
+        dim_xray = 1024
+        pth_base_name = f'densenet_gloria_{pth_trailing_string}.pth'
+        latent_size = 768
+    elif baseline_type == 'gloria_resnet':
+        xray_model_type = baseline_type
+        dim_xray = 2048
+        pth_base_name = f'resnet_gloria_{pth_trailing_string}.pth'
+        latent_size = 768 # the final size of the xray embedding is indeed different in gloria
+    else:
+        xray_model_type = baseline_type
+        dim_xray = 768 if 'swin' in baseline_type.lower() else 2048
+        pth_base_name = f'{xray_model_type}_xray_{pth_trailing_string}.pth'
+        latent_size = 512
+
+    return dim_xray, xray_model_type, pth_base_name, latent_size
+
+
 # Example usage
 # if __name__ == "__main__":
     # from torchvision.models import resnet18
