@@ -220,8 +220,8 @@ class CTClipTrainer(nn.Module):
 
         #TODO: might need to check if group_wd_params is needed when train the whole triplet instead of the xray encoder.
         if cfg and cfg['optimizer']['name'] == 'adamw':
-            wd = cfg['optimizer']['config']['weight_decay']
-            lr = cfg['optimizer']['config']['lr']
+            wd = wd
+            lr = lr
         else:
             # default parameters in original CTCLIPTrainer
             wd = 0
@@ -412,8 +412,8 @@ class CTClipTrainer(nn.Module):
                 # evaluate model based on iteration instead of epochs
                 if self.is_main and not (batch_idx % self.iteration_evaluate_frequency):
                     print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
-                    print('    Evaluate based on iterations')
-                    self.eval_on_validation_split(epoch, val_size, iteration=batch_idx, is_epoch_evaluation=False)
+                    # print('    Evaluate based on iterations')
+                    # self.eval_on_validation_split(epoch, val_size, iteration=batch_idx, is_epoch_evaluation=False)
 
                 # Accumulate loss
                 running_loss += loss.item()

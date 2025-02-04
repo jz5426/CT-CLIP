@@ -1236,8 +1236,9 @@ class CTCLIPwithXray(nn.Module):
             loss = text_cl_weight*cl_text_to_xray + ct_cl_weight*cl_img_to_xray
         elif self.loss_type == 'siamese':
             xray_latents = xray_latents.squeeze(0)
-
-            xray_latents = self.predictor(xray_latents)
+            if self.projector_type == 'siamese':
+                xray_latents = self.predictor(xray_latents)
+            # for infoNCE projector type, no predictor at all
             cos_xray_to_text = 0
             cos_xray_to_img = 0
             loss_count = 0
