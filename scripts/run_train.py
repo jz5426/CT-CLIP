@@ -137,7 +137,8 @@ def run(cfg_dot):
         use_all_token_embeds = False,
         cfg=cfg,
         auto_load_pretrained_weights=True if cfg_dot.training_params.use_pretrained_xray_encoder else False,
-        freeze_xray_pretrained_weights=False # need the xray encoder for training => no freeze parameters in xray encoder
+        freeze_xray_pretrained_weights=False, # need the xray encoder for training => no freeze parameters in xray encoder
+        loss = cfg_dot.training_params.loss_function
     )
     # load the ct-clip pretrained weights
     clip_xray.load_ctclip('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/CT-CLIP_v2.pt')
