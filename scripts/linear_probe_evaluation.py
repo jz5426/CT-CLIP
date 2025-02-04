@@ -9,7 +9,7 @@ note that this file depends on the following are done:
 
 import torch
 
-from linear_probe_utils import evaluate_classifier, get_train_internal_split, get_pathologies, linear_probing_main
+from linear_probe_utils import evaluate_classifier, get_train_internal_split, get_train_internal_split_from_cache, get_pathologies, linear_probing_main
 from eval_utils import LinearProbeModel, metadata_base_on_model_type
 from transformers import BertModel
 import os
@@ -132,10 +132,14 @@ def run(cfg_dot):
     )
 
     # NOTE: mimic and ct-rate give same data split from ct-rate as mimic also uses the sythetic data for learning the clasifier
+    # train_dataset, internal_val_dataset = get_train_internal_split_from_cache(
+    #     dataset=cfg_dot.linear_probing_params.evaluation_dataset,
+    #     model=cfg_dot.linear_probing_params.baseline_type,
+    #     proportion=cfg_dot.linear_probing_params.train_data_portion
+    # )
+
     train_dataset, internal_val_dataset = get_train_internal_split(
-        dataset=cfg_dot.linear_probing_params.evaluation_dataset,
-        model=cfg_dot.linear_probing_params.baseline_type,
-        proportion=cfg_dot.linear_probing_params.train_data_portion
+        cfg_dot, cfg
     )
     
     pathologies = get_pathologies(dataset=cfg_dot.linear_probing_params.evaluation_dataset)

@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, VinBigDataChestXrayDataset
-from eval_utils import XrayClassificationModel, proportion_mapping
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
+from eval_utils import XrayClassificationModel, metadata_base_on_model_type, proportion_mapping
 import os
 import torch
 import numpy as np
@@ -23,7 +23,7 @@ def load_cached_ct_rate_xray_features(pth_base_name, split):
     print('Xray feature extraction completed')
     return xray_features
 
-def get_train_internal_split(dataset, model, proportion):
+def get_train_internal_split_from_cache(dataset, model, proportion):
     """
     mimic and internal evalution share the same strategy
 
@@ -66,6 +66,90 @@ def get_train_internal_split(dataset, model, proportion):
         results = torch.load(target_file_path)
         print('internal split loaded')
         return results['train_split'], results['internal_val_split']
+
+def get_train_internal_split(cfg_dot, cfg):
+    """implementation copied from internal_split_caching.py"""
+
+    # get the metadata
+    _, xray_model_type, pth_base_name, _ = metadata_base_on_model_type(
+        cfg_dot.internal_split_caching_params.baseline_type,
+        pth_trailing_string='features')
+
+    if cfg_dot.internal_split_caching_params.evaluation_dataset == 'mimic':
+        print('Splitting ct-rate mimic version dataset')
+
+        # base on the baseline model, load the corresponding xray features
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
+        train_xray_features = torch.load(xray_feature_path)
+
+        # Set up the dataset and data loaders
+        #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
+        train_data_splitter = CTReportDataSplitter(
+            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
+            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+        )
+        train_sample, internal_val_samples = train_data_splitter.prepare_samples(
+            train_split=cfg_dot.internal_split_caching_params.train_data_portion,
+            val_split=0.2
+        ) # validation split is always, train_split is controlable
+
+        train_dataset = CTReportXRayClassificationDataset(
+            cfg=cfg,
+            data=train_sample, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='train'
+        )
+
+        internal_val_dataset = CTReportXRayClassificationDataset(
+            cfg=cfg,
+            data=internal_val_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='train'
+        )
+        
+    elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'ct-rate':
+        # TODO:
+        pass
+    elif 'vinBig' in cfg_dot.internal_split_caching_params.evaluation_dataset: # the ct dataset
+        print(f'Splitting {cfg_dot.internal_split_caching_params.evaluation_dataset} dataset')
+    
+        dataset = cfg_dot.internal_split_caching_params.evaluation_dataset
+        split = 'train'
+        # base on the baseline model, load the corresponding xray features
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{dataset}/xray_features_embeddings/train/{pth_base_name}'
+        train_xray_features = torch.load(xray_feature_path)
+
+        train_data_splitter = VinBigChestXrayDataSplitter(
+            labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', #NOTE: the label need to be the mha version
+            data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
+            label_variant=cfg_dot.internal_split_caching_params.evaluation_dataset
+        )
+        train_sample, internal_val_samples = train_data_splitter.prepare_samples(
+            train_split=cfg_dot.internal_split_caching_params.train_data_portion,
+            val_split=0.2
+        ) # validation split is always, train_split is controlable
+
+
+        train_dataset = VinBigChestXrayClassificationDataset(
+            cfg=cfg,
+            data=train_sample, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split=split
+        )
+
+        internal_val_dataset = VinBigChestXrayClassificationDataset(
+            cfg=cfg,
+            data=internal_val_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split=split
+        )
+    
+    return train_dataset, internal_val_dataset
 
 
 def get_pathologies(dataset='ct-rate'):
