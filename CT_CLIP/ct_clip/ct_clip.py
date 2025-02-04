@@ -3,7 +3,6 @@ import copy
 from contextlib import contextmanager
 from functools import partial, wraps
 from pathlib import Path
-
 from cxr_clip_utils import load_cxr_clip_image_encoder
 from gloria_utils import GloRIaVisionModel, GloRIaVisionModelDenseNet, GloRIaVisionModelResNet
 from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT
@@ -13,6 +12,7 @@ from torch import nn, einsum
 from torch.utils.checkpoint import checkpoint
 from einops import rearrange, repeat, reduce
 from einops.layers.torch import Rearrange, Reduce
+from eval_utils import get_cxr_clip_variants
 
 from ct_clip.mlm import MLM
 from ct_clip.visual_ssl import SimSiam, SimCLR
@@ -1007,7 +1007,7 @@ class CTCLIPwithXray(nn.Module):
         if xray_model_type == 'ct_clip':
             self.xray_encoder = None
             self.to_xray_latent = None
-        elif 'cxr_clip_swin' in xray_model_type: # default options.
+        elif xray_model_type in get_cxr_clip_variants() and 'swin' in xray_model_type: # default options.
             # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["swin"]["image_encoder"])
 
@@ -1043,7 +1043,7 @@ class CTCLIPwithXray(nn.Module):
             )
             print(f'loaded xray encoder from cxr_clip SWIN: {ckpt_path}')
 
-        elif 'cxr_clip_resnet' in xray_model_type:
+        elif xray_model_type in get_cxr_clip_variants() and 'resnet' in xray_model_type:
             # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["resnet"]["image_encoder"])
 
