@@ -9,7 +9,7 @@ note that this file depends on the following are done:
 
 import torch
 
-from linear_probe_utils import evaluate_classifier, get_train_internal_split, get_train_internal_split_from_cache, get_pathologies, linear_probing_main
+from linear_probe_utils import evaluate_classifier, get_train_internal_split, get_pathologies, linear_probing_main
 from eval_utils import LinearProbeModel, metadata_base_on_model_type
 from transformers import BertModel
 import os

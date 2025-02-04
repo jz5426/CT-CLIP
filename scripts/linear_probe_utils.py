@@ -23,49 +23,49 @@ def load_cached_ct_rate_xray_features(pth_base_name, split):
     print('Xray feature extraction completed')
     return xray_features
 
-def get_train_internal_split_from_cache(dataset, model, proportion):
-    """
-    mimic and internal evalution share the same strategy
+# def get_train_internal_split_from_cache(dataset, model, proportion):
+#     """
+#     mimic and internal evalution share the same strategy
 
-    set it up so that it loads from cache instead of loading from scratch
-    """
-    # from internal_split_caching
-    # assert model in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
-    if 'cxr_clip' in model: # can be either cxr_clip_swin or cxr_clip_resnet
-        xray_model_type = model #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
-        saving_base_name = 'swin_cxr_xray_datasplit.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_datasplit.pth'
-    elif model == 'medclip_resnet':
-        xray_model_type = model
-        saving_base_name = 'resnet_medclip_datasplit.pth'
-        # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
-    elif model == 'medclip_vit':
-        xray_model_type = model
-        saving_base_name = 'swin_medclip_datasplit.pth'
-    elif model == 'gloria_densenet':
-        xray_model_type = model
-        saving_base_name = 'densenet_gloria_datasplit.pth'
-    elif model == 'gloria_resnet':
-        xray_model_type = model
-        saving_base_name = 'resnet_gloria_datasplit.pth'
-    else:
-        xray_model_type = model
-        saving_base_name = f'{xray_model_type}_datasplit.pth'
+#     set it up so that it loads from cache instead of loading from scratch
+#     """
+#     # from internal_split_caching
+#     # assert model in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
+#     if 'cxr_clip' in model: # can be either cxr_clip_swin or cxr_clip_resnet
+#         xray_model_type = model #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
+#         saving_base_name = 'swin_cxr_xray_datasplit.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_datasplit.pth'
+#     elif model == 'medclip_resnet':
+#         xray_model_type = model
+#         saving_base_name = 'resnet_medclip_datasplit.pth'
+#         # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
+#     elif model == 'medclip_vit':
+#         xray_model_type = model
+#         saving_base_name = 'swin_medclip_datasplit.pth'
+#     elif model == 'gloria_densenet':
+#         xray_model_type = model
+#         saving_base_name = 'densenet_gloria_datasplit.pth'
+#     elif model == 'gloria_resnet':
+#         xray_model_type = model
+#         saving_base_name = 'resnet_gloria_datasplit.pth'
+#     else:
+#         xray_model_type = model
+#         saving_base_name = f'{xray_model_type}_datasplit.pth'
 
-    # decide to which cache to retrieve base on the model (saving_base_name), the dataset, and the proportion
-    if dataset == 'mimic':
-        internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_mimic_splits/{proportion_mapping(proportion)}/'
-        target_file_path = os.path.join(internal_split_dir, saving_base_name)
-        results = torch.load(target_file_path)
-        print('internal split loaded')
-        return results['train_split'], results['internal_val_split']
-    elif dataset == 'ct-rate':
-        pass
-    elif 'vinBig' in dataset:
-        internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{dataset}/lp_train_splits/{proportion_mapping(proportion)}/'
-        target_file_path = os.path.join(internal_split_dir, saving_base_name)
-        results = torch.load(target_file_path)
-        print('internal split loaded')
-        return results['train_split'], results['internal_val_split']
+#     # decide to which cache to retrieve base on the model (saving_base_name), the dataset, and the proportion
+#     if dataset == 'mimic':
+#         internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_mimic_splits/{proportion_mapping(proportion)}/'
+#         target_file_path = os.path.join(internal_split_dir, saving_base_name)
+#         results = torch.load(target_file_path)
+#         print('internal split loaded')
+#         return results['train_split'], results['internal_val_split']
+#     elif dataset == 'ct-rate':
+#         pass
+#     elif 'vinBig' in dataset:
+#         internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{dataset}/lp_train_splits/{proportion_mapping(proportion)}/'
+#         target_file_path = os.path.join(internal_split_dir, saving_base_name)
+#         results = torch.load(target_file_path)
+#         print('internal split loaded')
+#         return results['train_split'], results['internal_val_split']
 
 def get_train_internal_split(cfg_dot, cfg):
     """implementation copied from internal_split_caching.py"""
