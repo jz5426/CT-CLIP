@@ -72,10 +72,10 @@ def get_train_internal_split(cfg_dot, cfg):
 
     # get the metadata
     _, xray_model_type, pth_base_name, _ = metadata_base_on_model_type(
-        cfg_dot.internal_split_caching_params.baseline_type,
+        cfg_dot.linear_probing_params.baseline_type,
         pth_trailing_string='features')
 
-    if cfg_dot.internal_split_caching_params.evaluation_dataset == 'mimic':
+    if cfg_dot.linear_probing_params.evaluation_dataset == 'mimic':
         print('Splitting ct-rate mimic version dataset')
 
         # base on the baseline model, load the corresponding xray features
@@ -90,7 +90,7 @@ def get_train_internal_split(cfg_dot, cfg):
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
-            train_split=cfg_dot.internal_split_caching_params.train_data_portion,
+            train_split=cfg_dot.linear_probing_params.train_data_portion,
             val_split=0.2
         ) # validation split is always, train_split is controlable
 
@@ -110,13 +110,13 @@ def get_train_internal_split(cfg_dot, cfg):
             split='train'
         )
         
-    elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'ct-rate':
+    elif cfg_dot.linear_probing_params.evaluation_dataset == 'ct-rate':
         # TODO:
         pass
-    elif 'vinBig' in cfg_dot.internal_split_caching_params.evaluation_dataset: # the ct dataset
-        print(f'Splitting {cfg_dot.internal_split_caching_params.evaluation_dataset} dataset')
+    elif 'vinBig' in cfg_dot.linear_probing_params.evaluation_dataset: # the ct dataset
+        print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
     
-        dataset = cfg_dot.internal_split_caching_params.evaluation_dataset
+        dataset = cfg_dot.linear_probing_params.evaluation_dataset
         split = 'train'
         # base on the baseline model, load the corresponding xray features
         xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{dataset}/xray_features_embeddings/train/{pth_base_name}'
@@ -125,10 +125,10 @@ def get_train_internal_split(cfg_dot, cfg):
         train_data_splitter = VinBigChestXrayDataSplitter(
             labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', #NOTE: the label need to be the mha version
             data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
-            label_variant=cfg_dot.internal_split_caching_params.evaluation_dataset
+            label_variant=cfg_dot.linear_probing_params.evaluation_dataset
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
-            train_split=cfg_dot.internal_split_caching_params.train_data_portion,
+            train_split=cfg_dot.linear_probing_params.train_data_portion,
             val_split=0.2
         ) # validation split is always, train_split is controlable
 

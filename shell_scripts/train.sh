@@ -17,6 +17,10 @@ source activate ctclip
 ## does not work since resnet does not have mechanism to load imagenet pretrained weights
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=experiment training_params.epochs=202 training_params.use_pretrained_xray_encoder=false 
 
+#TODO: before start the training, modify the script so that it save at the 500 epochs instead of override the existing one. train longer the better.
+## train with custom pretrained weights
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=experiment training_params.epochs=500 training_params.use_pretrained_xray_encoder=false training_params.training_pretrain_baseline=cxr_clip_swin
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.epochs=500 training_params.use_pretrained_xray_encoder=false training_params.training_pretrain_baseline=cxr_clip_swin
 
-# train with custom pretrained weights
-python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=experiment training_params.epochs=101 training_params.use_pretrained_xray_encoder=true training_params.training_pretrain_baseline=medclip_vit
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=experiment training_params.epochs=500 training_params.use_pretrained_xray_encoder=true training_params.training_pretrain_baseline=cxr_clip_swin
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.epochs=500 training_params.use_pretrained_xray_encoder=true training_params.training_pretrain_baseline=cxr_clip_swin

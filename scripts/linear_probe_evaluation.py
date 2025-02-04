@@ -51,7 +51,7 @@ def main(cfg: DictConfig):
     # iterate 10 times and collect the stats
     if cfg.linear_probing_params.multi_sweep_evaluation:
         # List of seeds to iterate over
-        seed_list = [1024, 1234, 4321, 5678, 8765, 1357, 2468, 9753, 8642, 3141][:5]
+        seed_list = [1024, 1234, 4321, 5678, 8765, 1357, 2468, 9753, 8642, 3141]
 
         results = {}
 
@@ -138,9 +138,7 @@ def run(cfg_dot):
     #     proportion=cfg_dot.linear_probing_params.train_data_portion
     # )
 
-    train_dataset, internal_val_dataset = get_train_internal_split(
-        cfg_dot, cfg
-    )
+    train_dataset, internal_val_dataset = get_train_internal_split(cfg_dot, cfg)
     
     pathologies = get_pathologies(dataset=cfg_dot.linear_probing_params.evaluation_dataset)
     
