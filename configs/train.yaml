@@ -40,7 +40,7 @@ training_params:
   learning_rate: 5e-5
   weight_decay: 1e-4
   epochs: 200
-  min_epochs: 200
+  min_epochs: 50
   training_pretrain_baseline: ''
   use_pretrained_xray_encoder: true
   loss_function: '' # either siamese or infoNCE
