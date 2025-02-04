@@ -1177,6 +1177,8 @@ class CTCLIPwithXray(nn.Module):
             return logits.squeeze()
         """
         NOTE: CL between image and xray and CL between text and xray
+
+        NOTE: for Siamese Representation Learning, we might need a predictor or don't need (experiments).
         """
         cl_text_to_xray = self.cl_loss(text_latents, xray_latents, temp)
         cl_img_to_xray = self.cl_loss(image_latents, xray_latents, temp)

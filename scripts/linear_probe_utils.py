@@ -470,6 +470,13 @@ def test_loop(params):
     precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
 
     auc_micro = roc_auc_score(all_labels, all_probs, average='micro', multi_class='ovr')
+
+    # compute aucroc for each class in the multihot vector
+    auc_per_class = []
+    for i in range(all_labels.shape[1]):
+        auc = roc_auc_score(all_labels[:, i], all_probs[:, i])
+        auc_per_class.append(auc)
+
     try:
         auc_macro = roc_auc_score(all_labels, all_probs, average='macro', multi_class='ovr')
     except:
@@ -500,7 +507,8 @@ def test_loop(params):
     os.makedirs(os.path.dirname(delong_stats_saving_path), exist_ok=True)
     labels_preds = {
         'labels': all_labels.flatten().tolist(),
-        'pred_probs': all_probs.flatten().tolist()
+        'pred_probs': all_probs.flatten().tolist(),
+        'auc_per_class': auc_per_class
     }
     # Save to a pickle file
     with open(delong_stats_saving_path, "wb") as f:

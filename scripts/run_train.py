@@ -121,33 +121,6 @@ def run(cfg_dot):
         dim_xray = 768 if 'swin' in cfg_dot.training_params.training_pretrain_baseline.lower() else 2048
 
 
-    # xray_model_type = 'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
-    # clip_xray = CTCLIPwithXray(
-    #     image_encoder = image_encoder,
-    #     text_encoder = text_encoder,
-    #     # tokenizer=tokenizer,
-    #     dim_text = 768,
-    #     dim_image = 294912,
-    #     xray_model_type = xray_model_type,
-    #     dim_xray = 768 if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048,
-    #     dim_latent = 512,
-    #     extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
-    #     use_mlm=False,
-    #     downsample_image_embeds = False,
-    #     use_all_token_embeds = False,
-    #     cfg=cfg,
-    #     auto_load_pretrained_weights=False # because it loads it later.
-    # )
-
-    # # uhn cluster
-    # #NOTE: if cfg_dot.training_params.use_pretrained_xray_encoder is true => xray encoder and the projection layer is loaded with pretrained cxr_clip weights
-    # # Load the CT-CLIP pretrained backbone to CT-CLIP and optionlly load the pretrained cxr_clip xray encoder weights
-    # ckpt_name = 'r50_mcc.tar' if cfg['model']['image_encoder']['name'] == 'resnet' else 'swint_mcc.tar' # NOTE: weights for cxr_clip xray encoder
-    # clip_xray.load(
-    #     "/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/CT-CLIP_v2.pt",
-    #     f"/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/cxr_clip/{ckpt_name}" if cfg_dot.training_params.use_pretrained_xray_encoder else None
-    # )
-
     # for custom pretrained weight training
     latent_size = 512
     clip_xray = CTCLIPwithXray(
