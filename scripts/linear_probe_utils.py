@@ -111,8 +111,40 @@ def get_train_internal_split(cfg_dot, cfg):
         )
         
     elif cfg_dot.linear_probing_params.evaluation_dataset == 'ct-rate':
-        # TODO:
-        pass
+        print('Splitting ct-rate dataset')
+
+        # base on the baseline model, load the corresponding xray features
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
+        train_xray_features = torch.load(xray_feature_path)
+
+        # Set up the dataset and data loaders
+        #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
+        train_data_splitter = CTReportDataSplitter(
+            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv', #NOTE: the label need to be the mimic version
+            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+        )
+        train_sample, internal_val_samples = train_data_splitter.prepare_samples(
+            train_split=cfg_dot.linear_probing_params.train_data_portion,
+            val_split=0.2
+        ) # validation split is always, train_split is controlable
+
+        train_dataset = CTReportXRayClassificationDataset(
+            cfg=cfg,
+            data=train_sample, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='train'
+        )
+
+        internal_val_dataset = CTReportXRayClassificationDataset(
+            cfg=cfg,
+            data=internal_val_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='train'
+        )
+        
     elif 'vinBig' in cfg_dot.linear_probing_params.evaluation_dataset: # the ct dataset
         print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
     
@@ -340,7 +372,7 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
     elif dataset == 'ct-rate':
-        val_xray_features = load_cached_ct_rate_xray_features(split='valid') #TODO:
+        val_xray_features = load_cached_ct_rate_xray_features(split='valid') # the split to be tested.
         print('Xray feature extraction completed on the validation split for this particular baseline model')
 
         # the whole validation dataset for internal validation.
