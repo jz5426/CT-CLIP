@@ -98,11 +98,15 @@ def proportion_mapping(proportion):
     if str(proportion) == '1' or str(proportion) == '1.':
         return 'hundred_percent'
 
+def get_cxr_clip_variants():
+    cxr_clip_variants = ['cxr_clip_swin_m', 'cxr_clip_swin_mc', 'cxr_clip_swin', 'cxr_clip_resnet_m', 'cxr_clip_resnet_mc', 'cxr_clip_resnet']
+    return cxr_clip_variants
 
 def metadata_base_on_model_type(baseline_type, pth_trailing_string='features'):
-
+    
+    cxr_clip_variants = get_cxr_clip_variants()
     # assert baseline_type in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
-    if 'cxr_clip' in baseline_type: # can be either cxr_clip_swin or cxr_clip_resnet
+    if baseline_type in cxr_clip_variants: # can be either cxr_clip_swin or cxr_clip_resnet
         xray_model_type = baseline_type #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
         dim_xray = 768 if 'swin' in baseline_type else 2048  # if cfg['model']['image_encoder']['model_type'] == 'swin' else 2048
 
