@@ -1216,7 +1216,7 @@ class CTCLIPwithXray(nn.Module):
             image_latents = image
 
         # always extract xray feature representation
-        xray_latents = self.get_xray_latents(xray, normalize=True)
+        xray_latents = self.get_xray_latents(xray)
 
         # get temperature
         temp = self.CTCLIP.temperature.exp()
@@ -1258,7 +1258,7 @@ class CTCLIPwithXray(nn.Module):
     def cosine_similarity_loss(self, p, z):
         return -self.cos_sim_loss(p, z).mean()
 
-    def get_xray_latents(self, xray, normalize=True):
+    def get_xray_latents(self, xray):
         # always extract xray feature representation
         enc_xray = self.xray_encoder(xray)
 
@@ -1271,8 +1271,7 @@ class CTCLIPwithXray(nn.Module):
         enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch of shape [batch size, features]
         xray_embeds = enc_xray[:, :] if enc_xray.ndim == 3 else enc_xray
         xray_latents = self.to_xray_latent(xray_embeds)
-        if normalize:
-            xray_latents = l2norm(xray_latents)
+        xray_latents = l2norm(xray_latents)
 
         return xray_latents
 
