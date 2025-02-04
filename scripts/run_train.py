@@ -138,7 +138,8 @@ def run(cfg_dot):
         cfg=cfg,
         auto_load_pretrained_weights=True if cfg_dot.training_params.use_pretrained_xray_encoder else False,
         freeze_xray_pretrained_weights=False, # need the xray encoder for training => no freeze parameters in xray encoder
-        loss = cfg_dot.training_params.loss_function
+        loss = cfg_dot.training_params.loss_function,
+        projector_type=cfg_dot.training_params.projector_type,
     )
     # load the ct-clip pretrained weights
     clip_xray.load_ctclip('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/CT-CLIP_v2.pt')
@@ -156,6 +157,8 @@ def run(cfg_dot):
         min_epochs=cfg_dot.training_params.min_epochs,
         cfg=cfg,
         tokenizer=tokenizer,
+        projector_type= cfg_dot.training_params.projector_type,
+        train_loss= cfg_dot.training_params.loss_function,
         data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         data_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
         img_embedding_paths = {
@@ -169,7 +172,7 @@ def run(cfg_dot):
         reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
         reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
         labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        results_folder=f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{xray_model_type}', # put the check point in a subdirectory under CT-RATE-CHECKPOINTS
+        results_folder=f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{xray_model_type}_siamese', # put the check point in a subdirectory under CT-RATE-CHECKPOINTS
         num_train_steps = 100001,
         batch_style=cfg_dot.training_params.batch_style,
         batch_size = cfg_dot.training_params.batch_size,
@@ -184,7 +187,7 @@ def run(cfg_dot):
         wd = cfg_dot.training_params.weight_decay,
         lr = cfg_dot.training_params.learning_rate,
         model_type=xray_model_type
-        # TODO: interpolate the learing rate between ULIP and CXR-CLIP
+        # TODO: interpolate the learning rate between ULIP and CXR-CLIP
     )
     trainer.train_by_epoch(cfg_dot.training_params.epochs)
 

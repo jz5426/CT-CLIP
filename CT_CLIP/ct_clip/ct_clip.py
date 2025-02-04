@@ -1002,6 +1002,7 @@ class CTCLIPwithXray(nn.Module):
         self.loss_type = loss
         self.projector_type = projector_type
         self.predictor = None
+        self.auto_load_pretrained_weights = auto_load_pretrained_weights
 
         if xray_model_type == 'ct_clip':
             self.xray_encoder = None
@@ -1010,29 +1011,16 @@ class CTCLIPwithXray(nn.Module):
             # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["swin"]["image_encoder"])
 
-            if self.loss_type == 'siamese' and self.projector_type == 'siamese':
+            if self.projector_type == 'siamese':
                 # projector
-                self.to_xray_latent = nn.Sequential(nn.Linear(dim_xray, dim_xray, bias=False),
-                                        nn.BatchNorm1d(dim_xray),
-                                        nn.ReLU(inplace=True), # first layer
-                                        nn.Linear(dim_xray, dim_xray, bias=False),
-                                        nn.BatchNorm1d(dim_xray),
-                                        nn.ReLU(inplace=True), # second layer
-                                        # self.encoder.fc,
-                                        nn.Linear(dim_xray, dim_latent, bias=False), # TODO: double check if this self.encoder.fc : looks like a single layer
-                                        # nn.BatchNorm1d(dim_latent, affine=False) # use the l2norm later
-                ) # output layer
-                # self.to_xray_latent[6].bias.requires_grad = False # already did
+                self.to_xray_latent = self._define_siamese_projector(dim_xray, dim_latent)
 
                 # bottleneck layers for predictor 
-                self.predictor = nn.Sequential(nn.Linear(dim_latent, 128, bias=False),
-                                                nn.BatchNorm1d(128),
-                                                nn.ReLU(inplace=True), # hidden layer
-                                                nn.Linear(128, dim_latent)) # output layer
+                self.predictor = self._define_siamese_predictor(dim_latent)
             else:
                 self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
-            if self.loss == 'siamese':
+            if self.loss_type == 'siamese':
                 self.cos_sim_loss = nn.CosineSimilarity(dim=1).to('cuda')
 
             if not auto_load_pretrained_weights:
@@ -1059,29 +1047,15 @@ class CTCLIPwithXray(nn.Module):
             # load the plain image encoder
             self.xray_encoder = load_cxr_clip_image_encoder(cfg["resnet"]["image_encoder"])
 
-            if self.loss_type == 'siamese' and self.projector_type == 'siamese':
+            if self.projector_type == 'siamese':
                 # projector
-                self.to_xray_latent = nn.Sequential(nn.Linear(dim_xray, dim_xray, bias=False),
-                                        nn.BatchNorm1d(dim_xray),
-                                        nn.ReLU(inplace=True), # first layer
-                                        nn.Linear(dim_xray, dim_xray, bias=False),
-                                        nn.BatchNorm1d(dim_xray),
-                                        nn.ReLU(inplace=True), # second layer
-                                        # self.encoder.fc,
-                                        nn.Linear(dim_xray, dim_latent, bias=False), # NOTE: actual project layer does not need activation.
-                                        # nn.BatchNorm1d(dim_latent, affine=False) # use the l2norm later
-                ) # output layer
-                # self.to_xray_latent[6].bias.requires_grad = False # already did
-
+                self.to_xray_latent = self._define_siamese_projector(dim_xray, dim_latent)
                 # bottleneck layers for predictor 
-                self.predictor = nn.Sequential(nn.Linear(dim_latent, 128, bias=False),
-                                                nn.BatchNorm1d(128),
-                                                nn.ReLU(inplace=True), # hidden layer
-                                                nn.Linear(128, dim_latent)) # output layer
+                self.predictor = self._define_siamese_predictor(dim_latent)
             else:
                 self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
-            if self.loss == 'siamese':
+            if self.loss_type == 'siamese':
                 self.cos_sim_loss = nn.CosineSimilarity(dim=1).to('cuda')
 
             if not auto_load_pretrained_weights:
@@ -1155,6 +1129,28 @@ class CTCLIPwithXray(nn.Module):
             else:
                 print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
 
+    def _define_siamese_projector(self, dim_xray, dim_latent):
+        assert self.auto_load_pretrained_weights == False
+        projector = nn.Sequential(nn.Linear(dim_xray, dim_xray, bias=False),
+                                nn.BatchNorm1d(dim_xray),
+                                nn.ReLU(inplace=True), # first layer
+                                nn.Linear(dim_xray, dim_xray, bias=False),
+                                nn.BatchNorm1d(dim_xray),
+                                nn.ReLU(inplace=True), # second layer
+                                # self.encoder.fc,
+                                nn.Linear(dim_xray, dim_latent, bias=False), # NOTE: actual project layer does not need activation.
+                                # nn.BatchNorm1d(dim_latent, affine=False) # NOTE: should we use batchnorm?
+        ) # use the l2norm later
+        # self.to_xray_latent[6].bias.requires_grad = False # already did
+        return projector
+
+    def _define_siamese_predictor(self, dim_latent, bottleneck_size=128):
+        return nn.Sequential(
+            nn.Linear(dim_latent, bottleneck_size, bias=False),
+            nn.BatchNorm1d(bottleneck_size),
+            nn.ReLU(inplace=True), # hidden layer
+            nn.Linear(bottleneck_size, dim_latent)
+        ) # output layer
 
     def forward(
             self,
@@ -1234,20 +1230,24 @@ class CTCLIPwithXray(nn.Module):
 
         NOTE: for Siamese Representation Learning, we might need a predictor or don't need (experiments).
         """
-        if loss == 'infoNCE':
+        if self.loss_type == 'infoNCE':
             cl_text_to_xray = self.cl_loss(text_latents, xray_latents, temp)
             cl_img_to_xray = self.cl_loss(image_latents, xray_latents, temp)
             loss = text_cl_weight*cl_text_to_xray + ct_cl_weight*cl_img_to_xray
-        elif loss == 'siamese':
-            
+        elif self.loss_type == 'siamese':
+            xray_latents = xray_latents.squeeze(0)
+
+            xray_latents = self.predictor(xray_latents)
             cos_xray_to_text = 0
             cos_xray_to_img = 0
             loss_count = 0
 
             if text_cl_weight:
+                text_latents = text_latents.squeeze(0)
                 cos_xray_to_text = self.cosine_similarity_loss(p=xray_latents, z=text_latents)
                 loss_count += 1
             if ct_cl_weight:
+                image_latents = image_latents.squeeze(0)
                 cos_xray_to_img = self.cosine_similarity_loss(p=xray_latents, z=image_latents)
                 loss_count += 1
             loss = (cos_xray_to_text + cos_xray_to_img) / loss_count
@@ -1375,7 +1375,7 @@ class CTCLIPwithXray(nn.Module):
             if 'image_projection.projection.weight' in key:
                 new_state_dict[key.replace("image_projection.projection.weight", "to_xray_latent.weight", 1)] = saved_state_dict[key]
 
-        missing_keys, _ = self.load_state_dict(new_state_dict, strict=False)
+        missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
         model_keys = set(self.state_dict().keys())
         ckpt_keys = set(new_state_dict.keys())
         loaded_keys = ckpt_keys.intersection(model_keys) - set(missing_keys)

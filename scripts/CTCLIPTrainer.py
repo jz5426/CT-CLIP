@@ -175,6 +175,8 @@ class CTClipTrainer(nn.Module):
         data_valid = "valid",
         cfg=None,
         pretrained_xray_encoder = True,
+        projector_type='infoNCE',
+        train_loss = 'infoNCE',
         img_embedding_paths = {}, # contain both train and validation
         text_embedding_paths = {}, # contian both train and validation
         reports_file_train = "data_reports.xslx",
@@ -329,7 +331,11 @@ class CTClipTrainer(nn.Module):
         self.ct_cl_weight = ct_cl_weight
 
         # base file name for the checkpoints
-        self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}'
+        if projector_type == 'infoNCE' and train_loss == 'infoNCE': # retro adapting the filename for the previous implementation.
+            self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}'
+            print('Both projector and tran loss are infoNCE!')
+        else:
+            self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}__ProjType_{projector_type}__trainLoss_{train_loss}'
         print('base file name: ', self.base_file_name)
 
     def save(self, path):
