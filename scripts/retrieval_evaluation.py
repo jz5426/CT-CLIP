@@ -1,7 +1,3 @@
-"""
-largely extends from the synxray_to_report_ct.py
-"""
-
 import os
 from cxr_clip_utils import convert_dictconfig_to_dict
 import hydra
@@ -47,13 +43,14 @@ def calc_similarity(arr1, arr2):
     return (oneandone / (oneandone + oneorzero))
 
 def map_retrieval_evaluation(
-        query_latents, # dictionary of the xray latents
-        target_latents, # xray or CT feature dictionary
-        data_folder = "./internal_val_retrieval_results/",
-        predicted_label_csv_path='path_to_valid_predicted_labels.csv',
-        k_list=[1,5,10,50, 100],
-        batch_size=1024,
-        file_name='xray2ct',
+      query_latents, # dictionary of the xray latents
+      target_latents, # xray or CT feature dictionary
+      metric_results_dest = "path_to_save_the_metric_results",
+      predicted_label_csv_path='path_to_valid_predicted_labels.csv',
+      k_list=[1, 5, 10, 50, 100],
+      batch_size=1024,
+      file_name='xray2ct',
+      dataset='ct-rate' # ct-rate => internal, mimic => external, radchestct => external
     ):
 
     # convert the xray key as the accession to access the label later on.
@@ -61,7 +58,11 @@ def map_retrieval_evaluation(
     accs = []
     for xray_file_key in tqdm.tqdm(query_latents.keys()):
         image_data_list.append(query_latents[xray_file_key]) # insert the embeddings
-        accs.append(xray_file_key+'.nii.gz')  # Use the filename without the extension as the accession number
+
+        if dataset == 'ct-rate':
+            accs.append(xray_file_key+'.nii.gz')  # Use the filename without the extension as the accession number
+        elif dataset == 'mimic':
+            accs.append(xray_file_key)  # Use the filename without the extension as the accession number
 
     # Concatenate all loaded image data
     image_data = np.array(image_data_list)
@@ -75,9 +76,13 @@ def map_retrieval_evaluation(
     accs_for_second = []
     # Filter the image data based on the condition in the validation labels
     for target_key in tqdm.tqdm(target_latents.keys()):
+        if dataset == 'ct-rate':
+            acc_second = target_key+'.nii.gz'
+            row_second = df[df['VolumeName'] == acc_second]
+        elif dataset == 'mimic':
+            acc_second = target_key
+            row_second = df[df['hadm_id'] == acc_second]
 
-        acc_second = target_key+'.nii.gz'
-        row_second = df[df['VolumeName'] == acc_second]
         num_path = np.sum(row_second.iloc[:, 1:].values[0])
 
         # if there are any labels (multihot or onehot) for this, save the embeddings and the file name NOTE: do we need this?
@@ -85,8 +90,6 @@ def map_retrieval_evaluation(
             target_latent = target_latents[target_key]
             image_data_for_second.append(target_latent)
             accs_for_second.append(acc_second)
-        # else:
-        #     print(acc_second)
     
     # one huge matrix
     image_data_for_second = np.array(image_data_for_second)
@@ -100,7 +103,10 @@ def map_retrieval_evaluation(
             first = image_data[i] # get the embedding
             first = torch.tensor(first).to('cuda') # place it in the GPU for batch processing.
             acc_first = accs[i]
-            row_first = df[df['VolumeName'] == acc_first]
+            if dataset == 'ct-rate':
+                row_first = df[df['VolumeName'] == acc_first]
+            elif dataset == 'mimic':
+                row_first = df[df['hadm_id'] == acc_first]
             row_first = row_first.iloc[:, 1:].values[0]
 
             # Create a DataLoader for batching processing, with respect to each row_first
@@ -117,7 +123,10 @@ def map_retrieval_evaluation(
             top_k_indices = find_top_k_indices(crosses, return_n)
             for index in top_k_indices:
                 acc_second = accs_for_second[index]
-                row_second = df[df['VolumeName'] == acc_second]
+                if dataset == 'ct-rate':
+                    row_second = df[df['VolumeName'] == acc_second]
+                elif dataset == 'mimic':
+                    row_second = df[df['hadm_id'] == acc_second]
                 row_second = row_second.iloc[:, 1:].values[0]
 
                 # find the similarity (overlapping labels) based on the top-k
@@ -133,7 +142,7 @@ def map_retrieval_evaluation(
         list_outs.append(str((running_avg_stats, stats)))
 
     # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
-    output_file_path = data_folder + f"{file_name}.txt"
+    output_file_path = metric_results_dest + f"{file_name}.txt"
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
     # Open the file for writing (you can also use "a" to append if the file already exists)
@@ -144,75 +153,7 @@ def map_retrieval_evaluation(
     print(f'results saved to {output_file_path}')
     return list_outs
 
-def recall_retrieval_evaluation(
-        query_latents, 
-        target_latents, 
-        list_ks=[5, 10, 50, 100], 
-        data_folder = "./internal_val_retrieval_results/",
-        file_name='xray2ct',
-        batch_size=1024):
 
-    query_latents = np.array(query_latents)
-    target_latents = np.array(target_latents) # to be retrieved from
-
-    list_texts = []
-    for value in tqdm.tqdm(list_ks):
-        num_is_in, num_random = 0, 0
-
-        # for each xray => the goal is to retrieve the correct target
-        for i in tqdm.tqdm(range(query_latents.shape[0])):
-            crosses, crosses_rands = [], []
-            xray = torch.tensor(query_latents[i]).to('cuda')
-
-            # Create a DataLoader for batching
-            dataset = TensorDataset(torch.tensor(target_latents))
-            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-
-            # find the similarity between the xray and the target embeddings
-            for batch in dataloader:
-                targets = batch[0].to('cuda')
-                
-                # Compute similarity in batch and save the results.
-                cross_batch = torch.matmul(xray, targets.T)
-                crosses.extend(cross_batch.cpu().tolist())
-            
-            # find the top k indiices
-            top_k_indices = find_top_k_indices(crosses, value)
-            if i in top_k_indices:
-                num_is_in += 1
-
-            # this is the baseline performance on the random pairs.
-            # for _ in range(len(dataloader)): # number of batches
-            #     size = (512,)
-            #     target_batch = torch.rand((batch_size, *size)).to('cuda')
-            #     targets = torch.rand((batch_size, *size)).to('cuda')
-
-            #     # Compute similarity in batch
-            #     cross_batch = torch.matmul(target_batch, targets.T)
-            #     crosses_rands.extend(cross_batch.cpu().tolist())
-
-            # top_k_indices = find_top_k_indices(crosses_rands, value)
-            # if i in top_k_indices:
-            #     num_random += 1
-
-        clip = num_is_in / target_latents.shape[0]
-        # rand = num_random / target_latents.shape[0]
-        rand = 'n.a'
-        write_str = f"K={value}, clip = {clip}, rand= {rand}"
-
-        list_texts.append(write_str)
-
-    # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
-    output_file_path = data_folder + f"{file_name}.txt"
-    os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
-
-    # Open the file for writing (you can also use "a" to append if the file already exists)
-    with open(output_file_path, "w") as file:
-        # Write each string from the list to the file
-        for string in list_texts:
-            file.write(string + "\n")
-    print(f'results saved to {output_file_path}')
-    return list_texts
 
 @hydra.main(
         version_base=None,

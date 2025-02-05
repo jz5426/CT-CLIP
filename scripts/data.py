@@ -432,7 +432,7 @@ class VinBigChestXrayClassificationDataset(XrayClassificationDataset):
         # return xray_image, label
 
         label = torch.from_numpy(label)
-        return xray_embedding, 'vinBig', label, None
+        return xray_embedding, 'vinBig', label, 'PLACEHOLDER'
 
 
 class CTReportXRayClassificationDataset(XrayClassificationDataset):
@@ -466,7 +466,7 @@ class CTReportXRayClassificationDataset(XrayClassificationDataset):
         # return xray_image, label
 
         label = torch.from_numpy(label)
-        return xray_embedding, 'ct-rate', label, None
+        return xray_embedding, 'ct-rate', label, 'PLACEHOLDER'
 
 class MimicCTReportXRayDataset:
     """mainly used in retrieval evaluation and linear probe evaluation in the MimicCTClipInference class"""
