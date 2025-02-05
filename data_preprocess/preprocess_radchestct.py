@@ -233,7 +233,7 @@ def process_file(file_path, shared_dst_dir):
 # Example usage:
 if __name__ == "__main__":
     nii_files = read_npz_files('/Volumes/T7 Shield/radchest/')
-    num_workers = 10  # Number of worker processes
+    num_workers = 2  # Number of worker processes
 
     # Process files using multiprocessing with tqdm progress bar
     with Pool(num_workers) as pool:

@@ -144,23 +144,23 @@ def get_pathologies(dataset='ct-rate'):
     # NOTE: the order of the listed pathologies matter
     if dataset == 'ct-rate':
       pathologies = ['Medical material',
-                  'Arterial wall calcification', 
-                  'Cardiomegaly', 
-                  'Pericardial effusion',
-                  'Coronary artery wall calcification', 
-                  'Hiatal hernia',
-                  'Lymphadenopathy', 
-                  'Emphysema', 
-                  'Atelectasis', 
-                  'Lung nodule',
-                  'Lung opacity', 
-                  'Pulmonary fibrotic sequela', 
-                  'Pleural effusion', 
+                  'Arterial wall calcification', #calcification
+                  'Cardiomegaly', #
+                  'Pericardial effusion', #
+                  'Coronary artery wall calcification', #calcification
+                  'Hiatal hernia', # hernia
+                  'Lymphadenopathy', #
+                  'Emphysema', #
+                  'Atelectasis', #
+                  'Lung nodule', #nodule
+                  'Lung opacity', #opacity
+                  'Pulmonary fibrotic sequela', # fibrosis
+                  'Pleural effusion', #
                   'Mosaic attenuation pattern',
-                  'Peribronchial thickening', 
-                  'Consolidation', 
-                  'Bronchiectasis',
-                  'Interlobular septal thickening']
+                  'Peribronchial thickening', #bronical or periboncail ** double check this: bronchial_wall_thick ening, ‘pleural_thickening, pericardial thickening
+                  'Consolidation', #
+                  'Bronchiectasis', #
+                  'Interlobular septal thickening'] # septal thickening
     elif dataset == 'mimic':
         pathologies = ['Arterial wall calcification', #
 						'Pericardial effusion', #

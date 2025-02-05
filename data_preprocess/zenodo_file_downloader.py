@@ -27,12 +27,15 @@ else:
     print(f"❌ Failed to retrieve file list - Status Code {response.status_code}")
     exit(1)
 
+downloaded_files = [file for file in os.listdir(SAVE_DIR) if not file.startswith('._')]
+files = [file for file in files if file['key'] not in downloaded_files]
+
 # Define the file download function
 def download_file(file):
     file_name = file["key"]
     file_url = file["links"]["self"]
     file_path = os.path.join(SAVE_DIR, file_name)
-
+    
     print(f"📥 Starting download: {file_name}")
 
     # Large chunk size for efficiency
@@ -52,7 +55,7 @@ def download_file(file):
         print(f"❌ Error downloading {file_name}: {e}")
 
 # Use ThreadPoolExecutor for parallel downloads
-NUM_WORKERS = min(10, len(files))  # Use up to 8 threads or the number of files
+NUM_WORKERS = min(5, len(files))  # Use up to 8 threads or the number of files
 with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
     executor.map(download_file, files)
 
