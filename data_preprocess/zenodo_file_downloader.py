@@ -57,33 +57,3 @@ with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
     executor.map(download_file, files)
 
 print("✅ All downloads complete!")
-
-
-# # Headers with authentication
-# headers = {"Authorization": f"Bearer {ACCESS_TOKEN}"}
-
-# # Step 1: Get the list of files
-# response = requests.get(FILES_API_URL, headers=headers)
-# CHUNK_SIZE = 10 * 1024 * 1024 
-# if response.status_code == 200:
-#     files = response.json().get("files", [])
-    
-#     for file in files:
-#         file_name = file["key"]
-#         file_url = file["links"]["self"]
-
-#         print(f"📥 Downloading: {file_name}")
-
-#         # Step 2: Download file using authentication
-#         file_response = requests.get(file_url, headers=headers, stream=True)
-
-#         if file_response.status_code == 200:
-#             file_path = os.path.join(SAVE_DIR, file_name)
-#             with open(file_path, "wb") as f:
-#                 for chunk in file_response.iter_content(chunk_size=CHUNK_SIZE):
-#                     f.write(chunk)
-#             print(f"✅ Downloaded: {file_name}")
-#         else:
-#             print(f"❌ Failed to download: {file_name} - Status Code {file_response.status_code}")
-# else:
-#     print(f"❌ Failed to retrieve file list - Status Code {response.status_code}")
