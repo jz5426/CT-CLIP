@@ -95,6 +95,10 @@ linear_probing_params:
   # evaluation_dataset: 'mimic' # ct-rate, mimic, vinBig
   # cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
 
+retrieval_params:
+  evaluation_dataset: '' # ct-rate, mimic, radchestct
+
+
 zero_shot_params:
   baseline_type: '' # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' # just like the one in linear probe with additional option as ct_clip
   test_bed: 'internal_ct_val' # the dataset that the vision and text encoders suppose to run on.

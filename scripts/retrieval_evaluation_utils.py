@@ -10,7 +10,8 @@ import random
 import numpy as np
 import tqdm
 from torch.utils.data import DataLoader, TensorDataset
-from zero_shot import CTClipInference
+from eval_utils import metadata_base_on_model_type
+from zero_shot import CTClipInference, MimicCTClipInference
 import pandas as pd
 
 def find_top_k_indices(values, k):
@@ -159,7 +160,7 @@ def recall_retrieval_evaluation(
         query_latents, 
         target_latents, 
         list_ks=[5, 10, 50, 100], 
-        data_folder = "",
+        metric_results_dest = "",
         file_name='xray2ct',
         batch_size=1024,
         dataset = 'ct-rate'):
@@ -208,7 +209,7 @@ def recall_retrieval_evaluation(
         list_texts.append(write_str)
 
     # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
-    output_file_path = data_folder + f"{file_name}.txt"
+    output_file_path = metric_results_dest + f"{file_name}.txt"
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
     # Open the file for writing (you can also use "a" to append if the file already exists)
@@ -222,8 +223,14 @@ def recall_retrieval_evaluation(
     return list_texts
 
 
-def ctrate_retrieval_evaluation():
+def ctrate_retrieval_evaluation(params):
     """list all the retrieval evaluation for ct-rate dataset"""
+
+    cfg = params['cfg']
+    baselines = params['baselines']
+    image_encoder = params['image_encoder']
+    text_encoder = params['text_encoder']
+    tokenizer = params['tokenizer']
 
     split = 'valid'
     embedding_directory = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/'
@@ -241,13 +248,15 @@ def ctrate_retrieval_evaluation():
     ct_report_embeddings = [(image_features[key], text_features[key]) for key in image_features.keys()]
 
     ## the following are the upper baseline from CT-CLIP
-
+    metric_destination_path = ''
     # report2ct
     print('evaluating report 2 ct in recall')
     recall_retrieval_evaluation(
         query_latents=[embed[1] for embed in ct_report_embeddings],
         target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
-        file_name='report2ct_recall')
+        file_name='report2ct_recall',
+        dataset='ct-rate'
+    )
 
     # ct2report
     print('evaluating ct 2 report in recall')
@@ -295,6 +304,233 @@ def ctrate_retrieval_evaluation():
         dataset='ct-rate'
     )
 
-def mimic_retrieval_evaluation():
+
+    for baseline in baselines:
+
+        dim_xray, xray_model_type, pth_name, latent_size = metadata_base_on_model_type(baseline)
+
+        # automatically load the model weights
+        clip_xray = CTCLIPwithXray(
+            image_encoder = image_encoder,
+            text_encoder = text_encoder,
+            dim_text = 768,
+            dim_image = 294912,
+            xray_model_type = xray_model_type,
+            dim_xray = dim_xray,
+            dim_latent = 512,
+            extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+            use_mlm=False,
+            downsample_image_embeds = False,
+            use_all_token_embeds = False,
+            cfg=cfg
+        )
+
+        # check the trainable parameters
+        # xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
+        # ct_clip_trainable = sum(p.numel() for p in clip_xray.CTCLIP.parameters() if p.requires_grad)
+        # assert(xray_encoder_trainable == 0)
+        # assert(ct_clip_trainable == 0)
+
+        retrival_evaluator = CTClipInference(
+            clip_xray,
+            cfg=cfg,
+            tokenizer=tokenizer,
+            data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
+            # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
+            img_embedding_paths = {
+                f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
+            },
+            text_embedding_paths = {
+                f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
+            },
+            reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+            labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            results_folder="./inference_zeroshot_retrieval",
+            batch_size = 512,
+            num_train_steps = -1, # placeholder
+            num_workers = 10, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+            feature_extraction_mode = True # might be optional
+        )  
+
+        # get xray latent features from a model NOTE: to be safe, re-extract the xray feature everytime
+        xray_features = retrival_evaluator.xray_feature_extraction(embedding_directory, pth_name=pth_name, append=False)
+
+        # make sure all three dictionary contains the same set of keys
+        assert(image_features.keys() == text_features.keys() == xray_features.keys())
+
+        # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
+        triplet_embeddings = [(image_features[key], text_features[key], xray_features[key]) for key in xray_features.keys()]
+
+        # NOTE: all features are normalized.
+
+        print('evaluating xray 2 ct_volumes recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[-1] for triple in triplet_embeddings],
+            target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{baseline}_synxray2ct_recall',
+            dataset='ct-rate')
+        print('evaluating ct_volumes 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[0] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{baseline}_ct2synxray_recall',
+            dataset='ct-rate')
+
+        print('evaluating xray 2 ct_reports recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[-1] for triple in triplet_embeddings],
+            target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{baseline}_synxray2report_recall',
+            dataset='ct-rate')
+        print('evaluating ct_reports 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[1] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{baseline}_report2synxray_recall',
+            dataset='ct-rate')
+
+
+
+        print('evaluating xray 2 ct_volumes MAP')
+        map_retrieval_evaluation(
+            xray_features,
+            target_latents=image_features,
+            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            file_name=f'{baseline}_synxray2ct_map',
+            dataset='ct-rate')
+        print('evaluating ct_volumes 2 xray MAP')
+        map_retrieval_evaluation(
+            image_features,
+            target_latents=xray_features,
+            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            file_name=f'{baseline}_ct2synxray_map',
+            dataset='ct-rate')
+
+
+
+        print('evaluating xray 2 ct_reports MAP')
+        map_retrieval_evaluation(
+            xray_features,
+            target_latents=text_features,
+            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            file_name=f'{baseline}_synxray2report_map',
+            dataset='ct-rate')
+        print('evaluating ct_reports 2 xray MAP')
+        map_retrieval_evaluation(
+            text_features,
+            target_latents=xray_features,
+            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            file_name=f'{baseline}_report2synxray_map',
+            dataset='ct-rate')
+
+
+
+        # there is not symmetric retrieval and recall for this one.
+        print('evaluating xray 2 xray MAP')
+        map_retrieval_evaluation(
+            xray_features,
+            target_latents=xray_features,
+            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            file_name=f'{baseline}_synxray2synxray_map',
+            dataset='ct-rate')
+
+
+def mimic_retrieval_evaluation(params):
     """list all the retrieval evaluation for the mimic dataset"""
+    cfg = params['cfg']
+    baselines = params['baselines']
+    image_encoder = params['image_encoder']
+    text_encoder = params['text_encoder']
+    tokenizer = params['tokenizer']
+
+    for baseline in baselines:
+        dim_xray, xray_model_type, pth_name, latent_size = metadata_base_on_model_type(baseline)
+
+        clip_xray = CTCLIPwithXray(
+            image_encoder = image_encoder,
+            text_encoder = text_encoder,
+            dim_text = 768, # for ct-clip
+            dim_image = 294912, # for ct-clip
+            xray_model_type = xray_model_type,
+            dim_xray = dim_xray,
+            dim_latent = 512, # the target output latent dimension
+            extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+            use_mlm=False,
+            downsample_image_embeds = False,
+            use_all_token_embeds = False,
+            cfg=cfg,
+            auto_load_pretrained_weights = True # NOTE: automatically load the model weights based on the xray_model_type
+        )
+
+        # check the trainable parameters
+        # xray_encoder_trainable = sum(p.numel() for p in clip_xray.xray_encoder.parameters() if p.requires_grad)
+        # ct_clip_trainable = sum(p.numel() for p in clip_xray.CTCLIP.parameters() if p.requires_grad)
+        # assert(xray_encoder_trainable == 0)
+        # assert(ct_clip_trainable == 0)
+        
+        retrival_evaluator = MimicCTClipInference(
+            clip_xray,
+            cfg=cfg,
+            tokenizer=tokenizer,
+            data_folder= '/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
+            reports_file = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
+            labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            results_folder="./inference_zeroshot_retrieval_mimic",
+            batch_size = 512,
+            num_workers = 2, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+            feature_extraction_mode = True # might be optional
+        )  
+
+        # get xray latent features from a model
+        xray_features = retrival_evaluator.extract_xray_features()
+
+        # get text features from the model.
+        text_features = retrival_evaluator.extract_report_features()
+
+        # NOTE: all features are normalized.
+
+        # # organize data into a list with index as a the text-image-xray correspondance and pair up xray-ct_image and xray-text
+        triplet_embeddings = [('', text_features[key], xray_features[key]) for key in xray_features.keys()]
+
+        # the experiment is in the same order as the table listed in external_validation document in notion.
+        metric_results_destination = ''
+
+        print('evaluating xray 2 ct_report MAP')
+        map_retrieval_evaluation(
+            xray_features,
+            target_latents=text_features,
+            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            file_name=f'{baseline}_mimic_xray2report_map',
+            dataset='mimic')
+
+        print('evaluating xray 2 ct reports recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[-1] for triple in triplet_embeddings],
+            target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{baseline}_mimic_xray2report_recall',
+            dataset='mimic')
+
+        print('evaluating xray 2 xray MAP')
+        map_retrieval_evaluation(
+            xray_features,
+            target_latents=xray_features,
+            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            file_name=f'{baseline}_mimic_xray2mimic_xray_map',
+            dataset='mimic')
+
+        print('evaluating report 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[1] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            file_name=f'{baseline}_report2mimic_xray_recall',
+            dataset='mimic')
+
+        print('evaluating report 2 xray MAP')
+        map_retrieval_evaluation(
+            text_features,
+            target_latents=xray_features,
+            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            file_name=f'{baseline}_report2mimic_xray_map',
+            dataset='mimic')
+
     return
