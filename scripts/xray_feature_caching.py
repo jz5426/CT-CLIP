@@ -19,7 +19,7 @@ from zero_shot import CTClipInference, VinBigDataChestXrayInference
 
 @hydra.main(
         version_base=None,
-        config_path="/cluster/home/t135419uhn/CT-CLIP/configs",
+        config_path="/cluster/home/t135419uhn/CT-CLIP/configs", #"/cluster/home/t135419uhn/CT-CLIP/configs"
         config_name="train")
 def main(cfg: DictConfig):
 

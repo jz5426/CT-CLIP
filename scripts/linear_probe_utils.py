@@ -23,50 +23,6 @@ def load_cached_ct_rate_xray_features(pth_base_name, split):
     print('Xray feature extraction completed')
     return xray_features
 
-# def get_train_internal_split_from_cache(dataset, model, proportion):
-#     """
-#     mimic and internal evalution share the same strategy
-
-#     set it up so that it loads from cache instead of loading from scratch
-#     """
-#     # from internal_split_caching
-#     # assert model in ['cxr_clip_resnet', 'cxr_clip_swin', 'medclip_resnet', 'medclip_vit', 'gloria_densenet', 'gloria_resnet']
-#     if 'cxr_clip' in model: # can be either cxr_clip_swin or cxr_clip_resnet
-#         xray_model_type = model #'cxr_clip_swin' if cfg['model']['image_encoder']['model_type'] == 'swin' else 'cxr_clip_resnet'
-#         saving_base_name = 'swin_cxr_xray_datasplit.pth' if 'swin' in xray_model_type else 'resnet_cxr_xray_datasplit.pth'
-#     elif model == 'medclip_resnet':
-#         xray_model_type = model
-#         saving_base_name = 'resnet_medclip_datasplit.pth'
-#         # place this somewhere in the medclip code to remove the learnt fc connected layer at the end, just like cxr_clip: del self.resnet.fc
-#     elif model == 'medclip_vit':
-#         xray_model_type = model
-#         saving_base_name = 'swin_medclip_datasplit.pth'
-#     elif model == 'gloria_densenet':
-#         xray_model_type = model
-#         saving_base_name = 'densenet_gloria_datasplit.pth'
-#     elif model == 'gloria_resnet':
-#         xray_model_type = model
-#         saving_base_name = 'resnet_gloria_datasplit.pth'
-#     else:
-#         xray_model_type = model
-#         saving_base_name = f'{xray_model_type}_datasplit.pth'
-
-#     # decide to which cache to retrieve base on the model (saving_base_name), the dataset, and the proportion
-#     if dataset == 'mimic':
-#         internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/lp_mimic_splits/{proportion_mapping(proportion)}/'
-#         target_file_path = os.path.join(internal_split_dir, saving_base_name)
-#         results = torch.load(target_file_path)
-#         print('internal split loaded')
-#         return results['train_split'], results['internal_val_split']
-#     elif dataset == 'ct-rate':
-#         pass
-#     elif 'vinBig' in dataset:
-#         internal_split_dir = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{dataset}/lp_train_splits/{proportion_mapping(proportion)}/'
-#         target_file_path = os.path.join(internal_split_dir, saving_base_name)
-#         results = torch.load(target_file_path)
-#         print('internal split loaded')
-#         return results['train_split'], results['internal_val_split']
-
 def get_train_internal_split(cfg_dot, cfg):
     """implementation copied from internal_split_caching.py"""
 
@@ -332,6 +288,7 @@ def evaluate_classifier(params):
     xray_model_type = params['xray_model_type']
     model = params['model']
     best_ckpt_destination = params['best_ckpt_destination']
+    classifier_ckpt_base_name = params['classifier_ckpt_base_name']
     pth_base_name = params['pth_base_name']
 
     if dataset == 'mimic':
@@ -366,13 +323,15 @@ def evaluate_classifier(params):
             'device': device,
             'model': classification_model,
             'full_forward_pass': True,
-            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-            'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
-            'delong_stats_saving_path': f'./lp_evaluation_results/mimic_ct/delong_stats/{pth_base_name}_data.pkl'
+            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint in the test loop
+            'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{classifier_ckpt_base_name}_test_metrics_results.xlsx', # where to save the files
+            'delong_stats_saving_path': f'./lp_evaluation_results/mimic_ct/delong_stats/{classifier_ckpt_base_name}_data.pkl'
         }
         return test_loop(test_params)
     elif dataset == 'ct-rate':
-        val_xray_features = load_cached_ct_rate_xray_features(split='valid') # the split to be tested.
+
+        # split=valid is the test set for internal validation and the pth_base_name is mainly use to retrieve the xray features of the particular backbone.
+        val_xray_features = load_cached_ct_rate_xray_features(pth_base_name, split='valid') # the split to be tested.
         print('Xray feature extraction completed on the validation split for this particular baseline model')
 
         # the whole validation dataset for internal validation.
@@ -386,7 +345,7 @@ def evaluate_classifier(params):
         test_dataset = CTReportXRayClassificationDataset(
             cfg=cfg,
             data=test_samples,
-            data_embeddings=val_xray_features,
+            data_embeddings=val_xray_features, # the xray embeddings of a particular backbone.
             model_type=xray_model_type,
             split='valid'
         )
@@ -403,9 +362,9 @@ def evaluate_classifier(params):
             'device': device,
             'model': model,
             'full_forward_pass': False,
-            'pretrained_cpt_dest': best_ckpt_destination,
-            'metric_saving_path': f'./lp_evaluation_results/ct-rate/{pth_base_name}_test_metrics_results.xlsx',
-            'delong_stats_saving_path': f'./lp_evaluation_results/ct-rate/delong_stats/{pth_base_name}_data.pkl'
+            'pretrained_cpt_dest': best_ckpt_destination, # destination to retreive the checkpoint for the linear classifier only.
+            'metric_saving_path': f'./lp_evaluation_results/ct-rate/{classifier_ckpt_base_name}_test_metrics_results.xlsx',
+            'delong_stats_saving_path': f'./lp_evaluation_results/ct-rate/delong_stats/{classifier_ckpt_base_name}_data.pkl'
         }
         return test_loop(test_params)
 
@@ -442,8 +401,8 @@ def evaluate_classifier(params):
             'model': classification_model,
             'full_forward_pass': True,
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-            'metric_saving_path': f'./lp_evaluation_results/{dataset}/{pth_base_name}_test_metrics_results.xlsx', # where to save the files
-            'delong_stats_saving_path': f'./lp_evaluation_results/{dataset}/delong_stats/{pth_base_name}_data.pkl' # where to save the files
+            'metric_saving_path': f'./lp_evaluation_results/{dataset}/{classifier_ckpt_base_name}_test_metrics_results.xlsx', # where to save the files
+            'delong_stats_saving_path': f'./lp_evaluation_results/{dataset}/delong_stats/{classifier_ckpt_base_name}_data.pkl' # where to save the files
         }
         return test_loop(test_params)
 
@@ -565,7 +524,8 @@ def validation_loop(params):
     val_loss = 0.0
     print(f'Performing validation with size (in unit batch) {len(val_loader)}')
     with torch.no_grad():
-        for inputs, labels in val_loader:
+        for data in val_loader:
+            inputs, _, labels, _ = data
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -595,7 +555,7 @@ def train_loop(params):
     model.train()
     total_loss = 0.0
     for idx, data in enumerate(train_loader):
-        inputs, labels = data
+        inputs, _, labels, _ = data
         inputs = inputs.to(device)
         labels = labels.to(device)
 
