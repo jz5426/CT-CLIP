@@ -14,6 +14,7 @@ from tqdm import tqdm
 from functools import partial
 import SimpleITK as sitk
 from PIL import Image
+import nibabel as nib
 
 
 df = pd.read_csv('/Volumes/T7 Shield/radchest/CT_Scan_Metadata_Complete_35747.csv') #select the metadata file that contains all the metadata information.
@@ -157,11 +158,19 @@ def process_file(file_path, shared_dst_dir):
 
     current = (xyz_spacing, xyz_spacing, xyz_spacing)
 
+    # make sure the input img_data shape matches the dimension ordering of the target spacing
     ct_image = _scale_clip_resize(img_data, current, (target_z_spacing, target_x_spacing, target_y_spacing))
     xray_image = _scale_clip_resize(img_data, current, (1,1,1))
 
     #TEST
     # sitk.WriteImage(sitk.GetImageFromArray(ct_image), './test_{}'.format(original_file_name))
+    # check the ct image
+
+    # affine = np.diag([target_x_spacing, target_y_spacing, target_z_spacing, 1])
+    # nifti_img = nib.Nifti1Image(ct_image, affine)
+    # # Save the NIfTI file
+    # nifti_filename = f"./{original_file_name}.nii.gz"
+    # nib.save(nifti_img, nifti_filename)
     
     # for xray
     xray_image = sitk.GetImageFromArray(xray_image)
