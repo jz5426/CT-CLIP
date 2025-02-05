@@ -131,13 +131,6 @@ def run(cfg_dot):
         auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
 
-    # NOTE: mimic and ct-rate give same data split from ct-rate as mimic also uses the sythetic data for learning the clasifier
-    # train_dataset, internal_val_dataset = get_train_internal_split_from_cache(
-    #     dataset=cfg_dot.linear_probing_params.evaluation_dataset,
-    #     model=cfg_dot.linear_probing_params.baseline_type,
-    #     proportion=cfg_dot.linear_probing_params.train_data_portion
-    # )
-
     train_dataset, internal_val_dataset = get_train_internal_split(cfg_dot, cfg)
     
     pathologies = get_pathologies(dataset=cfg_dot.linear_probing_params.evaluation_dataset)
@@ -150,11 +143,12 @@ def run(cfg_dot):
     model = LinearProbeModel(in_features=latent_size, num_classes=len(pathologies))
     model.to(device)
 
-    pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
+    # pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
+    classifier_ckpt_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
 
     parent_dir = cfg_dot.linear_probing_params.evaluation_dataset
     ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, parent_dir)
-    best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{pth_base_name}_best_model.pth')
+    best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{classifier_ckpt_base_name}_best_model.pth')
     params = {
         'num_classes': len(pathologies),
         'latent_size': latent_size,
@@ -181,7 +175,8 @@ def run(cfg_dot):
         'xray_model_type': xray_model_type,
         'model': model, # the linear classifier
         'best_ckpt_destination': best_ckpt_destination,
-        'pth_base_name': pth_base_name
+        'classifier_ckpt_base_name': classifier_ckpt_base_name,
+        'pth_base_name': pth_base_name # mainly for the ct-rate dataset
     }
     label_predictions = evaluate_classifier(params)
 
