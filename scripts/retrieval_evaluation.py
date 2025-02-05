@@ -93,11 +93,14 @@ def run(cfg_dot):
         'baselines': baselines,
         'image_encoder': image_encoder,
         'text_encoder': text_encoder,
-        'tokenizer': tokenizer
+        'tokenizer': tokenizer,
+        'metric_results_destination': ''
     }
     if cfg_dot.retrieval_params.evaluation_dataset == 'ct-rate':
+        params['metric_results_destination'] = './ct-rate_retrieval_results'
         ctrate_retrieval_evaluation(params)
     elif cfg_dot.retrieval_params.evaluation_dataset == 'mimic':
+        params['metric_results_destination'] = './mimic_retrieval_results'
         mimic_retrieval_evaluation(params)
 
 if __name__ == '__main__':
