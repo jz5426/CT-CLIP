@@ -93,7 +93,7 @@ def process_file(file_path, shared_dst_dir):
     """
     original_file_name = os.path.basename(file_path)
     file_name = os.path.basename(file_path)
-    print(file_name)
+    # print(file_name)
     # should check if the file exists before preceed the loading so that save computation resources
     ct_save_folder = "preprocessed_ct"#save folder for preprocessed
     ct_folder_path_new = os.path.join(shared_dst_dir, ct_save_folder)
@@ -112,12 +112,6 @@ def process_file(file_path, shared_dst_dir):
     os.makedirs(xray_folder_path_new, exist_ok=True)
     file_name = file_name.split(".")[0]+".png"
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
-
-    # avoid duplicate processing.
-    # if os.path.exists(ct_save_path) and os.path.exists(xray_save_path) and os.path.exists(xray_rgb_save_path):
-    #     print(f"{file_name} already exists. Passing")
-    #     # os.remove(file_path)  # Remove the file
-    #     return
 
     img_data = read_npz_data(file_path)
     if img_data is None:
@@ -159,8 +153,10 @@ def process_file(file_path, shared_dst_dir):
     current = (xyz_spacing, xyz_spacing, xyz_spacing)
 
     # make sure the input img_data shape matches the dimension ordering of the target spacing
+    # print('original ct shape: {}'.format(img_data.shape))
     ct_image = _scale_clip_resize(img_data, current, (target_z_spacing, target_x_spacing, target_y_spacing))
     xray_image = _scale_clip_resize(img_data, current, (1,1,1))
+    # print('ct shape after the preprocessing: {}'.format(ct_image.shape))
 
     #TEST
     # sitk.WriteImage(sitk.GetImageFromArray(ct_image), './test_{}'.format(original_file_name))
@@ -187,7 +183,7 @@ def process_file(file_path, shared_dst_dir):
     np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
     rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
     rgb_image = Image.fromarray(rgb_image, mode="RGB")
-    rgb_image.show()
+    # rgb_image.show()
     xray_image = sitk.GetImageFromArray(xray_array)
     xray_image.SetSpacing((1.0, 1.0))  # Example spacing
     xray_image.SetOrigin((0.0, 0.0))   # Example origin
@@ -237,7 +233,7 @@ def process_file(file_path, shared_dst_dir):
 # Example usage:
 if __name__ == "__main__":
     nii_files = read_npz_files('/Volumes/T7 Shield/radchest/')
-    num_workers = 1  # Number of worker processes
+    num_workers = 10  # Number of worker processes
 
     # Process files using multiprocessing with tqdm progress bar
     with Pool(num_workers) as pool:
