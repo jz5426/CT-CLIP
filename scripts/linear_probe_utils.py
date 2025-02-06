@@ -562,18 +562,18 @@ def test_loop(params):
         auc_weighted = -1
 
     pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='micro')
-    pr_auc_score_macro = average_precision_score(all_labels, all_probs, average='macro')
-    pr_auc_score_weighted = average_precision_score(all_labels, all_probs, average='weighted')
+    # pr_auc_score_macro = average_precision_score(all_labels, all_probs, average='macro')
+    # pr_auc_score_weighted = average_precision_score(all_labels, all_probs, average='weighted')
 
     print(f"Test Results for micro average: F1 Score: {f1_micro:.4f}, Recall: {recall_micro:.4f}, Precision: {precision_micro:.4f}, AUC: {auc_micro:.4f}, PR_AUC: {pr_auc_score_micro:.4f}")
-    print(f"Test Results for weighted average: F1 Score: {f1_weighted:.4f}, Recall: {recall_weighted:.4f}, Precision: {precision_weighted:.4f}, AUC: {auc_weighted:.4f}, PR_AUC: {pr_auc_score_weighted:.4f}")
-    print(f"Test Results for macro average: F1 Score: {f1_macro:.4f}, Recall: {recall_macro:.4f}, Precision: {precision_macro:.4f}, AUC: {auc_macro:.4f}, PR_AUC: {pr_auc_score_macro:.4f}")
+    # print(f"Test Results for weighted average: F1 Score: {f1_weighted:.4f}, Recall: {recall_weighted:.4f}, Precision: {precision_weighted:.4f}, AUC: {auc_weighted:.4f}, PR_AUC: {pr_auc_score_weighted:.4f}")
+    # print(f"Test Results for macro average: F1 Score: {f1_macro:.4f}, Recall: {recall_macro:.4f}, Precision: {precision_macro:.4f}, AUC: {auc_macro:.4f}, PR_AUC: {pr_auc_score_macro:.4f}")
 
     metrics_data = {
         'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC'], # the labels and the pred_probs are for delong auc significant test
         'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro],
-        'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted],
-        'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro]
+        # 'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted],
+        # 'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro]
     }
 
     print('Saving the metrics results')
