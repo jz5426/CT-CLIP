@@ -497,7 +497,7 @@ class RadChestCTDataset(Dataset):
             accession_number = nii_file.split(os.sep)[-1].replace('.pt', '')
             onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
             if len(onehotlabels) == 1:
-                samples.append((nii_file, onehotlabels[0]))
+                samples.append((nii_file, onehotlabels[0], accession_number))
                 self.paths.append(nii_file)
             else:
                 # sanity check
@@ -518,10 +518,9 @@ class RadChestCTDataset(Dataset):
         return img_data
 
     def __getitem__(self, index):
-        nii_file, onehotlabels = self.samples[index]
+        nii_file, onehotlabels, instance_name = self.samples[index]
         video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
-        # valid_data, text, _, _, instance_name, _ = batch_data
-        return video_tensor, onehotlabels, nii_file # add the nii_file for xray projections
+        return video_tensor, onehotlabels, instance_name # add the nii_file for xray projections
 
 
 class MimicCTReportXRayDataset:
