@@ -7,7 +7,7 @@ from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
 import random
 import numpy as np
-from retrieval_evaluation_utils import ctrate_retrieval_evaluation, mimic_retrieval_evaluation
+from retrieval_evaluation_utils import ctrate_retrieval_evaluation, mimic_retrieval_evaluation, radchest_ct_retrieval_evaluation
 
 @hydra.main(
         version_base=None,
@@ -102,6 +102,9 @@ def run(cfg_dot):
     elif cfg_dot.retrieval_params.evaluation_dataset == 'mimic':
         params['metric_results_destination'] = './mimic_retrieval_results'
         mimic_retrieval_evaluation(params)
+    elif cfg_dot.retrieval_params.evaluation_dataset == 'radchest_ct':
+        params['metric_results_destination'] = './radchest-ct_retrieval_results'
+        radchest_ct_retrieval_evaluation(params)
 
 if __name__ == '__main__':
 

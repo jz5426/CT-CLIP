@@ -64,6 +64,8 @@ def map_retrieval_evaluation(
             accs.append(xray_file_key+'.nii.gz')  # Use the filename without the extension as the accession number
         elif dataset == 'mimic':
             accs.append(xray_file_key)  # Use the filename without the extension as the accession number
+        elif dataset == 'radchest_ct':
+            accs.append(xray_file_key)  # Use the filename without the extension as the accession number
 
     # Concatenate all loaded image data
     image_data = np.array(image_data_list)
@@ -83,6 +85,9 @@ def map_retrieval_evaluation(
         elif dataset == 'mimic':
             acc_second = target_key
             row_second = df[df['hadm_id'] == acc_second]
+        elif dataset == 'radchest_ct':
+            acc_second = target_key
+            row_second = df[df['NoteAcc_DEID'] == acc_second]
 
         num_path = np.sum(row_second.iloc[:, 1:].values[0])
 
@@ -108,6 +113,8 @@ def map_retrieval_evaluation(
                 row_first = df[df['VolumeName'] == acc_first]
             elif dataset == 'mimic':
                 row_first = df[df['hadm_id'] == acc_first]
+            elif dataset == 'radchest_ct':
+                row_first = df[df['NoteAcc_DEID'] == acc_first]
             row_first = row_first.iloc[:, 1:].values[0]
 
             # Create a DataLoader for batching processing, with respect to each row_first
@@ -128,6 +135,8 @@ def map_retrieval_evaluation(
                     row_second = df[df['VolumeName'] == acc_second]
                 elif dataset == 'mimic':
                     row_second = df[df['hadm_id'] == acc_second]
+                elif dataset == 'radchest_ct':
+                    row_second = df[df['NoteAcc_DEID'] == acc_second]
                 row_second = row_second.iloc[:, 1:].values[0]
 
                 # find the similarity (overlapping labels) based on the top-k
@@ -178,8 +187,8 @@ def recall_retrieval_evaluation(
             xray = torch.tensor(query_latents[i]).to('cuda')
 
             # Create a DataLoader for batching
-            dataset = TensorDataset(torch.tensor(target_latents))
-            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+            train_dataset = TensorDataset(torch.tensor(target_latents))
+            dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
 
             # find the similarity between the xray and the target embeddings
             for batch in dataloader:
@@ -257,7 +266,7 @@ def ctrate_retrieval_evaluation(params):
         target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
         metric_results_dest=metric_results_destination,
         file_name='report2ct_recall',
-        dataset='ct-rate'
+        train_dataset='ct-rate'
     )
 
     # ct2report
@@ -267,7 +276,7 @@ def ctrate_retrieval_evaluation(params):
         target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
         metric_results_dest=metric_results_destination,
         file_name='ct2report_recall',
-        dataset='ct-rate'
+        train_dataset='ct-rate'
     )
 
     print('evaluating report 2 ct in MAP')
@@ -376,14 +385,14 @@ def ctrate_retrieval_evaluation(params):
             target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
             metric_results_dest=metric_results_destination,
             file_name=f'{baseline}_synxray2ct_recall',
-            dataset='ct-rate')
+            train_dataset='ct-rate')
         print('evaluating ct_volumes 2 xray recall')
         recall_retrieval_evaluation(
             query_latents=[triple[0] for triple in triplet_embeddings],
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
             metric_results_dest=metric_results_destination,
             file_name=f'{baseline}_ct2synxray_recall',
-            dataset='ct-rate')
+            train_dataset='ct-rate')
 
         print('evaluating xray 2 ct_reports recall')
         recall_retrieval_evaluation(
@@ -391,14 +400,14 @@ def ctrate_retrieval_evaluation(params):
             target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
             metric_results_dest=metric_results_destination,
             file_name=f'{baseline}_synxray2report_recall',
-            dataset='ct-rate')
+            train_dataset='ct-rate')
         print('evaluating ct_reports 2 xray recall')
         recall_retrieval_evaluation(
             query_latents=[triple[1] for triple in triplet_embeddings],
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
             metric_results_dest=metric_results_destination,
             file_name=f'{baseline}_report2synxray_recall',
-            dataset='ct-rate')
+            train_dataset='ct-rate')
 
 
 
@@ -449,6 +458,94 @@ def ctrate_retrieval_evaluation(params):
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             file_name=f'{baseline}_synxray2synxray_map',
             dataset='ct-rate')
+
+def radchest_ct_retrieval_evaluation(params):
+    cfg = params['cfg']
+    baselines = params['baselines']
+    image_encoder = params['image_encoder']
+    text_encoder = params['text_encoder']
+    tokenizer = params['tokenizer']
+    metric_results_destination = params['metric_results_destination']
+
+    #TODO: change the paths in this function.
+    embedding_directory = 'path to the ct embeddings of radchest_ct dataset'
+    saving_path = embedding_directory
+    img_feature_path = os.path.join(saving_path, 'image_features.pth')
+    image_features = None
+    if os.path.exists(img_feature_path):
+        image_features = torch.load(img_feature_path)
+
+    for baseline in baselines:
+        dim_xray, xray_model_type, pth_name, latent_size = metadata_base_on_model_type(baseline)
+
+        clip_xray = CTCLIPwithXray(
+            image_encoder = image_encoder,
+            text_encoder = text_encoder,
+            dim_text = 768, # for ct-clip
+            dim_image = 294912, # for ct-clip
+            xray_model_type = xray_model_type,
+            dim_xray = dim_xray,
+            dim_latent = 512, # the target output latent dimension
+            extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
+            use_mlm=False,
+            downsample_image_embeds = False,
+            use_all_token_embeds = False,
+            cfg=cfg,
+            auto_load_pretrained_weights = True # NOTE: automatically load the model weights based on the xray_model_type
+        )
+
+        retrival_evaluator = CTClipInference(
+            clip_xray,
+            tokenizer=tokenizer,
+            data_folder = '/mnt/g/radchest_preprocessed/preprocessed_ct', # "/mnt/f/Chris/dataset/train_preprocessed_ct",
+            labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv",
+            batch_size = 4,
+            num_workers = 5,
+            results_folder="inference_zeroshot/",
+            num_train_steps = 1,
+            feature_extraction_mode = True, # extract only the text and ct features only
+            dataset='radchest_ct' # this is what differentiate with ct-rate one.
+        )
+
+        # get xray latent features from a model
+        xray_features = retrival_evaluator.extract_xray_features()
+        assert(image_features.keys() == xray_features.keys())
+
+        triplet_embeddings = [(image_features[key], 'placeholder', xray_features[key]) for key in xray_features.keys()]
+
+        print('evaluating xray 2 ct_volumes recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[-1] for triple in triplet_embeddings],
+            target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
+            metric_results_dest=metric_results_destination,
+            file_name=f'{baseline}_synxray2ct_recall',
+            train_dataset='radchest_ct')
+        print('evaluating ct_volumes 2 xray recall')
+        recall_retrieval_evaluation(
+            query_latents=[triple[0] for triple in triplet_embeddings],
+            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+            metric_results_dest=metric_results_destination,
+            file_name=f'{baseline}_ct2synxray_recall',
+            train_dataset='radchest_ct')
+
+
+        print('evaluating xray 2 ct_volumes MAP')
+        map_retrieval_evaluation(
+            xray_features,
+            target_latents=image_features,
+            metric_results_dest=metric_results_destination,
+            predicted_label_csv_path='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv',
+            file_name=f'{baseline}_synxray2ct_map',
+            dataset='radchest_ct')
+        print('evaluating ct_volumes 2 xray MAP')
+        map_retrieval_evaluation(
+            image_features,
+            target_latents=xray_features,
+            metric_results_dest=metric_results_destination,
+            predicted_label_csv_path='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv',
+            file_name=f'{baseline}_ct2synxray_map',
+            dataset='radchest_ct')
+
 
 
 def mimic_retrieval_evaluation(params):
@@ -526,7 +623,7 @@ def mimic_retrieval_evaluation(params):
             target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
             metric_results_dest=metric_results_destination,
             file_name=f'{baseline}_mimic_xray2report_recall',
-            dataset='mimic')
+            train_dataset='mimic')
 
         print('evaluating xray 2 xray MAP')
         map_retrieval_evaluation(
@@ -543,7 +640,7 @@ def mimic_retrieval_evaluation(params):
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
             metric_results_dest=metric_results_destination,
             file_name=f'{baseline}_report2mimic_xray_recall',
-            dataset='mimic')
+            train_dataset='mimic')
 
         print('evaluating report 2 xray MAP')
         map_retrieval_evaluation(

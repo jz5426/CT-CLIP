@@ -119,8 +119,3 @@ inference_train.extract_radchest_ct_feature('/mnt/g/radchest_preprocessed/featur
 
 # run to textract the ctclip features on the ct-rate dataset.
 # inference_train.ctclip_feature_extraction('/mnt/g/radchest_preprocessed/features_embeddings', 'test', True)
-
-"""
-TODO: hyperparameters for the xray encoder with temperature 0.07
-TODO: batch based on patient/experiment/instance.
-"""
