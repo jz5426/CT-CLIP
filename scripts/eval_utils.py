@@ -151,7 +151,7 @@ def metadata_base_on_model_type(baseline_type, pth_trailing_string='features'):
         latent_size = 768 # the final size of the xray embedding is indeed different in gloria
     elif baseline_type == 'bi_mamba':
         xray_model_type = baseline_type
-        dim_xray = 0
+        dim_xray = 0 #TODO:
         pth_base_name = f'bi_mamba_{pth_trailing_string}.pth'
         latent_size = 512 #
     else:

@@ -32,7 +32,7 @@ def get_train_internal_split(cfg_dot, cfg):
         pth_trailing_string='features')
 
     if cfg_dot.linear_probing_params.evaluation_dataset == 'mimic':
-        print('Splitting ct-rate mimic version dataset')
+        print('Splitting ct-rate mimic version dataset: differences in the set of the labels')
 
         # base on the baseline model, load the corresponding xray features
         xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
@@ -78,6 +78,40 @@ def get_train_internal_split(cfg_dot, cfg):
         train_data_splitter = CTReportDataSplitter(
             csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
             labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv', #NOTE: the label need to be the mimic version
+            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+        )
+        train_sample, internal_val_samples = train_data_splitter.prepare_samples(
+            train_split=cfg_dot.linear_probing_params.train_data_portion,
+            val_split=0.2
+        ) # validation split is always, train_split is controlable
+
+        train_dataset = CTReportXRayClassificationDataset(
+            cfg=cfg,
+            data=train_sample, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='train'
+        )
+
+        internal_val_dataset = CTReportXRayClassificationDataset(
+            cfg=cfg,
+            data=internal_val_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='train'
+        )
+    elif cfg_dot.linear_probing_params.evaluation_dataset == 'radchest_ct':
+        print('Splitting ct-rate rachest_ct version dataset: differences in the set of the labels')
+        # base on the baseline model, load the corresponding xray features
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
+        train_xray_features = torch.load(xray_feature_path)
+
+        # Set up the dataset and data loaders
+        #NOTE: the label is the radchest_ct version (with 15 labels) but the report and the data are the original CT-RATE
+            # particularly, the calcification related labels are merged.
+        train_data_splitter = CTReportDataSplitter(
+            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv', #NOTE: the label need to be the mimic version
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
@@ -203,7 +237,25 @@ def get_pathologies(dataset='ct-rate'):
         ]
     elif dataset == 'vinBig_ct':
         pathologies = ['Atelectasis', 'Cardiomegaly', 'Consolidation', 'Emphysema', 'Lung Opacity', 'Pleural effusion']
-
+    elif dataset == 'radchest_ct':
+        pathologies = [
+            'calcification',
+            'Cardiomegaly',
+            'pericardial_effusion',
+            'hernia',
+            'Lymphadenopathy',
+            'Emphysema',
+            'Atelectasis',
+            'nodule',
+            'opacity',
+            'fibrosis',
+            'pleural_effusion',
+            'bronchial_wall_thickening', # assumed
+            'Consolidation',
+            'Bronchiectasis',
+            'septal_thickening'
+        ]
+        pathologies = [p.lower() for p in pathologies]
     return pathologies
 
 
