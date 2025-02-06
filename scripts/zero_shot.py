@@ -545,7 +545,6 @@ class CTClipInference(nn.Module):
 
         with torch.no_grad():
             self.CTClip.eval()
-            idx = 0
             for batch_data in tqdm.tqdm(self.dl, desc="Feature Extraction", leave=False):
                 ct_tensor, onehot, instance_name = batch_data
 
@@ -556,20 +555,15 @@ class CTClipInference(nn.Module):
                 for i, key in enumerate(instance_name):
                     self.image_features[key] = img_feature[i, :]
 
-                # Save the feature embeddings every 100 iterations
-                if append and idx % 100 == 0:
-                    os.makedirs(saving_path, exist_ok=True)
-                    torch.save(self.image_features, img_feature_path)
-                idx += 1
-
         # save the remaining.
         if append:
+            print('saving the extracted ct features..')
             os.makedirs(saving_path, exist_ok=True)
             torch.save(self.image_features, img_feature_path)
 
             #sanity check
             loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
-            print(f'size of image features {len(loaded_img_features)};')
+            print(f'Finished saving the features => size of image features {len(loaded_img_features)};')
 
         return self.image_features
 

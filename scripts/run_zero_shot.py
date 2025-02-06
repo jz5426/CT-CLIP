@@ -114,9 +114,10 @@ inference_train = CTClipInference(
     dataset='radchest_ct'
 )
 
+# run to extract the radchest ct features
+inference_train.extract_radchest_ct_feature('/mnt/g/radchest_preprocessed/features_embeddings', append=True)
 
-# inference_train.infer()
-inference_train.extract_radchest_ct_feature('/mnt/g/radchest_preprocessed/features_embeddings', append=False)
+# run to textract the ctclip features on the ct-rate dataset.
 # inference_train.ctclip_feature_extraction('/mnt/g/radchest_preprocessed/features_embeddings', 'test', True)
 
 """
