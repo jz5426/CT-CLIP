@@ -108,60 +108,6 @@ class CTReportDatasetinfer(Dataset):
         instance_name = dir_path[-1]
         return video_tensor, input_text, onehotlabels, name_acc, instance_name, nii_file # add the nii_file for xray projections
 
-class RadChestCTDataset(Dataset):
-    def __init__(self, data_folder, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False):
-        self.data_folder = data_folder
-        self.min_slices = min_slices
-        self.labels = labels
-        self.paths=[]
-        self.samples = self.prepare_samples()
-        self.transform = transforms.Compose([
-            transforms.Resize((resize_dim,resize_dim)),
-            transforms.ToTensor()
-        ])
-        self.nii_to_tensor = partial(self.nii_img_to_tensor, transform = self.transform)
-        self.probing_mode = probing_mode
-
-    def prepare_samples(self):
-        samples = []
-        patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
-
-        # Read labels once outside the loop
-        test_df = pd.read_csv(self.labels)
-        test_label_cols = list(test_df.columns[1:])
-        test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
-
-        for nii_file in tqdm.tqdm(patient_folders):
-
-            accession_number = nii_file.split(os.sep)[-1].replace('.pt', '')
-            onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
-            if len(onehotlabels) == 1:
-                samples.append((nii_file, onehotlabels[0]))
-                self.paths.append(nii_file)
-            else:
-                # sanity check
-                assert False
-        return samples
-
-    def __len__(self):
-        return len(self.samples)
-
-    def nii_img_to_tensor(self, path, transform): 
-        """
-        path: this should be the path for the processed data instead of the original data
-        """
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", FutureWarning)
-            img_data = torch.load(path)
-
-        return img_data
-
-    def __getitem__(self, index):
-        nii_file, onehotlabels = self.samples[index]
-        video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
-        return video_tensor, onehotlabels,  nii_file # add the nii_file for xray projections
-
-
 class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
     def __init__(self,

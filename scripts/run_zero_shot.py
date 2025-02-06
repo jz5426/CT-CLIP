@@ -115,6 +115,7 @@ inference_train = CTClipInference(
 
 
 # inference_train.infer()
+inference_train.extract_radchest_ct_feature('/mnt/g/radchest_preprocessed/features_embeddings', True)
 # inference_train.ctclip_feature_extraction('/mnt/g/radchest_preprocessed/features_embeddings', 'test', True)
 
 """
