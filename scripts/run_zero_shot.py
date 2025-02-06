@@ -105,9 +105,9 @@ inference_train = CTClipInference(
     clip,
     tokenizer=None,
     data_folder = processed_ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
-    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv",
+    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv",
     batch_size = 4,
-    num_workers = 4,
+    num_workers = 5,
     results_folder="inference_zeroshot/",
     num_train_steps = 1,
     feature_extraction_mode = True, # extract only the text and ct features only

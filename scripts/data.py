@@ -502,6 +502,7 @@ class RadChestCTDataset(Dataset):
             else:
                 # sanity check
                 assert False
+        print('size of the sample: ', len(samples))
         return samples
 
     def __len__(self):
