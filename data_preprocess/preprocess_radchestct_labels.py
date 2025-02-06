@@ -48,7 +48,7 @@ def process_labels(disease_names, df):
 
         # If valid columns are found, merge them by taking the max value
         if valid_columns:
-            result_df[disease] = df[valid_columns].max(axis=1)
+            result_df[disease.lower()] = df[valid_columns].max(axis=1)
             disease_distribution[disease] = sum(df[valid_columns].max(axis=1))
 
     print(disease_distribution)
@@ -88,6 +88,7 @@ if __name__ == "__main__":
 
         # Save the new DataFrame to a CSV file
         merged_label_frames.to_csv(final_labels_output_path, index=False)
+        print(f'final label file saved as: {final_labels_output_path}')
     else:
         print('fail to merge the label files => inconsistent columns')
         
