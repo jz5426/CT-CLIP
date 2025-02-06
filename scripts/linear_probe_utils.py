@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestCTDataset, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
 from eval_utils import XrayClassificationModel, metadata_base_on_model_type, proportion_mapping
 import os
 import torch
@@ -403,6 +403,7 @@ def evaluate_classifier(params):
         )
         print(f'size of the external test data: {len(test_dataset)}')
 
+        #NOTE: we do not need full forward pass as we already saved the preprocessed validation features of the xray
         test_loader = DataLoader(
             test_dataset,
             num_workers=cfg_dot.linear_probing_params.num_workers,
@@ -419,9 +420,41 @@ def evaluate_classifier(params):
             'delong_stats_saving_path': f'./lp_evaluation_results/ct-rate/delong_stats/{classifier_ckpt_base_name}_data.pkl'
         }
         return test_loop(test_params)
+    elif dataset == 'radchest_ct':
+        # TODO: change the path for the cluster.
+
+        test_dataset = RadChestCTDataset(
+            data_folder = '/mnt/g/radchest_preprocessed/preprocessed_ct',
+            labels = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv'
+        )
+        print(f'size of the external radchest_ct data: {len(test_dataset)}')
+
+        test_loader = DataLoader(
+            test_dataset, 
+            num_workers=cfg_dot.linear_probing_params.num_workers, 
+            batch_size=cfg_dot.linear_probing_params.batch_size, 
+            shuffle=False)
+
+        classification_model = XrayClassificationModel(
+            vision_model=clip_xray.xray_encoder, # from pretrained
+            feature_projector=clip_xray.to_xray_latent, # from pretrained
+            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded in test_loop function
+            vision_model_type=xray_model_type
+        )
+        classification_model.to(device)
+
+        test_params = {
+            'test_loader': test_loader,
+            'device': device,
+            'model': classification_model,
+            'full_forward_pass': True,
+            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
+            'metric_saving_path': f'./lp_evaluation_results/{dataset}/{classifier_ckpt_base_name}_test_metrics_results.xlsx', # where to save the files
+            'delong_stats_saving_path': f'./lp_evaluation_results/{dataset}/delong_stats/{classifier_ckpt_base_name}_data.pkl' # where to save the files
+        }
+        return test_loop(test_params)
 
     elif 'vinBig' in dataset:
-        #TODO: verify
         #NOTE: follow similarly to the mimic external validaion.
         split = 'test'
         test_dataset = VinBigDataChestXrayDataset(

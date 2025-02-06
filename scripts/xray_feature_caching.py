@@ -1,5 +1,6 @@
 """
-this script responsible for caching the xray features from the assigned baseline.
+this script responsible for caching the xray features from the assigned baseline and mainly used to only
+forward pass the classifier layer and forget about the backbone during TRAINING phrase.
 """
 
 import torch

@@ -521,8 +521,7 @@ class RadChestCTDataset(Dataset):
     def __getitem__(self, index):
         nii_file, onehotlabels, instance_name = self.samples[index]
         video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
-        return video_tensor, onehotlabels, instance_name # add the nii_file for xray projections
-
+        return video_tensor, 'no_report', onehotlabels, instance_name # add the nii_file for xray projections
 
 class MimicCTReportXRayDataset:
     """mainly used in retrieval evaluation and linear probe evaluation in the MimicCTClipInference class"""
@@ -601,7 +600,6 @@ class MimicCTReportXRayDataset:
                     text = ""
                 text_final = text_final + ' ' + text
 
-            # TODO: double check this.
             # get the filename without extension
             onehotlabels = label_df[label_df["hadm_id"] == accession_number]["one_hot_labels"].values
             if len(onehotlabels) == 0:

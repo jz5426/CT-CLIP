@@ -546,7 +546,7 @@ class CTClipInference(nn.Module):
         with torch.no_grad():
             self.CTClip.eval()
             for batch_data in tqdm.tqdm(self.dl, desc="Feature Extraction", leave=False):
-                ct_tensor, onehot, instance_name = batch_data
+                ct_tensor, no_report, onehot, instance_name = batch_data
 
                 img_feature = self.CTClip.get_ct_features_only(ct_tensor.cuda())
                 img_feature = img_feature.cpu().numpy()
