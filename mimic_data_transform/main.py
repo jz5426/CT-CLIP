@@ -71,7 +71,6 @@ import pandas as pd
 #         if combined_df.empty:
 #             combined_df = df
 #         else:
-#             # TODO: double check this.
 #             # note that 'text' is part of the key to join the table => there won't be duplicated text column in the final combined_df
 #             combined_df = pd.merge(combined_df, df, on=['hadm_id', 'text'], how='outer') # this should take care of multiple texts for the same hadm_id
 

@@ -192,8 +192,6 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         xray_image = self.xray_to_rgb(xray_file)
         # transformation borrowed from cxr_clip
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
-
-        # name_acc = xray_file.split(os.sep)[-2] #TODO: double check this, this is being used in ctclip_feature_extraction function in run_zero_shot.py
         name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
 
         img_embedding = torch.from_numpy(img_embedding.reshape(-1)).requires_grad_(False)
@@ -246,7 +244,6 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
                     elif self.batch_style == 'instance':
                         patient = instance_name # instance level (the original implementation)
                     
-                    #TODO: double check this.
                     path_dirs = xray_file.split(os.sep)
                     accession_number = path_dirs[-1]
                     accession_number = accession_number.replace(f".{self.file_extension}", ".nii.gz")

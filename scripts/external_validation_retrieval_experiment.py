@@ -299,7 +299,7 @@ def run(cfg_dot):
             dim_xray = 768
         # elif ckpt_name == 'gloria_densenet':
         #     xray_model_type = ckpt_name
-        #     dim_xray = 1024 #TODO: double check this.
+        #     dim_xray = 1024
         # elif ckpt_name == 'gloria_resnet':
         #     xray_model_type = ckpt_name
         #     dim_xray = 2048

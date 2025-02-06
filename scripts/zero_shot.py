@@ -434,7 +434,7 @@ class CTClipInference(nn.Module):
         self.triplet = False
         if hasattr(self.CTClip, 'xray_encoder'):
             self.triplet = True
-            # max_grad_norm = None # TODO: might need to experiment if need this.
+            # max_grad_norm = None 
 
         if self.triplet and dataset == 'ct-rate':
             assert(img_embedding_paths.keys() == text_embedding_paths.keys())

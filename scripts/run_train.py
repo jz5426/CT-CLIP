@@ -187,13 +187,8 @@ def run(cfg_dot):
         wd = cfg_dot.training_params.weight_decay,
         lr = cfg_dot.training_params.learning_rate,
         model_type=xray_model_type
-        # TODO: interpolate the learning rate between ULIP and CXR-CLIP
     )
     trainer.train_by_epoch(cfg_dot.training_params.epochs)
-
-    """
-    TODO: brainstorm different approachs for the contrastive learning function.
-    """
 
 if __name__ == '__main__':
     main()

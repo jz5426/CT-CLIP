@@ -1,5 +1,4 @@
 """
-TODO:
 	- load the text encoder from the CT-CLIP (no freedom on this) (DONE)
 	- load the vision encoder either the CT vision encoder or any Xray vision encoder (DONE)
 	- load the dataset that the text+vision encoder supposed to be run on.
@@ -88,7 +87,6 @@ def run(cfg_dot):
 		# the copied files in the destination folder will behave like regular files and directories. You can copy and paste them as usual using a file manager
 
 	# uhn cluster from local filesc
-	#TODO: 
 		# 1. copy the downloaded huggingface model in G:\Chris\CT-CLIP\predownloaded_models (shield external drive) to the CT-CLIP
 		# 2. for the image_encoder section of the yaml file (such as clip_Swin_clincial), replace the directory to the correct one
 	tokenizer = BertTokenizer.from_pretrained(

@@ -421,11 +421,10 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
     elif dataset == 'radchest_ct':
-        # TODO: change the path for the cluster.
 
         test_dataset = RadChestCTDataset(
-            data_folder = '/mnt/g/radchest_preprocessed/preprocessed_ct',
-            labels = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv'
+            data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
+            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv'
         )
         print(f'size of the external radchest_ct data: {len(test_dataset)}')
 

@@ -192,7 +192,7 @@ class CTClipTrainer(nn.Module):
         save_model_every = 1000 ,
         results_folder = '',
         num_workers = 8,
-        train_from_scratch = True, # TODO: double check this!
+        train_from_scratch = True,
         accelerate_kwargs: dict = dict()
     ):
         super().__init__()
@@ -206,7 +206,7 @@ class CTClipTrainer(nn.Module):
         self.triplet = False
         if hasattr(self.CTClip, 'xray_encoder'):
             self.triplet = True
-            # max_grad_norm = None # TODO: might need to experiment if need this.
+            # max_grad_norm = None
 
         self.max_grad_norm = max_grad_norm
         
@@ -218,7 +218,6 @@ class CTClipTrainer(nn.Module):
 
         all_parameters = set(CTClip.parameters())
 
-        #TODO: might need to check if group_wd_params is needed when train the whole triplet instead of the xray encoder.
         if cfg and cfg['optimizer']['name'] == 'adamw':
             wd = wd
             lr = lr

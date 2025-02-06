@@ -1,7 +1,6 @@
 """
 run the following script to extract xray features
 
-TODO:
 repeat the following and accumulate the stats:
     1. forward pass a synethic xray for each CT image in the validation set, to the pretrained xray encoder from ULIP style training
     2. with the embedding from xray encoder, compare it with the existing embeddings of the CT images based the image_embeddings.pth and find the top-k accuracy
@@ -78,7 +77,6 @@ def map_retrieval_evaluation(
     #     image_data_list.append(image_data) # insert the embeddings
     #     accs.append(mha_file.replace("mha","nii.gz"))  # Use the filename without the extension as the accession number
 
-    #TODO: double check this
     # convert the xray key as the accession to access the label later on.
     image_data_list = []
     accs = []
@@ -98,7 +96,6 @@ def map_retrieval_evaluation(
     accs_for_second = []
 
     # Filter the image data based on the condition in the validation labels
-    # TODO: check the following exactly what they are doing.
     for target_key in tqdm.tqdm(target_latents.keys()):
 
         acc_second = target_key+'.nii.gz'
@@ -127,7 +124,7 @@ def map_retrieval_evaluation(
             first = torch.tensor(first).to('cuda') # place it in the GPU for batch processing.
             acc_first = accs[i]
             row_first = df[df['VolumeName'] == acc_first]
-            row_first = row_first.iloc[:, 1:].values[0] #TODO: check this.
+            row_first = row_first.iloc[:, 1:].values[0]
 
             # Create a DataLoader for batching processing, with respect to each row_first
             dataset = TensorDataset(torch.tensor(image_data_for_second))
@@ -137,7 +134,7 @@ def map_retrieval_evaluation(
             ratios_internal = []
             for batch in dataloader:
                 second = batch[0].to('cuda')
-                cross_batch = torch.matmul(first, second.T) #TODO: double check this.
+                cross_batch = torch.matmul(first, second.T)
                 crosses.extend(cross_batch.cpu().tolist())
 
             top_k_indices = find_top_k_indices(crosses, return_n)
@@ -191,7 +188,6 @@ def recall_retrieval_evaluation(
             dataset = TensorDataset(torch.tensor(target_latents))
             dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
-            #TODO: normalize the feature before testing?
             # NOTE: should be normed already.
 
             # find the similarity between the xray and the target embeddings
@@ -307,19 +303,6 @@ def run(cfg):
         local_files_only=True
         )
 
-    # uhn cluster from local filesc
-    #TODO: 
-        # 1. copy the downloaded huggingface model in G:\Chris\CT-CLIP\predownloaded_models (shield external drive) to the CT-CLIP
-        # 2. for the image_encoder section of the yaml file (such as clip_Swin_clincial), replace the directory to the correct one
-    # tokenizer = BertTokenizer.from_pretrained(
-    #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-    #     do_lower_case=True,
-    #     local_files_only=True
-    # )
-    # text_encoder = BertModel.from_pretrained(
-    #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-    #     local_files_only=True
-    # )
 
     print("---------")
     print(tokenizer.pad_token_id)

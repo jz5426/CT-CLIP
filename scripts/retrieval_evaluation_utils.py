@@ -467,8 +467,7 @@ def radchest_ct_retrieval_evaluation(params):
     tokenizer = params['tokenizer']
     metric_results_destination = params['metric_results_destination']
 
-    #TODO: change the paths in this function.
-    embedding_directory = 'path to the ct embeddings of radchest_ct dataset'
+    embedding_directory = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/features_embeddings'
     saving_path = embedding_directory
     img_feature_path = os.path.join(saving_path, 'image_features.pth')
     image_features = None
@@ -497,8 +496,8 @@ def radchest_ct_retrieval_evaluation(params):
         retrival_evaluator = CTClipInference(
             clip_xray,
             tokenizer=tokenizer,
-            data_folder = '/mnt/g/radchest_preprocessed/preprocessed_ct', # "/mnt/f/Chris/dataset/train_preprocessed_ct",
-            labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv",
+            data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
+            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
             batch_size = 4,
             num_workers = 5,
             results_folder="inference_zeroshot/",
@@ -534,7 +533,7 @@ def radchest_ct_retrieval_evaluation(params):
             xray_features,
             target_latents=image_features,
             metric_results_dest=metric_results_destination,
-            predicted_label_csv_path='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv',
+            predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
             file_name=f'{baseline}_synxray2ct_map',
             dataset='radchest_ct')
         print('evaluating ct_volumes 2 xray MAP')
@@ -542,7 +541,7 @@ def radchest_ct_retrieval_evaluation(params):
             image_features,
             target_latents=xray_features,
             metric_results_dest=metric_results_destination,
-            predicted_label_csv_path='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv',
+            predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
             file_name=f'{baseline}_ct2synxray_map',
             dataset='radchest_ct')
 

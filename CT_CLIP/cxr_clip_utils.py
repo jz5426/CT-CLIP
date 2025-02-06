@@ -254,7 +254,7 @@ def load_cxr_clip_image_encoder(config_image_encoder: Dict):
             local_files_only=os.path.exists(os.path.join(cache_dir, f'models--{config_image_encoder["name"].replace("/", "--")}')),
         )
     elif config_image_encoder["name"] == "resnet":
-        _image_encoder = ResNet50(pretrained=True) # TODO: this should be default to True
+        _image_encoder = ResNet50(pretrained=True)
 
     else:
         raise KeyError(f"Not supported image encoder: {config_image_encoder}")

@@ -234,7 +234,6 @@ class CTReportDataSplitter:
                     if len(onehotlabels) == 0:
                         continue
                     
-                    # TODO: get the corresponding xray embeddings
                     # instance_name = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
                     samples.append((xray_file, onehotlabels[0]))
 
@@ -360,7 +359,6 @@ class XrayClassificationDataset:
         # if cfg["model"]["image_encoder"]["name"] == "resnet":
         #     self.normalize = "imagenet" # only for resnet architecture
 
-        # TODO: check the split for validation set
         self.xray_transform = load_transform(split=split, transform_config=cfg['transform'])
             # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
             # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
@@ -395,7 +393,7 @@ class XrayClassificationDataset:
         return rgb_image
 
     def __getitem__(self, key_id):
-        # TODO: to be implemented in downstream classes
+        # NOTE: to be implemented in downstream classes
         pass
 
     def __len__(self):
@@ -482,6 +480,7 @@ class RadChestCTDataset(Dataset):
         ])
         self.nii_to_tensor = partial(self.nii_img_to_tensor, transform = self.transform)
         self.probing_mode = probing_mode
+        self.file_extension = '.mha'
 
     def prepare_samples(self):
         samples = []
@@ -494,7 +493,7 @@ class RadChestCTDataset(Dataset):
 
         for nii_file in tqdm.tqdm(patient_folders):
 
-            accession_number = nii_file.split(os.sep)[-1].replace('.pt', '')
+            accession_number = nii_file.split(os.sep)[-1].replace(self.file_extension, '')
             onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
             if len(onehotlabels) == 1:
                 samples.append((nii_file, onehotlabels[0], accession_number))

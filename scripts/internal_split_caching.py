@@ -105,7 +105,6 @@ def run(cfg_dot):
 
 
     elif cfg_dot.internal_split_caching_params.evaluation_dataset == 'ct-rate':
-        # TODO:
         pass
     elif 'vinBig' in cfg_dot.internal_split_caching_params.evaluation_dataset: # the ct dataset
         print(f'Splitting {cfg_dot.internal_split_caching_params.evaluation_dataset} dataset')

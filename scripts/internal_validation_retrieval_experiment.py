@@ -375,7 +375,7 @@ def run(cfg):
         
         # elif ckpt_name == 'gloria_densenet':
         #     xray_model_type = ckpt_name
-        #     dim_xray = 1024 #TODO: double check this.
+        #     dim_xray = 1024
         #     pth_name = 'densenet_gloria_features.pth'
 
         # elif ckpt_name == 'gloria_resnet':
