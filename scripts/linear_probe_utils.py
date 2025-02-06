@@ -157,7 +157,7 @@ def get_pathologies(dataset='ct-rate'):
                   'Pulmonary fibrotic sequela', # fibrosis
                   'Pleural effusion', #
                   'Mosaic attenuation pattern',
-                  'Peribronchial thickening', #bronical or periboncail ** double check this: bronchial_wall_thick ening, ‘pleural_thickening, pericardial thickening
+                  'Peribronchial thickening', #bronchial wall thickening or periboncail ** double check this: bronchial_wall_thickening, ‘pleural_thickening, pericardial thickening
                   'Consolidation', #
                   'Bronchiectasis', #
                   'Interlobular septal thickening'] # septal thickening
