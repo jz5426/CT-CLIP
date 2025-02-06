@@ -107,6 +107,7 @@ inference_train = CTClipInference(
     data_folder = processed_ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
     labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv",
     batch_size = 4,
+    num_workers = 4,
     results_folder="inference_zeroshot/",
     num_train_steps = 1,
     feature_extraction_mode = True, # extract only the text and ct features only
@@ -115,7 +116,7 @@ inference_train = CTClipInference(
 
 
 # inference_train.infer()
-inference_train.extract_radchest_ct_feature('/mnt/g/radchest_preprocessed/features_embeddings', True)
+inference_train.extract_radchest_ct_feature('/mnt/g/radchest_preprocessed/features_embeddings', append=False)
 # inference_train.ctclip_feature_extraction('/mnt/g/radchest_preprocessed/features_embeddings', 'test', True)
 
 """

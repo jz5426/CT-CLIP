@@ -537,6 +537,8 @@ class CTClipInference(nn.Module):
         return self.accelerator.is_main_process
     
     def extract_radchest_ct_feature(self, directory, append=True):
+        saving_path = directory
+        img_feature_path = os.path.join(saving_path, 'image_features.pth')
 
         if not append:
             print('NOT SAVING IT THE EMBEDDINGS!!!')
@@ -559,17 +561,17 @@ class CTClipInference(nn.Module):
                     os.makedirs(saving_path, exist_ok=True)
                     torch.save(self.image_features, img_feature_path)
                 idx += 1
-        #TODO: fix the saving directory path.
+
         # save the remaining.
         if append:
             os.makedirs(saving_path, exist_ok=True)
             torch.save(self.image_features, img_feature_path)
 
-        #sanity check
-        loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
-        print(f'size of image features {len(loaded_img_features)};')
+            #sanity check
+            loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
+            print(f'size of image features {len(loaded_img_features)};')
 
-        return
+        return self.image_features
 
     def ctclip_feature_extraction(self, directory, split='valid', append=True):
         # load the .pth object if exists

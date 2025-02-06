@@ -626,6 +626,8 @@ class CTCLIP(nn.Module):
         enc_image_send = enc_image
 
         enc_image = torch.mean(enc_image, dim=1)
+        enc_image = enc_image.view(enc_image.shape[0], -1) # global view for one image and we have batch number of images
+
         # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
         if self.use_all_token_embeds:
             assert enc_image.ndim == 3, 'encoded image must have 3 dimensions (batch, seq [height x width], features)'
@@ -634,9 +636,7 @@ class CTCLIP(nn.Module):
             # the [:,:] retains the same shape in this case
             image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
 
-    
         # make the feature of the ct image in vector form batch x (h w z c)
-        enc_image = enc_image.view(enc_image.shape[0], -1) # global view for one image and we have batch number of images
         image_latents = self.to_visual_latent(image_embeds) #NOTE bxd
         image_latents = l2norm(image_latents)
 
