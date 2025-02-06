@@ -149,6 +149,11 @@ def metadata_base_on_model_type(baseline_type, pth_trailing_string='features'):
         dim_xray = 2048
         pth_base_name = f'resnet_gloria_{pth_trailing_string}.pth'
         latent_size = 768 # the final size of the xray embedding is indeed different in gloria
+    elif baseline_type == 'bi_mamba':
+        xray_model_type = baseline_type
+        dim_xray = 0
+        pth_base_name = f'bi_mamba_{pth_trailing_string}.pth'
+        latent_size = 512 #
     else:
         xray_model_type = baseline_type
         dim_xray = 768 if 'swin' in baseline_type.lower() else 2048
