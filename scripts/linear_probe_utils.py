@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestCTDataset, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestXrayDataset, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
 from eval_utils import XrayClassificationModel, metadata_base_on_model_type, proportion_mapping
 import os
 import torch
@@ -111,7 +111,7 @@ def get_train_internal_split(cfg_dot, cfg):
             # particularly, the calcification related labels are merged.
         train_data_splitter = CTReportDataSplitter(
             csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv', #NOTE: the label need to be the mimic version
+            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv', #NOTE: the label need to be the radchest_ct version
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
@@ -422,8 +422,10 @@ def evaluate_classifier(params):
         return test_loop(test_params)
     elif dataset == 'radchest_ct':
 
-        test_dataset = RadChestCTDataset(
+        test_dataset = RadChestXrayDataset(
             data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
+            model_type=xray_model_type,
+            cfg=cfg,
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv'
         )
         print(f'size of the external radchest_ct data: {len(test_dataset)}')

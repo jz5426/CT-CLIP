@@ -465,7 +465,6 @@ class CTReportXRayClassificationDataset(XrayClassificationDataset):
 
         label = torch.from_numpy(label)
         return xray_embedding, 'ct-rate', label, 'PLACEHOLDER'
-    
 
 class RadChestCTDataset(Dataset):
     def __init__(self, data_folder, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False):
@@ -521,6 +520,75 @@ class RadChestCTDataset(Dataset):
         nii_file, onehotlabels, instance_name = self.samples[index]
         video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
         return video_tensor, 'no_report', onehotlabels, instance_name # add the nii_file for xray projections
+
+class RadChestXrayDataset(Dataset):
+    def __init__(self,
+                data_folder, 
+                model_type, 
+                cfg,
+                labels = "labels.csv"
+    ):
+        self.file_extension = '.mha'
+        self.data_folder = data_folder
+        self.labels = labels
+        self.paths=[]
+        self.samples = self.prepare_samples()
+        self.normalize = 'huggingface' if 'swin' in model_type.lower() or 'vit' in model_type.lower() else 'imagenet' # when use swin or non-resnet architecture
+        print('normalization used => ', self.normalize)
+        self.xray_transform = load_transform(split='valid', transform_config=cfg['transform'])
+        self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
+
+    def prepare_samples(self):
+        samples = []
+        patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
+
+        # Read labels once outside the loop
+        test_df = pd.read_csv(self.labels)
+        test_label_cols = list(test_df.columns[1:])
+        test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
+
+        for xray_file in tqdm.tqdm(patient_folders):
+
+            accession_number = xray_file.split(os.sep)[-1].replace(self.file_extension, '')
+            onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
+            if len(onehotlabels) == 1:
+                samples.append((xray_file, onehotlabels[0], accession_number))
+                self.paths.append(xray_file)
+            else:
+                # sanity check
+                assert False
+        print('size of the sample: ', len(samples))
+        return samples
+
+    def __len__(self):
+        return len(self.samples)
+
+    def xray_mha_to_rgb(self, path, transform):
+        """
+        assume the path to the xray is mha format
+        """
+        
+        # Step 1: Read the .mha file using SimpleITK
+        itk_image = sitk.ReadImage(path)
+        
+        # Step 2: Convert to a NumPy array
+        np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
+
+        np_image = (np_image - np_image.min()) / (np_image.max() - np_image.min()) * 255
+        np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
+
+        rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
+        rgb_image = Image.fromarray(rgb_image, mode="RGB")
+
+        return rgb_image
+
+    def __getitem__(self, index):
+        xray_file, label, instance_name = self.samples[index]
+        # transformation borrowed from cxr_clip
+        xray_image = self.xray_to_rgb(xray_file)
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+        label = torch.from_numpy(label)
+        return xray_image, 'no_report', label, instance_name # add the nii_file for xray projections
 
 class MimicCTReportXRayDataset:
     """mainly used in retrieval evaluation and linear probe evaluation in the MimicCTClipInference class"""
