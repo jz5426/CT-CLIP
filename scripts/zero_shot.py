@@ -15,7 +15,7 @@ from torch.utils.data.distributed import DistributedSampler
 
 # from data_inference_nii import CTReportDatasetinfer
 # from data_external_valid import CTReportDatasetinfer
-from data_inference import CTReportDatasetinfer, CTReportXRayDatasetinfer
+from data_inference import CTReportDatasetinfer, CTReportXRayDatasetinfer, RadChestCTDataset
 
 import numpy as np
 import tqdm
@@ -411,6 +411,7 @@ class CTClipInference(nn.Module):
         save_model_every = 2000,
         results_folder = './results',
         labels = "labels.csv",
+        dataset='ct-rate',
         accelerate_kwargs: dict = dict()
     ):
         super().__init__()
@@ -467,11 +468,17 @@ class CTClipInference(nn.Module):
 
             self.split = 'valid' if 'valid' in img_embedding_paths else 'train'
         else:
-            # Load the pre-trained weights
-            self.ds = CTReportDatasetinfer(
-                data_folder=data_folder,
-                csv_file=reports_file,
-                labels=labels)
+
+            if dataset == 'ct-rate':
+                # Load the pre-trained weights
+                self.ds = CTReportDatasetinfer(
+                    data_folder=data_folder,
+                    csv_file=reports_file,
+                    labels=labels)
+            elif dataset == 'radchest_ct':
+                self.ds = RadChestCTDataset(
+                    data_folder=data_folder,
+                    labels=labels)
 
             # Split dataset into train and validation sets
             self.dl = DataLoader(

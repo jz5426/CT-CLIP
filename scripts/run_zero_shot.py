@@ -84,26 +84,39 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 # # inference_valid.infer()
 # inference_valid.ctclip_feature_extraction('/mnt/f/Chris/dataset/features_embeddings', 'valid')
 
-split = 'train'
+# NOTE: for CT-RATE dataset
+# split = 'train'
+# # #NOTE: run it from WSL instead of windows
+# processed_ct_dir = f"/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/{split}_preprocessed_ct"
+# inference_train = CTClipInference(
+#     clip,
+#     data_folder = processed_ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
+#     reports_file= f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv",
+#     labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
+#     batch_size = 4,
+#     results_folder="inference_zeroshot/",
+#     num_train_steps = 1,
+#     feature_extraction_mode = True # extract only the text and ct features only
+# )
 
-# #NOTE: run it from WSL instead of windows
-processed_ct_dir = f"/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/{split}_preprocessed_ct"
+# NOTE: for RadChest_ct dataset
+processed_ct_dir = '/mnt/g/radchest_preprocessed/preprocessed_ct'
 inference_train = CTClipInference(
     clip,
+    tokenizer=None,
     data_folder = processed_ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
-    reports_file= f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv",
-    labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
+    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv",
     batch_size = 4,
     results_folder="inference_zeroshot/",
     num_train_steps = 1,
-    feature_extraction_mode = True # extract only the text and ct features only
+    feature_extraction_mode = True, # extract only the text and ct features only
+    dataset='radchest_ct'
 )
 
-# inference_train.infer()
-inference_train.ctclip_feature_extraction('/mnt/f/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct', split, True)
 
-print('    removing processed ct files\n')
-shutil.rmtree(processed_ct_dir)
+# inference_train.infer()
+# inference_train.ctclip_feature_extraction('/mnt/g/radchest_preprocessed/features_embeddings', 'test', True)
+
 """
 TODO: hyperparameters for the xray encoder with temperature 0.07
 TODO: batch based on patient/experiment/instance.

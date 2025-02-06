@@ -467,6 +467,9 @@ class CTReportXRayClassificationDataset(XrayClassificationDataset):
 
         label = torch.from_numpy(label)
         return xray_embedding, 'ct-rate', label, 'PLACEHOLDER'
+    
+class RadChestCTDataset:
+    pass
 
 class MimicCTReportXRayDataset:
     """mainly used in retrieval evaluation and linear probe evaluation in the MimicCTClipInference class"""
