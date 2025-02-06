@@ -436,7 +436,7 @@ class CTClipInference(nn.Module):
             self.triplet = True
             # max_grad_norm = None # TODO: might need to experiment if need this.
 
-        if self.triplet:
+        if self.triplet and dataset == 'ct-rate':
             assert(img_embedding_paths.keys() == text_embedding_paths.keys())
             assert(cfg is not None)
 
