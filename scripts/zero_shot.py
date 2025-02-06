@@ -16,7 +16,7 @@ from torch.utils.data.distributed import DistributedSampler
 # from data_inference_nii import CTReportDatasetinfer
 # from data_external_valid import CTReportDatasetinfer
 from data_inference import CTReportDatasetinfer, CTReportXRayDatasetinfer
-
+from data import RadChestCTDataset
 import numpy as np
 import tqdm
 import pandas as pd
@@ -411,6 +411,7 @@ class CTClipInference(nn.Module):
         save_model_every = 2000,
         results_folder = './results',
         labels = "labels.csv",
+        dataset='ct-rate',
         accelerate_kwargs: dict = dict()
     ):
         super().__init__()
@@ -467,11 +468,17 @@ class CTClipInference(nn.Module):
 
             self.split = 'valid' if 'valid' in img_embedding_paths else 'train'
         else:
-            # Load the pre-trained weights
-            self.ds = CTReportDatasetinfer(
-                data_folder=data_folder,
-                csv_file=reports_file,
-                labels=labels)
+
+            if dataset == 'ct-rate':
+                # Load the pre-trained weights
+                self.ds = CTReportDatasetinfer(
+                    data_folder=data_folder,
+                    csv_file=reports_file,
+                    labels=labels)
+            elif dataset == 'radchest_ct':
+                self.ds = RadChestCTDataset(
+                    data_folder=data_folder,
+                    labels=labels)
 
             # Split dataset into train and validation sets
             self.dl = DataLoader(
@@ -528,6 +535,37 @@ class CTClipInference(nn.Module):
     @property
     def is_main(self):
         return self.accelerator.is_main_process
+    
+    def extract_radchest_ct_feature(self, directory, append=True):
+        saving_path = directory
+        img_feature_path = os.path.join(saving_path, 'image_features.pth')
+
+        if not append:
+            print('NOT SAVING IT THE EMBEDDINGS!!!')
+
+        with torch.no_grad():
+            self.CTClip.eval()
+            for batch_data in tqdm.tqdm(self.dl, desc="Feature Extraction", leave=False):
+                ct_tensor, no_report, onehot, instance_name = batch_data
+
+                img_feature = self.CTClip.get_ct_features_only(ct_tensor.cuda())
+                img_feature = img_feature.cpu().numpy()
+
+                # Assign the features to the respective dictionaries
+                for i, key in enumerate(instance_name):
+                    self.image_features[key] = img_feature[i, :]
+
+        # save the remaining.
+        if append:
+            print('saving the extracted ct features..')
+            os.makedirs(saving_path, exist_ok=True)
+            torch.save(self.image_features, img_feature_path)
+
+            #sanity check
+            loaded_img_features = torch.load(os.path.join(saving_path, 'image_features.pth'))
+            print(f'Finished saving the features => size of image features {len(loaded_img_features)};')
+
+        return self.image_features
 
     def ctclip_feature_extraction(self, directory, split='valid', append=True):
         # load the .pth object if exists

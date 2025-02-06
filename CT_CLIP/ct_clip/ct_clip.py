@@ -614,6 +614,33 @@ class CTCLIP(nn.Module):
         token_type_ids = buffered_token_type_ids_expanded
         text_embeddings = self.text_transformer.embeddings(input_ids = input_ids, token_type_ids = token_type_ids)
         return text_embeddings
+    
+    def get_ct_features_only(self, image):
+        enc_image= self.visual_transformer(image, return_encoded_tokens=True)
+
+        #print("This is visual encoding")
+        global h_r, w_r, z_r
+        h_r, w_r, z_r = enc_image.shape[1], enc_image.shape[2], enc_image.shape[3]
+
+        #enc_image, max_indices = torch.max(enc_image, dim=1)
+        enc_image_send = enc_image
+
+        enc_image = torch.mean(enc_image, dim=1)
+        enc_image = enc_image.view(enc_image.shape[0], -1) # global view for one image and we have batch number of images
+
+        # depending on whether to do fine-grained CLIP or not, select either all tokens, or CLS tokens only
+        if self.use_all_token_embeds:
+            assert enc_image.ndim == 3, 'encoded image must have 3 dimensions (batch, seq [height x width], features)'
+            image_embeds = enc_image[:, 1:] if self.visual_has_cls_token else enc_image # get rid of the visual global token
+        else:
+            # the [:,:] retains the same shape in this case
+            image_embeds = enc_image[:, :] if enc_image.ndim == 3 else enc_image
+
+        # make the feature of the ct image in vector form batch x (h w z c)
+        image_latents = self.to_visual_latent(image_embeds) #NOTE bxd
+        image_latents = l2norm(image_latents)
+
+        return image_latents
 
     def forward(
             self,
