@@ -10,9 +10,10 @@ import random
 import numpy as np
 import tqdm
 from torch.utils.data import DataLoader, TensorDataset
-from eval_utils import metadata_base_on_model_type
+from eval_utils import get_clean_model_name, metadata_base_on_model_type
 from zero_shot import CTClipInference, MimicCTClipInference
 import pandas as pd
+import constants as const
 
 def find_top_k_indices(values, k):
     # Check if the list has at least 50 values
@@ -46,12 +47,13 @@ def calc_similarity(arr1, arr2):
 def map_retrieval_evaluation(
       query_latents, # dictionary of the xray latents
       target_latents, # xray or CT feature dictionary
-      metric_results_dest = "",
+      query_type,
+      target_type,
+      model_baseline,
       predicted_label_csv_path='path_to_valid_predicted_labels.csv',
       k_list=[1, 5, 10, 50, 100],
       batch_size=1024,
-      file_name='xray2ct',
-      dataset='ct-rate' # ct-rate => internal, mimic => external, radchestct => external
+      dataset=const.CT_RATE # ct-rate => internal, mimic => external, radchestct => external
     ):
 
     # convert the xray key as the accession to access the label later on.
@@ -60,11 +62,11 @@ def map_retrieval_evaluation(
     for xray_file_key in tqdm.tqdm(query_latents.keys()):
         image_data_list.append(query_latents[xray_file_key]) # insert the embeddings
 
-        if dataset == 'ct-rate':
+        if dataset == const.CT_RATE:
             accs.append(xray_file_key+'.nii.gz')  # Use the filename without the extension as the accession number
-        elif dataset == 'mimic':
+        elif dataset == const.MIMIC:
             accs.append(xray_file_key)  # Use the filename without the extension as the accession number
-        elif dataset == 'radchest_ct':
+        elif dataset == const.RADCHEST_CT:
             accs.append(xray_file_key)  # Use the filename without the extension as the accession number
 
     # Concatenate all loaded image data
@@ -79,13 +81,13 @@ def map_retrieval_evaluation(
     accs_for_second = []
     # Filter the image data based on the condition in the validation labels
     for target_key in tqdm.tqdm(target_latents.keys()):
-        if dataset == 'ct-rate':
+        if dataset == const.CT_RATE:
             acc_second = target_key+'.nii.gz'
             row_second = df[df['VolumeName'] == acc_second]
-        elif dataset == 'mimic':
+        elif dataset == const.MIMIC:
             acc_second = target_key
             row_second = df[df['hadm_id'] == acc_second]
-        elif dataset == 'radchest_ct':
+        elif dataset == const.RADCHEST_CT:
             acc_second = target_key
             row_second = df[df['NoteAcc_DEID'] == acc_second]
 
@@ -101,7 +103,7 @@ def map_retrieval_evaluation(
     image_data_for_second = np.array(image_data_for_second)
     print(image_data_for_second.shape)
 
-    list_outs = []
+    results = {}
     # Calculate the similarity for each image in the dataset
     for return_n in k_list:
         ratios_external = [] # take note for this one.
@@ -109,11 +111,11 @@ def map_retrieval_evaluation(
             first = image_data[i] # get the embedding
             first = torch.tensor(first).to('cuda') # place it in the GPU for batch processing.
             acc_first = accs[i]
-            if dataset == 'ct-rate':
+            if dataset == const.CT_RATE:
                 row_first = df[df['VolumeName'] == acc_first]
-            elif dataset == 'mimic':
+            elif dataset == const.MIMIC:
                 row_first = df[df['hadm_id'] == acc_first]
-            elif dataset == 'radchest_ct':
+            elif dataset == const.RADCHEST_CT:
                 row_first = df[df['NoteAcc_DEID'] == acc_first]
             row_first = row_first.iloc[:, 1:].values[0]
 
@@ -131,11 +133,11 @@ def map_retrieval_evaluation(
             top_k_indices = find_top_k_indices(crosses, return_n)
             for index in top_k_indices:
                 acc_second = accs_for_second[index]
-                if dataset == 'ct-rate':
+                if dataset == const.CT_RATE:
                     row_second = df[df['VolumeName'] == acc_second]
-                elif dataset == 'mimic':
+                elif dataset == const.MIMIC:
                     row_second = df[df['hadm_id'] == acc_second]
-                elif dataset == 'radchest_ct':
+                elif dataset == const.RADCHEST_CT:
                     row_second = df[df['NoteAcc_DEID'] == acc_second]
                 row_second = row_second.iloc[:, 1:].values[0]
 
@@ -145,39 +147,31 @@ def map_retrieval_evaluation(
             running_ratios_external.append(np.mean(np.array(ratios_internal)))
             ratios_external.append(np.mean(np.array(ratios_internal)))
 
-        running_avg_stats = str(np.mean(np.array(running_ratios_external)))
-        stats = str(np.mean(np.array(ratios_external)))
+        _map = str(np.mean(np.array(ratios_external)))
 
-        print(running_avg_stats, stats)
-        list_outs.append(str((running_avg_stats, stats)))
+        results.setdefault(const.QUERY, []).append(query_type)
+        results.setdefault(const.TARGET, []).append(target_type)
+        results.setdefault(const.K, []).append(return_n)
+        results.setdefault(const.MODEL, []).append(model_baseline)
+        results.setdefault(const.METRIC_TYPE, []).append(const.MAP)
+        results.setdefault(const.VALUE, []).append(_map)
 
-    # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
-    output_file_path = metric_results_dest + f"{file_name}.txt"
-    os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
+    return results
 
-    # Open the file for writing (you can also use "a" to append if the file already exists)
-    with open(output_file_path, "w") as file:
-        # Write each string from the list to the file
-        for string in list_outs:
-            file.write(string + "\n")
-    print(f'results saved to {output_file_path}')
-
-    # TODO: eventually save the metrics to the excel spreadsheets
-    return list_outs
 
 def recall_retrieval_evaluation(
         query_latents, 
         target_latents, 
+        query_type,
+        target_type,
+        model_baseline,
         list_ks=[5, 10, 50, 100], 
-        metric_results_dest = "",
-        file_name='xray2ct',
-        batch_size=1024,
-        dataset = 'ct-rate'):
+        batch_size=1024,):
 
     query_latents = np.array(query_latents)
     target_latents = np.array(target_latents) # to be retrieved from
 
-    list_texts = []
+    results = {}
     for value in tqdm.tqdm(list_ks):
         num_is_in, num_random = 0, 0
 
@@ -213,24 +207,21 @@ def recall_retrieval_evaluation(
 
         clip = num_is_in / target_latents.shape[0]
         # rand = num_random / target_latents.shape[0]
-        rand = 'n.a'
-        write_str = f"K={value}, clip = {clip}, rand= {rand}"
-        list_texts.append(write_str)
 
-    # output_file_path = data_folder + f"internal_accessions_t2i_{list_ks[0]}.txt"
-    output_file_path = metric_results_dest + f"{file_name}.txt"
-    os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
+        results.setdefault(const.QUERY, []).append(query_type)
+        results.setdefault(const.TARGET, []).append(target_type)
+        results.setdefault(const.K, []).append(value)
+        results.setdefault(const.MODEL, []).append(model_baseline)
+        results.setdefault(const.METRIC_TYPE, []).append(const.RECALL)
+        results.setdefault(const.VALUE, []).append(clip)
 
-    # Open the file for writing (you can also use "a" to append if the file already exists)
-    with open(output_file_path, "w") as file:
-        # Write each string from the list to the file
-        for string in list_texts:
-            file.write(string + "\n")
-    print(f'results saved to {output_file_path}')
+    return results
 
-    # TODO: eventually save the metrics to the excel spreadsheets
-    return list_texts
-
+def extend_dictionary(parent, child):
+    assert parent.keys() == child.keys()
+    for key, value in child.items():
+        parent[key].extend(value)
+    return parent
 
 def ctrate_retrieval_evaluation(params):
     """list all the retrieval evaluation for ct-rate dataset"""
@@ -240,7 +231,6 @@ def ctrate_retrieval_evaluation(params):
     image_encoder = params['image_encoder']
     text_encoder = params['text_encoder']
     tokenizer = params['tokenizer']
-    metric_results_destination = params['metric_results_destination']
 
     split = 'valid'
     embedding_directory = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/'
@@ -258,67 +248,88 @@ def ctrate_retrieval_evaluation(params):
     ct_report_embeddings = [(image_features[key], text_features[key]) for key in image_features.keys()]
 
     ## the following are the upper baseline from CT-CLIP
+    csv_results = {
+        const.QUERY: [],
+        const.TARGET: [],
+        const.K: [],
+        const.MODEL: [],
+        const.METRIC_TYPE: [],
+        const.VALUE: []
+    }
 
     # report2ct
     print('evaluating report 2 ct in recall')
-    recall_retrieval_evaluation(
+    results = recall_retrieval_evaluation(
         query_latents=[embed[1] for embed in ct_report_embeddings],
         target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
-        metric_results_dest=metric_results_destination,
-        file_name='report2ct_recall',
-        train_dataset='ct-rate'
+        query_type=const.CT_REPORT,
+        target_type=const.CT_IMAGE,
+        model_baseline=get_clean_model_name(const.CT_CLIP)
     )
+    csv_results = extend_dictionary(parent=csv_results, child=results)
 
     # ct2report
     print('evaluating ct 2 report in recall')
-    recall_retrieval_evaluation(
+    results = recall_retrieval_evaluation(
         query_latents=[embed[0] for embed in ct_report_embeddings],
         target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
-        metric_results_dest=metric_results_destination,
-        file_name='ct2report_recall',
-        train_dataset='ct-rate'
+        query_type=const.CT_IMAGE,
+        target_type=const.CT_REPORT,
+        model_baseline=get_clean_model_name(const.CT_CLIP)
     )
+    csv_results = extend_dictionary(parent=csv_results, child=results)
 
     print('evaluating report 2 ct in MAP')
-    map_retrieval_evaluation(
+    results = map_retrieval_evaluation(
         text_features,
         target_latents=image_features,
-        metric_results_dest=metric_results_destination,
+        query_type=const.CT_REPORT,
+        target_type=const.CT_IMAGE,
+        model_baseline=get_clean_model_name(const.CT_CLIP),
         predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='report2ct_map',
-        dataset='ct-rate'
+        dataset=const.CT_RATE
     )
+    csv_results = extend_dictionary(parent=csv_results, child=results)
+
 
     # ct2ct
     print('evaluating ct 2 ct in MAP')
-    map_retrieval_evaluation(
+    results = map_retrieval_evaluation(
         image_features,
         target_latents=image_features,
-        metric_results_dest=metric_results_destination,
+        query_type=const.CT_IMAGE,
+        target_type=const.CT_IMAGE,
+        model_baseline=get_clean_model_name(const.CT_CLIP),
         predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='ct2ct_map',
-        dataset='ct-rate'
+        dataset=const.CT_RATE
     )
+    csv_results = extend_dictionary(parent=csv_results, child=results)
+
 
     print('evaluating ct 2 report in MAP')
-    map_retrieval_evaluation(
+    results = map_retrieval_evaluation(
         image_features,
         target_latents=text_features,
-        metric_results_dest=metric_results_destination,
+        query_type=const.CT_IMAGE,
+        target_type=const.CT_REPORT,
+        model_baseline=get_clean_model_name(const.CT_CLIP),
         predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='ct2report_map',
-        dataset='ct-rate'
+        dataset=const.CT_RATE
     )
+    csv_results = extend_dictionary(parent=csv_results, child=results)
+
     
     print('evaluating report 2 report in MAP')
-    map_retrieval_evaluation(
+    results = map_retrieval_evaluation(
         text_features,
         target_latents=text_features,
-        metric_results_dest=metric_results_destination,
+        query_type=const.CT_REPORT,
+        target_type=const.CT_REPORT,
+        model_baseline=get_clean_model_name(const.CT_CLIP),
         predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='report2report_map',
-        dataset='ct-rate'
+        dataset=const.CT_RATE
     )
+    csv_results = extend_dictionary(parent=csv_results, child=results)
 
 
     for baseline in baselines:
@@ -380,84 +391,107 @@ def ctrate_retrieval_evaluation(params):
         # NOTE: all features are normalized.
 
         print('evaluating xray 2 ct_volumes recall')
-        recall_retrieval_evaluation(
+        results = recall_retrieval_evaluation(
             query_latents=[triple[-1] for triple in triplet_embeddings],
             target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_synxray2ct_recall',
-            train_dataset='ct-rate')
+            query_type=const.XRAY,
+            target_type=const.CT_IMAGE,
+            model_baseline=get_clean_model_name(baseline)
+        )
+        csv_results = extend_dictionary(parent=csv_results, child=results)
+
         print('evaluating ct_volumes 2 xray recall')
-        recall_retrieval_evaluation(
+        results = recall_retrieval_evaluation(
             query_latents=[triple[0] for triple in triplet_embeddings],
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_ct2synxray_recall',
-            train_dataset='ct-rate')
+            query_type=const.CT_IMAGE,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline)
+        )
+        csv_results = extend_dictionary(parent=csv_results, child=results)
 
         print('evaluating xray 2 ct_reports recall')
-        recall_retrieval_evaluation(
+        results = recall_retrieval_evaluation(
             query_latents=[triple[-1] for triple in triplet_embeddings],
             target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_synxray2report_recall',
-            train_dataset='ct-rate')
+            query_type=const.XRAY,
+            target_type=const.CT_REPORT,
+            model_baseline=get_clean_model_name(baseline)
+        )
+        csv_results = extend_dictionary(parent=csv_results, child=results)
+
         print('evaluating ct_reports 2 xray recall')
-        recall_retrieval_evaluation(
+        results = recall_retrieval_evaluation(
             query_latents=[triple[1] for triple in triplet_embeddings],
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_report2synxray_recall',
-            train_dataset='ct-rate')
-
+            query_type=const.CT_REPORT,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline)
+        )
+        csv_results = extend_dictionary(parent=csv_results, child=results)
 
 
         print('evaluating xray 2 ct_volumes MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             xray_features,
             target_latents=image_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.XRAY,
+            target_type=const.CT_IMAGE,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{baseline}_synxray2ct_map',
-            dataset='ct-rate')
+            dataset=const.CT_RATE)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
+
         print('evaluating ct_volumes 2 xray MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             image_features,
             target_latents=xray_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.CT_IMAGE,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{baseline}_ct2synxray_map',
-            dataset='ct-rate')
+            dataset=const.CT_RATE)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
 
 
 
         print('evaluating xray 2 ct_reports MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             xray_features,
             target_latents=text_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.XRAY,
+            target_type=const.CT_REPORT,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{baseline}_synxray2report_map',
-            dataset='ct-rate')
+            dataset=const.CT_RATE)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
+
         print('evaluating ct_reports 2 xray MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             text_features,
             target_latents=xray_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.CT_REPORT,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{baseline}_report2synxray_map',
-            dataset='ct-rate')
+            dataset=const.CT_RATE)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
 
 
 
         # there is not symmetric retrieval and recall for this one.
         print('evaluating xray 2 xray MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             xray_features,
             target_latents=xray_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.XRAY,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{baseline}_synxray2synxray_map',
-            dataset='ct-rate')
+            dataset=const.CT_RATE)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
+    
+    return csv_results
 
 def radchest_ct_retrieval_evaluation(params):
     cfg = params['cfg']
@@ -465,7 +499,6 @@ def radchest_ct_retrieval_evaluation(params):
     image_encoder = params['image_encoder']
     text_encoder = params['text_encoder']
     tokenizer = params['tokenizer']
-    metric_results_destination = params['metric_results_destination']
 
     embedding_directory = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/features_embeddings'
     saving_path = embedding_directory
@@ -473,6 +506,16 @@ def radchest_ct_retrieval_evaluation(params):
     image_features = None
     if os.path.exists(img_feature_path):
         image_features = torch.load(img_feature_path)
+
+    csv_results = {
+        const.QUERY: [],
+        const.TARGET: [],
+        const.K: [],
+        const.MODEL: [],
+        const.METRIC_TYPE: [],
+        const.VALUE: []
+    }
+
 
     for baseline in baselines:
         dim_xray, xray_model_type, pth_name, latent_size = metadata_base_on_model_type(baseline)
@@ -503,7 +546,7 @@ def radchest_ct_retrieval_evaluation(params):
             results_folder="inference_zeroshot/",
             num_train_steps = 1,
             feature_extraction_mode = True, # extract only the text and ct features only
-            dataset='radchest_ct' # this is what differentiate with ct-rate one.
+            dataset=const.RADCHEST_CT # this is what differentiate with ct-rate one.
         )
 
         # get xray latent features from a model
@@ -513,37 +556,47 @@ def radchest_ct_retrieval_evaluation(params):
         triplet_embeddings = [(image_features[key], 'placeholder', xray_features[key]) for key in xray_features.keys()]
 
         print('evaluating xray 2 ct_volumes recall')
-        recall_retrieval_evaluation(
+        results = recall_retrieval_evaluation(
             query_latents=[triple[-1] for triple in triplet_embeddings],
             target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_synxray2ct_recall',
-            train_dataset='radchest_ct')
+            query_type=const.XRAY,
+            target_type=const.CT_IMAGE,
+            model_baseline=get_clean_model_name(baseline)
+        )
+        csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating ct_volumes 2 xray recall')
-        recall_retrieval_evaluation(
+        results = recall_retrieval_evaluation(
             query_latents=[triple[0] for triple in triplet_embeddings],
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_ct2synxray_recall',
-            train_dataset='radchest_ct')
+            query_type=const.CT_IMAGE,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline)
+        )
+        csv_results = extend_dictionary(parent=csv_results, child=results)
 
 
         print('evaluating xray 2 ct_volumes MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             xray_features,
             target_latents=image_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.XRAY,
+            target_type=const.CT_IMAGE,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
-            file_name=f'{baseline}_synxray2ct_map',
-            dataset='radchest_ct')
+            dataset=const.RADCHEST_CT)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating ct_volumes 2 xray MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             image_features,
             target_latents=xray_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.CT_IMAGE,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
-            file_name=f'{baseline}_ct2synxray_map',
-            dataset='radchest_ct')
+            dataset=const.RADCHEST_CT)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
+    
+    return csv_results
 
 
 
@@ -554,7 +607,14 @@ def mimic_retrieval_evaluation(params):
     image_encoder = params['image_encoder']
     text_encoder = params['text_encoder']
     tokenizer = params['tokenizer']
-    metric_results_destination = params['metric_results_destination']
+    csv_results = {
+        const.QUERY: [],
+        const.TARGET: [],
+        const.K: [],
+        const.MODEL: [],
+        const.METRIC_TYPE: [],
+        const.VALUE: []
+    }
 
     for baseline in baselines:
         dim_xray, xray_model_type, pth_name, latent_size = metadata_base_on_model_type(baseline)
@@ -608,46 +668,52 @@ def mimic_retrieval_evaluation(params):
         # the experiment is in the same order as the table listed in external_validation document in notion.
 
         print('evaluating xray 2 ct_report MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             xray_features,
             target_latents=text_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.XRAY,
+            target_type=const.CT_REPORT,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
-            file_name=f'{baseline}_mimic_xray2report_map',
-            dataset='mimic')
-
+            dataset=const.MIMIC)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating xray 2 ct reports recall')
-        recall_retrieval_evaluation(
+        results = recall_retrieval_evaluation(
             query_latents=[triple[-1] for triple in triplet_embeddings],
             target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_mimic_xray2report_recall',
-            train_dataset='mimic')
-
+            query_type=const.XRAY,
+            target_type=const.CT_REPORT,
+            model_baseline=get_clean_model_name(baseline)
+        )
+        csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating xray 2 xray MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             xray_features,
             target_latents=xray_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.XRAY,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
-            file_name=f'{baseline}_mimic_xray2mimic_xray_map',
-            dataset='mimic')
-
+            dataset=const.MIMIC)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating report 2 xray recall')
-        recall_retrieval_evaluation(
+        results = recall_retrieval_evaluation(
             query_latents=[triple[1] for triple in triplet_embeddings],
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_report2mimic_xray_recall',
-            train_dataset='mimic')
-
+            query_type=const.CT_REPORT,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline)
+        )
+        csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating report 2 xray MAP')
-        map_retrieval_evaluation(
+        results = map_retrieval_evaluation(
             text_features,
             target_latents=xray_features,
-            metric_results_dest=metric_results_destination,
+            query_type=const.CT_REPORT,
+            target_type=const.XRAY,
+            model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
-            file_name=f'{baseline}_report2mimic_xray_map',
-            dataset='mimic')
+            dataset=const.MIMIC)
+        csv_results = extend_dictionary(parent=csv_results, child=results)
 
-    return
+    return csv_results
