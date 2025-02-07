@@ -180,7 +180,12 @@ class CTReportDataset(Dataset):
         input_text = input_text.replace('(', '')
         input_text = input_text.replace(')', '')
 
-        return video_tensor, input_text
+        data = {
+            'ct': video_tensor,
+            'report': input_text
+        }
+        return data
+        # return video_tensor, input_text
 
 class CTReportDataSplitter:
     """mainly for the evaluation experiment"""
@@ -430,7 +435,12 @@ class VinBigChestXrayClassificationDataset(XrayClassificationDataset):
         # return xray_image, label
 
         label = torch.from_numpy(label)
-        return xray_embedding, 'vinBig', label, 'PLACEHOLDER'
+        data = {
+            'xray': xray_embedding,
+            'label': label
+        }
+        # return xray_embedding, 'vinBig', label, 'PLACEHOLDER'
+        return data
 
 
 class CTReportXRayClassificationDataset(XrayClassificationDataset):
@@ -464,7 +474,12 @@ class CTReportXRayClassificationDataset(XrayClassificationDataset):
         # return xray_image, label
 
         label = torch.from_numpy(label)
-        return xray_embedding, 'ct-rate', label, 'PLACEHOLDER'
+        data = {
+            'xray': xray_embedding,
+            'label': label
+        }
+        # return xray_embedding, 'ct-rate', label, 'PLACEHOLDER'
+        return data
 
 class RadChestCTDataset(Dataset):
     def __init__(self, data_folder, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False):
@@ -472,6 +487,7 @@ class RadChestCTDataset(Dataset):
         self.min_slices = min_slices
         self.labels = labels
         self.paths=[]
+        self.file_extension = '.mha'
         self.samples = self.prepare_samples()
         self.transform = transforms.Compose([
             transforms.Resize((resize_dim,resize_dim)),
@@ -479,7 +495,6 @@ class RadChestCTDataset(Dataset):
         ])
         self.nii_to_tensor = partial(self.nii_img_to_tensor, transform = self.transform)
         self.probing_mode = probing_mode
-        self.file_extension = '.mha'
 
     def prepare_samples(self):
         samples = []
@@ -519,8 +534,13 @@ class RadChestCTDataset(Dataset):
     def __getitem__(self, index):
         nii_file, onehotlabels, instance_name = self.samples[index]
         video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
-        return video_tensor, 'no_report', onehotlabels, instance_name # add the nii_file for xray projections
-
+        data = {
+            'ct': video_tensor,
+            'label': onehotlabels,
+            'instance_name': instance_name
+        }
+        # return video_tensor, 'no_report', onehotlabels, instance_name # add the nii_file for xray projections
+        return data
 class RadChestXrayDataset(Dataset):
     def __init__(self,
                 data_folder, 
@@ -588,7 +608,13 @@ class RadChestXrayDataset(Dataset):
         xray_image = self.xray_to_rgb(xray_file)
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
         label = torch.from_numpy(label)
-        return xray_image, 'no_report', label, instance_name # add the nii_file for xray projections
+        data = {
+            'xray': xray_image,
+            'label': label,
+            'instance_name': instance_name
+        }
+        # return xray_image, 'no_report', label, instance_name # add the nii_file for xray projections
+        return data
 
 class MimicCTReportXRayDataset:
     """mainly used in retrieval evaluation and linear probe evaluation in the MimicCTClipInference class"""
@@ -692,7 +718,15 @@ class MimicCTReportXRayDataset:
         xray_image = self.xray_to_rgb(xray_file)
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
         label = torch.from_numpy(label)
-        return xray_image, report, label, accession_number # the instance_name
+
+        data = {
+            'xray': xray_image,
+            'report': report,
+            'label': label,
+            'instance_name': accession_number
+        }
+        return data
+        # return xray_image, report, label, accession_number # the instance_name
 
     def __len__(self):
         return len(self.samples)
@@ -754,8 +788,13 @@ class VinBigDataChestXrayDataset:
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
         label = torch.from_numpy(label)
 
-        # return the file path, the multi-hot label, and the instance image id
-        return xray_image, self.label_variant, label, image_id # the instance_name
+        data = {
+            'xray': xray_image,
+            'label': label,
+            'instance_name': image_id
+        }
+        return data
+        # return xray_image, self.label_variant, label, image_id # the instance_name
 
     def prepare_samples(self, data_folder, label_variant):
         return prepare_vinbig_samples(data_folder, self.labels, self.file_extension, label_variant)
@@ -942,8 +981,15 @@ class CTReportXRayDataset(CTReportDataset):
         text_embedding = torch.from_numpy(text_embedding.reshape(-1)).requires_grad_(False)
 
         name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
-
-        return  img_embedding, text_embedding, 'this is train', xray_image, name_acc, xray_file
+        data = {
+            'ct': img_embedding,
+            'report': text_embedding,
+            'xray': xray_image,
+            'instance_name': name_acc,
+            'xray_file_path': xray_file
+        }
+        return data
+        # return  img_embedding, text_embedding, 'this is train', xray_image, name_acc, xray_file
 
     def prepare_samples(self):
         """

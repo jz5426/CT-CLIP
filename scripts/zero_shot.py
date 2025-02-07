@@ -3,7 +3,7 @@ from shutil import rmtree
 from transformer_maskgit.optimizer import get_optimizer
 from transformers import BertTokenizer, BertModel
 
-from data import CTReportDataset, CTReportXRayDataset, MimicCTReportXRayDataset, VinBigDataChestXrayDataset
+from data import CTReportDataset, CTReportXRayDataset, MimicCTReportXRayDataset, RadChestXrayDataset, VinBigDataChestXrayDataset
 from eval import evaluate_internal, plot_roc, accuracy, sigmoid, bootstrap, compute_cis
 
 from sklearn.metrics import classification_report, confusion_matrix, multilabel_confusion_matrix, f1_score, accuracy_score
@@ -235,7 +235,8 @@ class VinBigDataChestXrayInference(nn.Module):
         with torch.no_grad():
             self.CTClip.eval()
             for batch_data in tqdm.tqdm(self.dl, desc="Xray Feature Extraction", leave=False):
-                xrays, _, _, instance_name = batch_data
+                # xrays, _, _, instance_name = batch_data
+                xrays, instance_name = batch_data['xray'], batch_data['instance_name']
 
                 # forward the input
                 xrays = xrays.to(device)
@@ -316,13 +317,6 @@ class MimicCTClipInference(nn.Module):
         self.device = self.accelerator.device
         self.CTClip.to(self.device)
 
-        # self.save_model_every = save_model_every
-        # self.save_results_every = save_results_every
-        # self.result_folder_txt = self.results_folder
-        # self.results_folder = Path(results_folder)
-
-        # self.results_folder.mkdir(parents=True, exist_ok=True)
-
     @property
     def is_main(self):
         return self.accelerator.is_main_process
@@ -353,7 +347,8 @@ class MimicCTClipInference(nn.Module):
         with torch.no_grad():
             self.CTClip.eval()
             for batch_data in tqdm.tqdm(self.dl, desc="Report Feature Extraction", leave=False):
-                _, report, _, instance_name = batch_data
+                # _, report, _, instance_name = batch_data
+                report, instance_name = batch_data['report'], batch_data['instance_name']
 
                 # Tokenize and forward pass
                 text_tokens = self.tokenizer(
@@ -376,7 +371,8 @@ class MimicCTClipInference(nn.Module):
         with torch.no_grad():
             self.CTClip.eval()
             for batch_data in tqdm.tqdm(self.dl, desc="Xray Feature Extraction", leave=False):
-                xrays, _, _, instance_name = batch_data
+                # xrays, _, _, instance_name = batch_data
+                xrays, instance_name = batch_data['xray'], batch_data['instance_name']
 
                 # forward the input
                 xrays = xrays.to(device)
@@ -479,7 +475,12 @@ class CTClipInference(nn.Module):
                 self.ds = RadChestCTDataset(
                     data_folder=data_folder,
                     labels=labels)
-
+            elif dataset == 'radchest_xray':
+                self.ds = RadChestXrayDataset(
+                    data_folder=data_folder,
+                    model_type=self.CTClip.xray_model_type,
+                    cfg=cfg,
+                    labels=labels)
             # Split dataset into train and validation sets
             self.dl = DataLoader(
                 self.ds,
@@ -546,7 +547,8 @@ class CTClipInference(nn.Module):
         with torch.no_grad():
             self.CTClip.eval()
             for batch_data in tqdm.tqdm(self.dl, desc="Feature Extraction", leave=False):
-                ct_tensor, no_report, onehot, instance_name = batch_data
+                # ct_tensor, no_report, onehot, instance_name = batch_data
+                ct_tensor, instance_name = batch_data['ct'], batch_data['instance_name']
 
                 img_feature = self.CTClip.get_ct_features_only(ct_tensor.cuda())
                 img_feature = img_feature.cpu().numpy()
@@ -588,7 +590,8 @@ class CTClipInference(nn.Module):
             self.CTClip.eval()
             idx = 0
             for batch_data in tqdm.tqdm(self.dl, desc="Feature Extraction", leave=False):
-                valid_data, text, _, _, instance_name, _ = batch_data
+                # valid_data, text, _, _, instance_name, _ = batch_data
+                valid_data, text, instance_name = batch_data['ct'], batch_data['report'], batch_data['instance_name']
 
                 # Filter out instance names that already exist in image_features and text_features
                 new_instance_indices = [
@@ -641,7 +644,7 @@ class CTClipInference(nn.Module):
         loaded_txt_features = torch.load(os.path.join(saving_path, 'text_features.pth'))
         print(f'size of image features {len(loaded_img_features)}; size of text features {len(loaded_txt_features)}')
 
-    def xray_feature_extraction(self, directory, pth_name='xray_features.pth', append=True):
+    def xray_feature_extraction(self, directory='', pth_name='xray_features.pth', append=True):
 
         # sanity check
         # assert(self.split in ['valid']) # NOTE: for train to work, need to change the __get_item__ method in the class to output the instance name
@@ -667,7 +670,9 @@ class CTClipInference(nn.Module):
             # for batch_idx in range(data_size):
             for data in tqdm.tqdm(self.dl, desc="XRay Feature Extraction", leave=False):
                 # data = next(data_iterator)
-                _, _, _, xray, instance_name, _ = data  # NOTE: double-check the instance name, depends on the custom data loader.
+                # _, _, _, xray, instance_name, _ = data  # NOTE: double-check the instance name, depends on the custom data loader.
+                xray, instance_name = data['xray'], data['instance_name']
+                
                 xray = xray.to(device)
 
                 # Forward pass for the new xray latents

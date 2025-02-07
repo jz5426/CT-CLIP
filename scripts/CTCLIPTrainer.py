@@ -381,11 +381,13 @@ class CTClipTrainer(nn.Module):
 
                 data = next(self.dl_iter)
                 if self.triplet:
-                    video, text, _, xray, _, _ = data
+                    # video, text, _, xray, _, _ = data
+                    video, text, xray = data['ct'], data['report'], data['xray']
                     xray=xray.to(device)
                     text=text.to(device)
                 else:
-                    video, text = data
+                    # video, text = data
+                    video, text, xray = data['ct'], data['report']
                 video=video.to(device)
 
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.

@@ -106,7 +106,16 @@ class CTReportDatasetinfer(Dataset):
         dir_path = os.path.splitext(nii_file)[0].split(os.sep)
         name_acc = dir_path[-2] 
         instance_name = dir_path[-1]
-        return video_tensor, input_text, onehotlabels, name_acc, instance_name, nii_file # add the nii_file for xray projections
+
+        data = {
+            'ct': video_tensor,
+            'report': input_text,
+            'label': onehotlabels,
+            'instance_name': instance_name,
+            'ct_file_path':nii_file
+        }
+        return data
+        # return video_tensor, input_text, onehotlabels, name_acc, instance_name, nii_file # add the nii_file for xray projections
 
 class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
@@ -196,7 +205,17 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
 
         img_embedding = torch.from_numpy(img_embedding.reshape(-1)).requires_grad_(False)
         text_embedding = torch.from_numpy(text_embedding.reshape(-1)).requires_grad_(False)
-        return  img_embedding, text_embedding, onehotlabels, xray_image, name_acc, xray_file
+
+        data = {
+            'ct': img_embedding,
+            'report': text_embedding,
+            'label': onehotlabels,
+            'xray': xray_image,
+            'instance_name': name_acc,
+            'xray_file_path':xray_file
+        }
+        return data
+        # return  img_embedding, text_embedding, onehotlabels, xray_image, name_acc, xray_file
 
     
     def xray_mha_to_rgb(self, path, transform):

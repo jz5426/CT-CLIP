@@ -118,8 +118,8 @@ def map_retrieval_evaluation(
             row_first = row_first.iloc[:, 1:].values[0]
 
             # Create a DataLoader for batching processing, with respect to each row_first
-            dataset = TensorDataset(torch.tensor(image_data_for_second))
-            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+            train_dataset = TensorDataset(torch.tensor(image_data_for_second))
+            dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
 
             crosses = []
             ratios_internal = []
@@ -187,8 +187,8 @@ def recall_retrieval_evaluation(
             xray = torch.tensor(query_latents[i]).to('cuda')
 
             # Create a DataLoader for batching
-            train_dataset = TensorDataset(torch.tensor(target_latents))
-            dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+            dataset = TensorDataset(torch.tensor(target_latents))
+            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
             # find the similarity between the xray and the target embeddings
             for batch in dataloader:
@@ -266,7 +266,7 @@ def ctrate_retrieval_evaluation(params):
         target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
         metric_results_dest=metric_results_destination,
         file_name='report2ct_recall',
-        train_dataset='ct-rate'
+        dataset='ct-rate'
     )
 
     # ct2report
@@ -276,18 +276,18 @@ def ctrate_retrieval_evaluation(params):
         target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
         metric_results_dest=metric_results_destination,
         file_name='ct2report_recall',
-        train_dataset='ct-rate'
-    )
-
-    print('evaluating report 2 ct in MAP')
-    map_retrieval_evaluation(
-        text_features,
-        target_latents=image_features,
-        metric_results_dest=metric_results_destination,
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='report2ct_map',
         dataset='ct-rate'
     )
+
+    # print('evaluating report 2 ct in MAP')
+    # map_retrieval_evaluation(
+    #     text_features,
+    #     target_latents=image_features,
+    #     metric_results_dest=metric_results_destination,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name='report2ct_map',
+    #     dataset='ct-rate'
+    # )
 
     # ct2ct
     print('evaluating ct 2 ct in MAP')
@@ -310,15 +310,15 @@ def ctrate_retrieval_evaluation(params):
         dataset='ct-rate'
     )
     
-    print('evaluating report 2 report in MAP')
-    map_retrieval_evaluation(
-        text_features,
-        target_latents=text_features,
-        metric_results_dest=metric_results_destination,
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        file_name='report2report_map',
-        dataset='ct-rate'
-    )
+    # print('evaluating report 2 report in MAP')
+    # map_retrieval_evaluation(
+    #     text_features,
+    #     target_latents=text_features,
+    #     metric_results_dest=metric_results_destination,
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     file_name='report2report_map',
+    #     dataset='ct-rate'
+    # )
 
 
     for baseline in baselines:
@@ -385,14 +385,14 @@ def ctrate_retrieval_evaluation(params):
             target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
             metric_results_dest=metric_results_destination,
             file_name=f'{baseline}_synxray2ct_recall',
-            train_dataset='ct-rate')
-        print('evaluating ct_volumes 2 xray recall')
-        recall_retrieval_evaluation(
-            query_latents=[triple[0] for triple in triplet_embeddings],
-            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_ct2synxray_recall',
-            train_dataset='ct-rate')
+            dataset='ct-rate')
+        # print('evaluating ct_volumes 2 xray recall')
+        # recall_retrieval_evaluation(
+        #     query_latents=[triple[0] for triple in triplet_embeddings],
+        #     target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+        #     metric_results_dest=metric_results_destination,
+        #     file_name=f'{baseline}_ct2synxray_recall',
+        #     dataset='ct-rate')
 
         print('evaluating xray 2 ct_reports recall')
         recall_retrieval_evaluation(
@@ -400,14 +400,14 @@ def ctrate_retrieval_evaluation(params):
             target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
             metric_results_dest=metric_results_destination,
             file_name=f'{baseline}_synxray2report_recall',
-            train_dataset='ct-rate')
-        print('evaluating ct_reports 2 xray recall')
-        recall_retrieval_evaluation(
-            query_latents=[triple[1] for triple in triplet_embeddings],
-            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_report2synxray_recall',
-            train_dataset='ct-rate')
+            dataset='ct-rate')
+        # print('evaluating ct_reports 2 xray recall')
+        # recall_retrieval_evaluation(
+        #     query_latents=[triple[1] for triple in triplet_embeddings],
+        #     target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+        #     metric_results_dest=metric_results_destination,
+        #     file_name=f'{baseline}_report2synxray_recall',
+        #     dataset='ct-rate')
 
 
 
@@ -419,14 +419,14 @@ def ctrate_retrieval_evaluation(params):
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             file_name=f'{baseline}_synxray2ct_map',
             dataset='ct-rate')
-        print('evaluating ct_volumes 2 xray MAP')
-        map_retrieval_evaluation(
-            image_features,
-            target_latents=xray_features,
-            metric_results_dest=metric_results_destination,
-            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{baseline}_ct2synxray_map',
-            dataset='ct-rate')
+        # print('evaluating ct_volumes 2 xray MAP')
+        # map_retrieval_evaluation(
+        #     image_features,
+        #     target_latents=xray_features,
+        #     metric_results_dest=metric_results_destination,
+        #     predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        #     file_name=f'{baseline}_ct2synxray_map',
+        #     dataset='ct-rate')
 
 
 
@@ -438,16 +438,14 @@ def ctrate_retrieval_evaluation(params):
             predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             file_name=f'{baseline}_synxray2report_map',
             dataset='ct-rate')
-        print('evaluating ct_reports 2 xray MAP')
-        map_retrieval_evaluation(
-            text_features,
-            target_latents=xray_features,
-            metric_results_dest=metric_results_destination,
-            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            file_name=f'{baseline}_report2synxray_map',
-            dataset='ct-rate')
-
-
+        # print('evaluating ct_reports 2 xray MAP')
+        # map_retrieval_evaluation(
+        #     text_features,
+        #     target_latents=xray_features,
+        #     metric_results_dest=metric_results_destination,
+        #     predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        #     file_name=f'{baseline}_report2synxray_map',
+        #     dataset='ct-rate')
 
         # there is not symmetric retrieval and recall for this one.
         print('evaluating xray 2 xray MAP')
@@ -496,6 +494,7 @@ def radchest_ct_retrieval_evaluation(params):
         retrival_evaluator = CTClipInference(
             clip_xray,
             tokenizer=tokenizer,
+            cfg=cfg,
             data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
             batch_size = 4,
@@ -503,30 +502,12 @@ def radchest_ct_retrieval_evaluation(params):
             results_folder="inference_zeroshot/",
             num_train_steps = 1,
             feature_extraction_mode = True, # extract only the text and ct features only
-            dataset='radchest_ct' # this is what differentiate with ct-rate one.
+            dataset='radchest_xray' # this is what differentiate with ct-rate one.
         )
 
-        # get xray latent features from a model
-        xray_features = retrival_evaluator.extract_xray_features()
+        # get xray latent features from a model TODO: fix this!
+        xray_features = retrival_evaluator.xray_feature_extraction(append=False)
         assert(image_features.keys() == xray_features.keys())
-
-        triplet_embeddings = [(image_features[key], 'placeholder', xray_features[key]) for key in xray_features.keys()]
-
-        print('evaluating xray 2 ct_volumes recall')
-        recall_retrieval_evaluation(
-            query_latents=[triple[-1] for triple in triplet_embeddings],
-            target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_synxray2ct_recall',
-            train_dataset='radchest_ct')
-        print('evaluating ct_volumes 2 xray recall')
-        recall_retrieval_evaluation(
-            query_latents=[triple[0] for triple in triplet_embeddings],
-            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_ct2synxray_recall',
-            train_dataset='radchest_ct')
-
 
         print('evaluating xray 2 ct_volumes MAP')
         map_retrieval_evaluation(
@@ -536,13 +517,14 @@ def radchest_ct_retrieval_evaluation(params):
             predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
             file_name=f'{baseline}_synxray2ct_map',
             dataset='radchest_ct')
-        print('evaluating ct_volumes 2 xray MAP')
+
+        print('evaluating xray 2 xray MAP')
         map_retrieval_evaluation(
-            image_features,
+            xray_features,
             target_latents=xray_features,
             metric_results_dest=metric_results_destination,
             predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
-            file_name=f'{baseline}_ct2synxray_map',
+            file_name=f'{baseline}_synxray2synxray_map',
             dataset='radchest_ct')
 
 
@@ -622,7 +604,7 @@ def mimic_retrieval_evaluation(params):
             target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
             metric_results_dest=metric_results_destination,
             file_name=f'{baseline}_mimic_xray2report_recall',
-            train_dataset='mimic')
+            dataset='mimic')
 
         print('evaluating xray 2 xray MAP')
         map_retrieval_evaluation(
@@ -633,21 +615,21 @@ def mimic_retrieval_evaluation(params):
             file_name=f'{baseline}_mimic_xray2mimic_xray_map',
             dataset='mimic')
 
-        print('evaluating report 2 xray recall')
-        recall_retrieval_evaluation(
-            query_latents=[triple[1] for triple in triplet_embeddings],
-            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-            metric_results_dest=metric_results_destination,
-            file_name=f'{baseline}_report2mimic_xray_recall',
-            train_dataset='mimic')
+        # print('evaluating report 2 xray recall')
+        # recall_retrieval_evaluation(
+        #     query_latents=[triple[1] for triple in triplet_embeddings],
+        #     target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+        #     metric_results_dest=metric_results_destination,
+        #     file_name=f'{baseline}_report2mimic_xray_recall',
+        #     dataset='mimic')
 
-        print('evaluating report 2 xray MAP')
-        map_retrieval_evaluation(
-            text_features,
-            target_latents=xray_features,
-            metric_results_dest=metric_results_destination,
-            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
-            file_name=f'{baseline}_report2mimic_xray_map',
-            dataset='mimic')
+        # print('evaluating report 2 xray MAP')
+        # map_retrieval_evaluation(
+        #     text_features,
+        #     target_latents=xray_features,
+        #     metric_results_dest=metric_results_destination,
+        #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+        #     file_name=f'{baseline}_report2mimic_xray_map',
+        #     dataset='mimic')
 
     return

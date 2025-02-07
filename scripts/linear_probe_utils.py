@@ -519,7 +519,8 @@ def test_loop(params):
     model.eval()
     with torch.no_grad():
         for data in test_loader:
-            inputs, _, labels, _ = data
+            # inputs, _, labels, _ = data
+            inputs, labels = data['xray'], data['labels']
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -611,7 +612,8 @@ def validation_loop(params):
     print(f'Performing validation with size (in unit batch) {len(val_loader)}')
     with torch.no_grad():
         for data in val_loader:
-            inputs, _, labels, _ = data
+            # inputs, _, labels, _ = data
+            inputs, labels = data['xray'], data['labels']
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -641,7 +643,9 @@ def train_loop(params):
     model.train()
     total_loss = 0.0
     for idx, data in enumerate(train_loader):
-        inputs, _, labels, _ = data
+        # inputs, _, labels, _ 
+        inputs, labels = data['xray'], data['labels']
+        
         inputs = inputs.to(device)
         labels = labels.to(device)
 

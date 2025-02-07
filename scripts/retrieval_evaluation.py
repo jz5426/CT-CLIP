@@ -73,11 +73,12 @@ def run(cfg_dot):
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip NOTE: shared
     baselines = [
         ## newly add
-        'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch'
+        # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch'
         ## baseline pretrained model (not pretrained by us)
         # 'cxr_clip_swin', # xray encoder weights from cxr_clip
-        # 'cxr_clip_resnet',
+        'cxr_clip_resnet',
+        'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         # 'medclip_resnet',
         # 'medclip_vit',
         ## our pretrained model
@@ -105,6 +106,8 @@ def run(cfg_dot):
     elif cfg_dot.retrieval_params.evaluation_dataset == 'radchest_ct':
         params['metric_results_destination'] = './radchest-ct_retrieval_results'
         radchest_ct_retrieval_evaluation(params)
+    else:
+        assert False
 
 if __name__ == '__main__':
 

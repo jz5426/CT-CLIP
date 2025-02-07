@@ -72,7 +72,7 @@ linear_probing_params:
   multi_sweep_evaluation: false
   num_epochs: 100 # 1000
   patience: 20
-  batch_size: 4096
+  batch_size: 256
   learning_rate: 5e-2 # 1e-2
   progress_window: 2
   num_workers: 10
@@ -96,7 +96,7 @@ linear_probing_params:
 #   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
 
 retrieval_params:
-  evaluation_dataset: '' # ct-rate, mimic, radchestct
+  evaluation_dataset: 'radchest_ct' # ct-rate, mimic, radchest_ct
 
 
 zero_shot_params:
