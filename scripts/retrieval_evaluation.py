@@ -77,7 +77,7 @@ def run(cfg_dot):
         # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch'
         ## baseline pretrained model (not pretrained by us)
         # 'cxr_clip_swin', # xray encoder weights from cxr_clip
-        'cxr_clip_resnet',
+        # 'cxr_clip_resnet',
         'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         # 'medclip_resnet',
         # 'medclip_vit',

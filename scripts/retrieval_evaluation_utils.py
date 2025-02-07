@@ -497,7 +497,7 @@ def radchest_ct_retrieval_evaluation(params):
             cfg=cfg,
             data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
-            batch_size = 4,
+            batch_size = 256,
             num_workers = 5,
             results_folder="inference_zeroshot/",
             num_train_steps = 1,
@@ -571,8 +571,8 @@ def mimic_retrieval_evaluation(params):
             reports_file = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
             labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
             results_folder="./inference_zeroshot_retrieval_mimic",
-            batch_size = 512,
-            num_workers = 2, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+            batch_size = 256,
+            num_workers = 5, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
             feature_extraction_mode = True # might be optional
         )  
 
