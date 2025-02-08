@@ -4,7 +4,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestXrayDataset, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
-from eval_utils import XrayClassificationModel, metadata_base_on_model_type, proportion_mapping
+from eval_utils import XrayClassificationModel, get_clean_model_name, metadata_base_on_model_type, proportion_mapping
 import os
 import torch
 import numpy as np
@@ -13,6 +13,7 @@ from sklearn.metrics import average_precision_score, precision_recall_fscore_sup
 import pandas as pd
 import shutil
 import pickle
+import constants as const
 
 def load_cached_ct_rate_xray_features(pth_base_name, split):
     # split = 'train'
@@ -343,6 +344,14 @@ def evaluate_classifier(params):
     classifier_ckpt_base_name = params['classifier_ckpt_base_name']
     pth_base_name = params['pth_base_name']
 
+    test_params = {
+        'test_loader': test_loader,
+        'device': device,
+        'dataset': dataset,
+        'xray_model_type': xray_model_type,
+        'train_data_portion': cfg_dot.linear_probing_params.train_data_portion,
+    }
+
     if dataset == 'mimic':
         test_dataset = MimicCTReportXRayDataset(
             cfg=cfg,
@@ -371,13 +380,10 @@ def evaluate_classifier(params):
         classification_model.to(device)
 
         test_params = {
-            'test_loader': test_loader,
-            'device': device,
+            **test_params,
             'model': classification_model,
             'full_forward_pass': True,
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint in the test loop
-            'metric_saving_path': f'./lp_evaluation_results/mimic_ct/{classifier_ckpt_base_name}_test_metrics_results.xlsx', # where to save the files
-            'delong_stats_saving_path': f'./lp_evaluation_results/mimic_ct/delong_stats/{classifier_ckpt_base_name}_data.pkl'
         }
         return test_loop(test_params)
     elif dataset == 'ct-rate':
@@ -411,13 +417,10 @@ def evaluate_classifier(params):
             shuffle=False)
 
         test_params = {
-            'test_loader': test_loader,
-            'device': device,
+            **test_params,
             'model': model,
             'full_forward_pass': False,
             'pretrained_cpt_dest': best_ckpt_destination, # destination to retreive the checkpoint for the linear classifier only.
-            'metric_saving_path': f'./lp_evaluation_results/ct-rate/{classifier_ckpt_base_name}_test_metrics_results.xlsx',
-            'delong_stats_saving_path': f'./lp_evaluation_results/ct-rate/delong_stats/{classifier_ckpt_base_name}_data.pkl'
         }
         return test_loop(test_params)
     elif dataset == 'radchest_ct':
@@ -445,13 +448,10 @@ def evaluate_classifier(params):
         classification_model.to(device)
 
         test_params = {
-            'test_loader': test_loader,
-            'device': device,
+            **test_params,
             'model': classification_model,
             'full_forward_pass': True,
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-            'metric_saving_path': f'./lp_evaluation_results/{dataset}/{classifier_ckpt_base_name}_test_metrics_results.xlsx', # where to save the files
-            'delong_stats_saving_path': f'./lp_evaluation_results/{dataset}/delong_stats/{classifier_ckpt_base_name}_data.pkl' # where to save the files
         }
         return test_loop(test_params)
 
@@ -482,17 +482,14 @@ def evaluate_classifier(params):
         classification_model.to(device)
 
         test_params = {
-            'test_loader': test_loader,
-            'device': device,
+            **test_params,
             'model': classification_model,
             'full_forward_pass': True,
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-            'metric_saving_path': f'./lp_evaluation_results/{dataset}/{classifier_ckpt_base_name}_test_metrics_results.xlsx', # where to save the files
-            'delong_stats_saving_path': f'./lp_evaluation_results/{dataset}/delong_stats/{classifier_ckpt_base_name}_data.pkl' # where to save the files
         }
         return test_loop(test_params)
 
-    print('Finished probing evaluation without error :)')
+    print('something wrong')
 
 
 def test_loop(params):
@@ -500,9 +497,10 @@ def test_loop(params):
     test_loader = params['test_loader']
     device = params['device']
     model = params['model']
-    metric_saving_path = params['metric_saving_path']
-    delong_stats_saving_path = params['delong_stats_saving_path']
     full_forward_pass = params['full_forward_pass']
+    dataset = params['dataset']
+    xray_model_type = params['xray_model_type']
+    train_portion = params['train_data_portion']
     
     all_labels = []
     all_preds = []
@@ -543,9 +541,6 @@ def test_loop(params):
     # Calculate metrics for multilabel classification
     # NOTE: might use the same one from the training file instead of using the sklearn one.
     precision_micro, recall_micro, f1_micro, _ = precision_recall_fscore_support(all_labels, all_preds, average='micro')
-    precision_weighted, recall_weighted, f1_weighted, _ = precision_recall_fscore_support(all_labels, all_preds, average='weighted')
-    precision_macro, recall_macro, f1_macro, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
-
     auc_micro = roc_auc_score(all_labels, all_probs, average='micro', multi_class='ovr')
 
     # compute aucroc for each class in the multihot vector
@@ -555,34 +550,23 @@ def test_loop(params):
         auc_per_class.append(auc)
 
     pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='micro')
-
     print(f"Test Results for micro average: F1 Score: {f1_micro:.4f}, Recall: {recall_micro:.4f}, Precision: {precision_micro:.4f}, AUC: {auc_micro:.4f}, PR_AUC: {pr_auc_score_micro:.4f}")
 
-    metrics_data = {
-        'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC'], # the labels and the pred_probs are for delong auc significant test
-        'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro],
-    }
-
-    print('Saving the metrics results')
-    # save the stats for delong computation
     assert(len(all_labels.flatten().tolist())==len(all_probs.flatten().tolist()))
-    os.makedirs(os.path.dirname(delong_stats_saving_path), exist_ok=True)
-    labels_preds = {
-        'labels': all_labels.flatten().tolist(),
-        'pred_probs': all_probs.flatten().tolist(),
-        'auc_per_class': auc_per_class
+
+    # each row has the following results
+    metric_results = {
+        const.DATASET: dataset, # evaluation dataset
+        const.MODEL: get_clean_model_name(xray_model_type), # the xray model that the metrics belong to 
+        const.FEW_SHOT: train_portion, # the few-shots
+        const.AUC: auc_micro,
+        const.PR_AUC: pr_auc_score_micro,
+        const.LABELS: all_labels.flatten().tolist(),
+        const.PRED_PROBS: all_probs.flatten().tolist(),
+        const.PER_CLASS_AUC: auc_per_class
     }
-    # Save to a pickle file
-    with open(delong_stats_saving_path, "wb") as f:
-        pickle.dump(labels_preds, f)
-        print('finished dumping the files')
 
-    metrics_df = pd.DataFrame(metrics_data)
-    os.makedirs(os.path.dirname(metric_saving_path), exist_ok=True)
-    metrics_df.to_excel(metric_saving_path, index=False)
-    print(f"Metric results saved to {metric_saving_path}")
-
-    return labels_preds
+    return metric_results
 
 
 def validation_loop(params):

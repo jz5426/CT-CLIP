@@ -9,6 +9,7 @@ import random
 import numpy as np
 import pandas as pd
 from retrieval_evaluation_utils import ctrate_retrieval_evaluation, mimic_retrieval_evaluation, radchest_ct_retrieval_evaluation
+import constants as const
 
 @hydra.main(
         version_base=None,
@@ -95,7 +96,7 @@ def run(cfg_dot):
         'tokenizer': tokenizer,
         'metric_results_destination': ''
     }
-    retrieval_results_dir = './experiment_results/retrieval'
+    retrieval_results_dir = const.EXPERIMENT_RESULTS_SAVING_PATH
     if cfg_dot.retrieval_params.evaluation_dataset == 'ct-rate':
         params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'ct-rate_retrieval_results.csv')
         results = ctrate_retrieval_evaluation(params)
