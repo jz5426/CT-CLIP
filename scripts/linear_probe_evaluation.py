@@ -193,9 +193,10 @@ def run(cfg_dot):
     # append the stats to the existing metric results (if exists)
     if cfg_dot.linear_probing_params.override_metric_results:
         df.to_csv(csv_filename, mode='w', index=False, header=True)
+        print(f"New file created: {csv_filename}")
     else:
         df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
-    print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
+        print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
 
 # Example usage
 if __name__ == "__main__":
