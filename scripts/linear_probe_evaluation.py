@@ -181,6 +181,7 @@ def run(cfg_dot):
     }
     metric_results = evaluate_classifier(params)
 
+    # NOTE: everything is saved to the same file.
     # save it to a csv file
     df = pd.DataFrame(metric_results)
 

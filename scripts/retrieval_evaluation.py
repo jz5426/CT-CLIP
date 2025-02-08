@@ -97,16 +97,17 @@ def run(cfg_dot):
         'metric_results_destination': ''
     }
     retrieval_results_dir = const.EXPERIMENT_RESULTS_SAVING_PATH
-    if cfg_dot.retrieval_params.evaluation_dataset == 'ct-rate':
+    if cfg_dot.retrieval_params.evaluation_dataset == const.CT_RATE:
         params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'ct-rate_retrieval_results.csv')
         results = ctrate_retrieval_evaluation(params)
-    elif cfg_dot.retrieval_params.evaluation_dataset == 'mimic':
+    elif cfg_dot.retrieval_params.evaluation_dataset == const.MIMIC:
         params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'mimic_retrieval_results.csv')
         results = mimic_retrieval_evaluation(params)
-    elif cfg_dot.retrieval_params.evaluation_dataset == 'radchest_ct':
+    elif cfg_dot.retrieval_params.evaluation_dataset == const.RADCHEST_CT:
         params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'radchest-ct_retrieval_results.csv')
         results = radchest_ct_retrieval_evaluation(params)
 
+    #NOTE: each dataset has its own csv file for the experiment results.
     df = pd.DataFrame(results)
     csv_filename = params['metric_results_destination']
     # Check if file exists

@@ -509,7 +509,6 @@ def radchest_ct_retrieval_evaluation(params):
     image_encoder = params['image_encoder']
     text_encoder = params['text_encoder']
     tokenizer = params['tokenizer']
-    metric_results_destination = params['metric_results_destination']
     dataset = params['dataset']
     if dataset == 'radchest_ct':
         label_file = 'final_labels.csv'
