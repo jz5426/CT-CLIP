@@ -292,15 +292,17 @@ def ctrate_retrieval_evaluation(params):
     csv_results = extend_dictionary(parent=csv_results, child=results)
 
 
-    # print('evaluating report 2 ct in MAP')
-    # map_retrieval_evaluation(
-    #     text_features,
-    #     target_latents=image_features,
-    #     metric_results_dest=metric_results_destination,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-    #     file_name='report2ct_map',
-    #     dataset='ct-rate'
-    # )
+    print('evaluating report 2 ct in MAP')
+    results = map_retrieval_evaluation(
+        text_features,
+        target_latents=image_features,
+        query_type=const.CT_REPORT,
+        target_type=const.CT_IMAGE,
+        model_baseline=get_clean_model_name(const.CT_CLIP),
+        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        dataset=const.CT_RATE
+    )
+    csv_results = extend_dictionary(parent=csv_results, child=results)
 
     # ct2ct
     print('evaluating ct 2 ct in MAP')
