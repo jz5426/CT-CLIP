@@ -1,12 +1,6 @@
 import os
-from cxr_clip_utils import convert_dictconfig_to_dict
-import hydra
-from omegaconf import DictConfig, OmegaConf
 import torch
-from transformer_maskgit import CTViT
-from transformers import BertTokenizer, BertModel
 from ct_clip import CTCLIPwithXray
-import random
 import numpy as np
 import tqdm
 from torch.utils.data import DataLoader, TensorDataset
@@ -153,6 +147,7 @@ def map_retrieval_evaluation(
         results.setdefault(const.TARGET, []).append(target_type)
         results.setdefault(const.K, []).append(return_n)
         results.setdefault(const.MODEL, []).append(model_baseline)
+        results.setdefault(const.DATASET, []).append(model_baseline)
         results.setdefault(const.METRIC_TYPE, []).append(const.MAP)
         results.setdefault(const.VALUE, []).append(_map)
 
@@ -253,6 +248,7 @@ def ctrate_retrieval_evaluation(params):
         const.TARGET: [],
         const.K: [],
         const.MODEL: [],
+        const.DATASET: [],
         const.METRIC_TYPE: [],
         const.VALUE: []
     }
@@ -529,6 +525,7 @@ def radchest_ct_retrieval_evaluation(params):
         const.TARGET: [],
         const.K: [],
         const.MODEL: [],
+        const.DATASET: [],
         const.METRIC_TYPE: [],
         const.VALUE: []
     }
@@ -630,6 +627,7 @@ def mimic_retrieval_evaluation(params):
         const.TARGET: [],
         const.K: [],
         const.MODEL: [],
+        const.DATASET: [],
         const.METRIC_TYPE: [],
         const.VALUE: []
     }
