@@ -361,7 +361,6 @@ def evaluate_classifier(params):
     pth_base_name = params['pth_base_name']
 
     test_params = {
-        'test_loader': test_loader,
         'device': device,
         'dataset': dataset,
         'xray_model_type': xray_model_type,
@@ -397,6 +396,7 @@ def evaluate_classifier(params):
 
         test_params = {
             **test_params,
+            'test_loader': test_loader,
             'model': classification_model,
             'full_forward_pass': True,
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint in the test loop
@@ -434,6 +434,7 @@ def evaluate_classifier(params):
 
         test_params = {
             **test_params,
+            'test_loader': test_loader,
             'model': model,
             'full_forward_pass': False,
             'pretrained_cpt_dest': best_ckpt_destination, # destination to retreive the checkpoint for the linear classifier only.
@@ -470,6 +471,7 @@ def evaluate_classifier(params):
 
         test_params = {
             **test_params,
+            'test_loader': test_loader,
             'model': classification_model,
             'full_forward_pass': True,
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
@@ -504,6 +506,7 @@ def evaluate_classifier(params):
 
         test_params = {
             **test_params,
+            'test_loader': test_loader,
             'model': classification_model,
             'full_forward_pass': True,
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
@@ -578,14 +581,14 @@ def test_loop(params):
 
     # each row has the following results
     metric_results = {
-        const.DATASET: dataset, # evaluation dataset
-        const.MODEL: get_clean_model_name(xray_model_type), # the xray model that the metrics belong to 
-        const.FEW_SHOT: train_portion, # the few-shots
-        const.AUC: auc_micro,
-        const.PR_AUC: pr_auc_score_micro,
-        const.LABELS: all_labels.flatten().tolist(),
-        const.PRED_PROBS: all_probs.flatten().tolist(),
-        const.PER_CLASS_AUC: auc_per_class
+        const.DATASET: [dataset], # evaluation dataset
+        const.MODEL: [get_clean_model_name(xray_model_type)], # the xray model that the metrics belong to 
+        const.FEW_SHOT: [train_portion], # the few-shots
+        const.AUC: [auc_micro],
+        const.PR_AUC: [pr_auc_score_micro],
+        const.LABELS: [all_labels.flatten().tolist()],
+        const.PRED_PROBS: [all_probs.flatten().tolist()],
+        const.PER_CLASS_AUC: [auc_per_class]
     }
 
     return metric_results
