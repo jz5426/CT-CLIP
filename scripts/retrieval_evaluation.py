@@ -79,12 +79,12 @@ def run(cfg_dot):
         # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
         # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
-        'cxr_clip_swin_m',
-        'cxr_clip_resnet_m',
-        # 'medclip_vit',
-        # 'medclip_resnet',
-        # 'gloria_densenet',
-        # 'gloria_resnet',
+        # 'cxr_clip_swin_m',
+        # 'cxr_clip_resnet_m',
+        'medclip_vit',
+        'medclip_resnet',
+        ## 'gloria_densenet', # NOTE: no retreival for gloria
+        ## 'gloria_resnet', #NOTE: no retrieval for gloria
         # MISSING -> BI-Mamba
     ]
 
@@ -94,17 +94,14 @@ def run(cfg_dot):
         'image_encoder': image_encoder,
         'text_encoder': text_encoder,
         'tokenizer': tokenizer,
-        'metric_results_destination': ''
+        'metric_results_destination': os.path.join(const.EXPERIMENT_RESULTS_SAVING_PATH, 'retrieval_results.csv')
     }
-    retrieval_results_dir = const.EXPERIMENT_RESULTS_SAVING_PATH
     if cfg_dot.retrieval_params.evaluation_dataset == const.CT_RATE:
-        params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'ct-rate_retrieval_results.csv')
         results = ctrate_retrieval_evaluation(params)
     elif cfg_dot.retrieval_params.evaluation_dataset == const.MIMIC:
-        params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'mimic_retrieval_results.csv')
         results = mimic_retrieval_evaluation(params)
-    elif cfg_dot.retrieval_params.evaluation_dataset == const.RADCHEST_CT:
-        params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'radchest-ct_retrieval_results.csv')
+    elif cfg_dot.retrieval_params.evaluation_dataset == const.RADCHEST_CT or cfg_dot.retrieval_params.evaluation_dataset == const.RADCHEST_CT_PURE:
+        params['dataset'] = cfg_dot.retrieval_params.evaluation_dataset
         results = radchest_ct_retrieval_evaluation(params)
 
     #NOTE: each dataset has its own csv file for the experiment results.
@@ -114,8 +111,13 @@ def run(cfg_dot):
     file_exists = os.path.isfile(csv_filename)
     # create the directory if not exists
     os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
-    # Append data if file exists, otherwise create new CSV
-    df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
+    
+    # Append data if file exists, otherwise create new CSV and depends on the toggle
+    if cfg_dot.retrieval_params.override_metric_results:
+        df.to_csv(csv_filename, mode='w', index=False, header=True)
+    else:
+        df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
+
     print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
 
 if __name__ == '__main__':

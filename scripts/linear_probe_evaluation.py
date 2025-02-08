@@ -191,7 +191,10 @@ def run(cfg_dot):
     os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
     
     # append the stats to the existing metric results (if exists)
-    df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
+    if cfg_dot.retrieval_params.override_metric_results:
+        df.to_csv(csv_filename, mode='w', index=False, header=True)
+    else:
+        df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
     print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
 
 # Example usage

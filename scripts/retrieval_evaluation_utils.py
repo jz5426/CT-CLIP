@@ -60,7 +60,7 @@ def map_retrieval_evaluation(
             accs.append(xray_file_key+'.nii.gz')  # Use the filename without the extension as the accession number
         elif dataset == const.MIMIC:
             accs.append(xray_file_key)  # Use the filename without the extension as the accession number
-        elif dataset == 'radchest_ct' or dataset == 'radchest_ct_pure':
+        elif dataset == const.RADCHEST_CT or dataset == const.RADCHEST_CT_PURE:
             accs.append(xray_file_key)  # Use the filename without the extension as the accession number
 
     # Concatenate all loaded image data
@@ -77,13 +77,13 @@ def map_retrieval_evaluation(
     for target_key in tqdm.tqdm(target_latents.keys()):
         if dataset == const.CT_RATE:
             acc_second = target_key+'.nii.gz'
-            row_second = df[df['VolumeName'] == acc_second]
+            row_second = df[df[const.CT_RATE_INSTANCE_ID] == acc_second]
         elif dataset == const.MIMIC:
             acc_second = target_key
-            row_second = df[df['hadm_id'] == acc_second]
-        elif dataset == 'radchest_ct' or dataset == 'radchest_ct_pure':
+            row_second = df[df[const.MIMIC_INSTANCE_ID] == acc_second]
+        elif dataset == const.RADCHEST_CT or dataset == const.RADCHEST_CT_PURE:
             acc_second = target_key
-            row_second = df[df['NoteAcc_DEID'] == acc_second]
+            row_second = df[df[const.RADCHEST_CT_INSTANCE_ID] == acc_second]
 
         num_path = np.sum(row_second.iloc[:, 1:].values[0])
 
@@ -106,11 +106,11 @@ def map_retrieval_evaluation(
             first = torch.tensor(first).to('cuda') # place it in the GPU for batch processing.
             acc_first = accs[i]
             if dataset == const.CT_RATE:
-                row_first = df[df['VolumeName'] == acc_first]
+                row_first = df[df[const.CT_RATE_INSTANCE_ID] == acc_first]
             elif dataset == const.MIMIC:
-                row_first = df[df['hadm_id'] == acc_first]
-            elif dataset == 'radchest_ct' or dataset == 'radchest_ct_pure':
-                row_first = df[df['NoteAcc_DEID'] == acc_first]
+                row_first = df[df[const.MIMIC_INSTANCE_ID] == acc_first]
+            elif dataset == const.RADCHEST_CT or dataset == const.RADCHEST_CT_PURE:
+                row_first = df[df[const.RADCHEST_CT_INSTANCE_ID] == acc_first]
             row_first = row_first.iloc[:, 1:].values[0]
 
             # Create a DataLoader for batching processing, with respect to each row_first
@@ -128,11 +128,11 @@ def map_retrieval_evaluation(
             for index in top_k_indices:
                 acc_second = accs_for_second[index]
                 if dataset == const.CT_RATE:
-                    row_second = df[df['VolumeName'] == acc_second]
+                    row_second = df[df[const.CT_RATE_INSTANCE_ID] == acc_second]
                 elif dataset == const.MIMIC:
-                    row_second = df[df['hadm_id'] == acc_second]
-                elif dataset == 'radchest_ct' or dataset == 'radchest_ct_pure':
-                    row_second = df[df['NoteAcc_DEID'] == acc_second]
+                    row_second = df[df[const.MIMIC_INSTANCE_ID] == acc_second]
+                elif dataset == const.RADCHEST_CT or dataset == const.RADCHEST_CT_PURE:
+                    row_second = df[df[const.RADCHEST_CT_INSTANCE_ID] == acc_second]
                 row_second = row_second.iloc[:, 1:].values[0]
 
                 # find the similarity (overlapping labels) based on the top-k
@@ -147,7 +147,7 @@ def map_retrieval_evaluation(
         results.setdefault(const.TARGET, []).append(target_type)
         results.setdefault(const.K, []).append(return_n)
         results.setdefault(const.MODEL, []).append(model_baseline)
-        results.setdefault(const.DATASET, []).append(model_baseline)
+        results.setdefault(const.DATASET, []).append(dataset)
         results.setdefault(const.METRIC_TYPE, []).append(const.MAP)
         results.setdefault(const.VALUE, []).append(_map)
 
@@ -161,7 +161,8 @@ def recall_retrieval_evaluation(
         target_type,
         model_baseline,
         list_ks=[5, 10, 50, 100], 
-        batch_size=1024,):
+        batch_size=1024,
+        dataset=const.CT_RATE):
 
     query_latents = np.array(query_latents)
     target_latents = np.array(target_latents) # to be retrieved from
@@ -176,8 +177,8 @@ def recall_retrieval_evaluation(
             xray = torch.tensor(query_latents[i]).to('cuda')
 
             # Create a DataLoader for batching
-            dataset = TensorDataset(torch.tensor(target_latents))
-            dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+            train_dataset = TensorDataset(torch.tensor(target_latents))
+            dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
 
             # find the similarity between the xray and the target embeddings
             for batch in dataloader:
@@ -207,6 +208,7 @@ def recall_retrieval_evaluation(
         results.setdefault(const.TARGET, []).append(target_type)
         results.setdefault(const.K, []).append(value)
         results.setdefault(const.MODEL, []).append(model_baseline)
+        results.setdefault(const.DATASET, []).append(dataset)
         results.setdefault(const.METRIC_TYPE, []).append(const.RECALL)
         results.setdefault(const.VALUE, []).append(clip)
 
@@ -260,7 +262,8 @@ def ctrate_retrieval_evaluation(params):
         target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
         query_type=const.CT_REPORT,
         target_type=const.CT_IMAGE,
-        model_baseline=get_clean_model_name(const.CT_CLIP)
+        model_baseline=get_clean_model_name(const.CT_CLIP),
+        dataset=const.CT_RATE
     )
     csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -271,7 +274,8 @@ def ctrate_retrieval_evaluation(params):
         target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
         query_type=const.CT_IMAGE,
         target_type=const.CT_REPORT,
-        model_baseline=get_clean_model_name(const.CT_CLIP)
+        model_baseline=get_clean_model_name(const.CT_CLIP),
+        dataset=const.CT_RATE
     )
     csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -404,7 +408,8 @@ def ctrate_retrieval_evaluation(params):
             target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
             query_type=const.XRAY,
             target_type=const.CT_IMAGE,
-            model_baseline=get_clean_model_name(baseline)
+            model_baseline=get_clean_model_name(baseline),
+            dataset=const.CT_RATE
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -414,7 +419,8 @@ def ctrate_retrieval_evaluation(params):
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
             query_type=const.CT_IMAGE,
             target_type=const.XRAY,
-            model_baseline=get_clean_model_name(baseline)
+            model_baseline=get_clean_model_name(baseline),
+            dataset=const.CT_RATE
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -424,7 +430,8 @@ def ctrate_retrieval_evaluation(params):
             target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
             query_type=const.XRAY,
             target_type=const.CT_REPORT,
-            model_baseline=get_clean_model_name(baseline)
+            model_baseline=get_clean_model_name(baseline),
+            dataset=const.CT_RATE
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -434,7 +441,8 @@ def ctrate_retrieval_evaluation(params):
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
             query_type=const.CT_REPORT,
             target_type=const.XRAY,
-            model_baseline=get_clean_model_name(baseline)
+            model_baseline=get_clean_model_name(baseline),
+            dataset=const.CT_RATE
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -508,9 +516,9 @@ def radchest_ct_retrieval_evaluation(params):
     text_encoder = params['text_encoder']
     tokenizer = params['tokenizer']
     dataset = params['dataset']
-    if dataset == 'radchest_ct':
+    if dataset == const.RADCHEST_CT:
         label_file = 'final_labels.csv'
-    elif dataset == 'radchest_ct_pure':
+    elif dataset == const.RADCHEST_CT_PURE:
         label_file = 'final_labels_pure.csv'
 
     embedding_directory = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/features_embeddings'
@@ -576,7 +584,8 @@ def radchest_ct_retrieval_evaluation(params):
             target_latents=[triple[0].reshape(-1) for triple in triplet_embeddings],
             query_type=const.XRAY,
             target_type=const.CT_IMAGE,
-            model_baseline=get_clean_model_name(baseline)
+            model_baseline=get_clean_model_name(baseline),
+            dataset=dataset
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating ct_volumes 2 xray recall')
@@ -585,7 +594,8 @@ def radchest_ct_retrieval_evaluation(params):
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
             query_type=const.CT_IMAGE,
             target_type=const.XRAY,
-            model_baseline=get_clean_model_name(baseline)
+            model_baseline=get_clean_model_name(baseline),
+            dataset=dataset
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -699,7 +709,8 @@ def mimic_retrieval_evaluation(params):
             target_latents=[triple[1].reshape(-1) for triple in triplet_embeddings],
             query_type=const.XRAY,
             target_type=const.CT_REPORT,
-            model_baseline=get_clean_model_name(baseline)
+            model_baseline=get_clean_model_name(baseline),
+            dataset=const.MIMIC
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating xray 2 xray MAP')
@@ -718,7 +729,8 @@ def mimic_retrieval_evaluation(params):
             target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
             query_type=const.CT_REPORT,
             target_type=const.XRAY,
-            model_baseline=get_clean_model_name(baseline)
+            model_baseline=get_clean_model_name(baseline),
+            dataset=const.MIMIC
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating report 2 xray MAP')
