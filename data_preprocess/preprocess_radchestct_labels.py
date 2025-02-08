@@ -57,31 +57,42 @@ def process_labels(disease_names, df):
 if __name__ == "__main__":
     # Example file paths (update these with actual file paths)
     file_paths = [
-        "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radchestct/imgtest_Abnormality_and_Location_Labels.csv",
-        "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radchestct/imgtrain_Abnormality_and_Location_Labels.csv",
-        "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radchestct/imgvalid_Abnormality_and_Location_Labels.csv"
+        "/cluster/projects/mcintoshgroup/publicData/RADChestCT/imgtest_Abnormality_and_Location_Labels.csv",
+        "/cluster/projects/mcintoshgroup/publicData/RADChestCT/imgtrain_Abnormality_and_Location_Labels.csv",
+        "/cluster/projects/mcintoshgroup/publicData/RADChestCT/imgvalid_Abnormality_and_Location_Labels.csv"
     ]
-    merge_labels_output_path = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radchestct/merged_original_labels.csv"
-    final_labels_output_path = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radchestct/final_labels.csv"
+    merge_labels_output_path = "/cluster/projects/mcintoshgroup/publicData/RADChestCT/merged_original_labels.csv"
+    final_labels_output_path = "/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure.csv"
     merged_labels_df = merge_excels(file_paths)
     if merged_labels_df is not None:
-        merged_labels_df.to_csv(merge_labels_output_path, index=False)
-        print(f"Merged file saved as: {merge_labels_output_path}")
+        # merged_labels_df.to_csv(merge_labels_output_path, index=False)
+        # print(f"Merged file saved as: {merge_labels_output_path}")
+        # path_col_names = [
+        #     'calcification',
+        #     'Cardiomegaly',
+        #     'pericardial_effusion',
+        #     'hernia',
+        #     'Lymphadenopathy',
+        #     'Emphysema',
+        #     'Atelectasis',
+        #     'nodule',
+        #     'opacity',
+        #     'fibrosis',
+        #     'pleural_effusion',
+        #     'bronchial_wall_thickening', # assumed
+        #     'Consolidation',
+        #     'Bronchiectasis',
+        #     'septal_thickening'
+        # ]
         path_col_names = [
             'calcification',
-            'Cardiomegaly',
             'pericardial_effusion',
             'hernia',
-            'Lymphadenopathy',
-            'Emphysema',
-            'Atelectasis',
-            'nodule',
-            'opacity',
+            'lymphadenopathy',
+            'emphysema',
             'fibrosis',
-            'pleural_effusion',
-            'bronchial_wall_thickening', # assumed
-            'Consolidation',
-            'Bronchiectasis',
+            'bronchial_wall_thickening',
+            'bronchiectasis',
             'septal_thickening'
         ]
         merged_label_frames = process_labels(path_col_names, merged_labels_df)

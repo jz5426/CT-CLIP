@@ -471,7 +471,7 @@ class CTClipInference(nn.Module):
                     data_folder=data_folder,
                     csv_file=reports_file,
                     labels=labels)
-            elif dataset == 'radchest_ct':
+            elif dataset == 'radchest_ct': #TODO: integrate the pure dataset
                 self.ds = RadChestCTDataset(
                     data_folder=data_folder,
                     labels=labels)

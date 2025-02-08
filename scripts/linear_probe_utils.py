@@ -101,7 +101,8 @@ def get_train_internal_split(cfg_dot, cfg):
             model_type=xray_model_type,
             split='train'
         )
-    elif cfg_dot.linear_probing_params.evaluation_dataset == 'radchest_ct':
+    elif cfg_dot.linear_probing_params.evaluation_dataset in ['radchest_ct', 'radchest_ct_pure']:
+
         print('Splitting ct-rate rachest_ct version dataset: differences in the set of the labels')
         # base on the baseline model, load the corresponding xray features
         xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
@@ -110,9 +111,14 @@ def get_train_internal_split(cfg_dot, cfg):
         # Set up the dataset and data loaders
         #NOTE: the label is the radchest_ct version (with 15 labels) but the report and the data are the original CT-RATE
             # particularly, the calcification related labels are merged.
+        dataset = cfg_dot.linear_probing_params.evaluation_dataset 
+        if dataset == 'radchest_ct':
+            labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv' 
+        elif dataset == 'radchest_ct_pure':
+            labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_pure_labels.csv'
         train_data_splitter = CTReportDataSplitter(
             csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv', #NOTE: the label need to be the radchest_ct version
+            labels=labels, #NOTE: the label need to be the radchest_ct or radchest_ct_pure version
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
@@ -257,6 +263,18 @@ def get_pathologies(dataset='ct-rate'):
             'septal_thickening'
         ]
         pathologies = [p.lower() for p in pathologies]
+    elif dataset == 'radchest_ct_pure':
+        pathologies = [
+            'calcification',
+            'pericardial_effusion',
+            'hernia',
+            'lymphadenopathy',
+            'emphysema',
+            'fibrosis',
+            'bronchial_wall_thickening',
+            'bronchiectasis',
+            'septal_thickening'
+        ]
     return pathologies
 
 
@@ -423,13 +441,18 @@ def evaluate_classifier(params):
             'pretrained_cpt_dest': best_ckpt_destination, # destination to retreive the checkpoint for the linear classifier only.
         }
         return test_loop(test_params)
-    elif dataset == 'radchest_ct':
-
+    elif dataset in ['radchest_ct', 'radchest_ct_pure']:
+        # TODO: change the labels with option to be pure
+        if dataset == 'radchest_ct':
+            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv'
+        elif dataset == 'radchest_ct_pure':
+            # this file should be created in preprocess_radchestct_labels.py
+            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure.csv'
         test_dataset = RadChestXrayDataset(
             data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
             model_type=xray_model_type,
             cfg=cfg,
-            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv'
+            labels=labels
         )
         print(f'size of the external radchest_ct data: {len(test_dataset)}')
 
@@ -518,7 +541,7 @@ def test_loop(params):
     with torch.no_grad():
         for data in test_loader:
             # inputs, _, labels, _ = data
-            inputs, labels = data['xray'], data['labels']
+            inputs, labels = data['xray'], data['label']
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -582,7 +605,7 @@ def validation_loop(params):
     with torch.no_grad():
         for data in val_loader:
             # inputs, _, labels, _ = data
-            inputs, labels = data['xray'], data['labels']
+            inputs, labels = data['xray'], data['label']
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -613,7 +636,7 @@ def train_loop(params):
     total_loss = 0.0
     for idx, data in enumerate(train_loader):
         # inputs, _, labels, _ 
-        inputs, labels = data['xray'], data['labels']
+        inputs, labels = data['xray'], data['label']
         
         inputs = inputs.to(device)
         labels = labels.to(device)

@@ -29,20 +29,41 @@ def merge_disease_labels(csv_file, radchest_ctrate_label_mappings):
 
 
 if __name__ == '__main__':
+    # radchest_ctrate_label_mappings = {
+    #     'calcification': ['Arterial wall calcification', 'Coronary artery wall calcification'],
+    #     'cardiomegaly': ['Cardiomegaly'],
+    #     'pericardial_effusion':['Pericardial effusion'],
+    #     'hernia': ['Hiatal hernia'],
+    #     'lymphadenopathy': ['Lymphadenopathy'],
+    #     'emphysema': ['Emphysema'],
+    #     'atelectasis': ['Atelectasis'],
+    #     'nodule': ['Lung nodule'],
+    #     'opacity': ['Lung opacity'],
+    #     'fibrosis': ['Pulmonary fibrotic sequela'],
+    #     'pleural_effusion': ['Pleural effusion'],
+    #     'bronchial_wall_thickening': ['Peribronchial thickening'], # assumed
+    #     'consolidation': ['Consolidation'],
+    #     'bronchiectasis': ['Bronchiectasis'],
+    #     'septal_thickening': ['Interlobular septal thickening'],
+    # }
+
+    # radchest_ctrate_labels = merge_disease_labels(
+    #     '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
+    #     radchest_ctrate_label_mappings
+    # )
+    # radchest_ctrate_labels.to_csv(
+    #     '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv',
+    #     index=False
+    # )
+
     radchest_ctrate_label_mappings = {
         'calcification': ['Arterial wall calcification', 'Coronary artery wall calcification'],
-        'cardiomegaly': ['Cardiomegaly'],
         'pericardial_effusion':['Pericardial effusion'],
         'hernia': ['Hiatal hernia'],
         'lymphadenopathy': ['Lymphadenopathy'],
         'emphysema': ['Emphysema'],
-        'atelectasis': ['Atelectasis'],
-        'nodule': ['Lung nodule'],
-        'opacity': ['Lung opacity'],
         'fibrosis': ['Pulmonary fibrotic sequela'],
-        'pleural_effusion': ['Pleural effusion'],
         'bronchial_wall_thickening': ['Peribronchial thickening'], # assumed
-        'consolidation': ['Consolidation'],
         'bronchiectasis': ['Bronchiectasis'],
         'septal_thickening': ['Interlobular septal thickening'],
     }
@@ -52,7 +73,6 @@ if __name__ == '__main__':
         radchest_ctrate_label_mappings
     )
     radchest_ctrate_labels.to_csv(
-        '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv',
+        '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_pure_labels.csv',
         index=False
     )
-

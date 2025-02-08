@@ -151,7 +151,7 @@ def process_and_plot(directory, include_trainPortion1=False, metric="roc"):
         auc_scores = []
 
         for train_portion, data in files:
-            labels = np.array(data['labels'])  # Ensure correct key
+            labels = np.array(data['label'])  # Ensure correct key
             pred_probs = np.array(data['pred_probs'])
             
             if labels.ndim == 1 or pred_probs.ndim == 1:  # Ensure correct shape

@@ -66,7 +66,7 @@ def map_retrieval_evaluation(
             accs.append(xray_file_key+'.nii.gz')  # Use the filename without the extension as the accession number
         elif dataset == const.MIMIC:
             accs.append(xray_file_key)  # Use the filename without the extension as the accession number
-        elif dataset == const.RADCHEST_CT:
+        elif dataset == 'radchest_ct' or dataset == 'radchest_ct_pure':
             accs.append(xray_file_key)  # Use the filename without the extension as the accession number
 
     # Concatenate all loaded image data
@@ -87,7 +87,7 @@ def map_retrieval_evaluation(
         elif dataset == const.MIMIC:
             acc_second = target_key
             row_second = df[df['hadm_id'] == acc_second]
-        elif dataset == const.RADCHEST_CT:
+        elif dataset == 'radchest_ct' or dataset == 'radchest_ct_pure':
             acc_second = target_key
             row_second = df[df['NoteAcc_DEID'] == acc_second]
 
@@ -115,7 +115,7 @@ def map_retrieval_evaluation(
                 row_first = df[df['VolumeName'] == acc_first]
             elif dataset == const.MIMIC:
                 row_first = df[df['hadm_id'] == acc_first]
-            elif dataset == const.RADCHEST_CT:
+            elif dataset == 'radchest_ct' or dataset == 'radchest_ct_pure':
                 row_first = df[df['NoteAcc_DEID'] == acc_first]
             row_first = row_first.iloc[:, 1:].values[0]
 
@@ -137,7 +137,7 @@ def map_retrieval_evaluation(
                     row_second = df[df['VolumeName'] == acc_second]
                 elif dataset == const.MIMIC:
                     row_second = df[df['hadm_id'] == acc_second]
-                elif dataset == const.RADCHEST_CT:
+                elif dataset == 'radchest_ct' or dataset == 'radchest_ct_pure':
                     row_second = df[df['NoteAcc_DEID'] == acc_second]
                 row_second = row_second.iloc[:, 1:].values[0]
 
@@ -509,6 +509,12 @@ def radchest_ct_retrieval_evaluation(params):
     image_encoder = params['image_encoder']
     text_encoder = params['text_encoder']
     tokenizer = params['tokenizer']
+    metric_results_destination = params['metric_results_destination']
+    dataset = params['dataset']
+    if dataset == 'radchest_ct':
+        label_file = 'final_labels.csv'
+    elif dataset == 'radchest_ct_pure':
+        label_file = 'final_labels_pure.csv'
 
     embedding_directory = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/features_embeddings'
     saving_path = embedding_directory
@@ -551,7 +557,7 @@ def radchest_ct_retrieval_evaluation(params):
             tokenizer=tokenizer,
             cfg=cfg,
             data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
-            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
+            labels = f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{label_file}',
             batch_size = 256,
             num_workers = 5,
             results_folder="inference_zeroshot/",
