@@ -98,7 +98,7 @@ def proportion_mapping(proportion):
     if str(proportion) == '1' or str(proportion) == '1.':
         return 'hundred_percent'
     
-def get_clean_model_name(messy_custom_model_name):
+def  get_clean_model_name(messy_custom_model_name):
     # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
 
     messy_custom_model_name=messy_custom_model_name.lower()
@@ -108,6 +108,8 @@ def get_clean_model_name(messy_custom_model_name):
             parts.append('resnet')
         elif 'swin' in messy_custom_model_name:
             parts.append('swin')
+        elif 'mamba' in messy_custom_model_name:
+            parts.append('mamba')
         
         if 'pretrained_true' in messy_custom_model_name:
             parts.append('pretrained')
