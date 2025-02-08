@@ -97,6 +97,32 @@ def proportion_mapping(proportion):
         return 'ten_percent'
     if str(proportion) == '1' or str(proportion) == '1.':
         return 'hundred_percent'
+    
+def get_clean_model_name(messy_custom_model_name):
+    # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+
+    messy_custom_model_name=messy_custom_model_name.lower()
+    if 'batchstyle' in messy_custom_model_name:
+        parts = []
+        if 'resnet' in messy_custom_model_name:
+            parts.append('resnet')
+        elif 'swin' in messy_custom_model_name:
+            parts.append('swin')
+        
+        if 'pretrained_true' in messy_custom_model_name:
+            parts.append('pretrained')
+        
+        if 'experiment' in messy_custom_model_name:
+            parts.append('exp')
+        elif 'patient' in messy_custom_model_name:
+            parts.append('pat')
+        elif 'instance' in messy_custom_model_name:
+            parts.append('ins')
+
+        return '_'.join(parts)
+    else:
+        return messy_custom_model_name
+
 
 def get_cxr_clip_variants():
     cxr_clip_variants = ['cxr_clip_swin_m', 'cxr_clip_swin_mc', 'cxr_clip_swin', 'cxr_clip_resnet_m', 'cxr_clip_resnet_mc', 'cxr_clip_resnet']

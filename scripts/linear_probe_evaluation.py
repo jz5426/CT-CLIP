@@ -24,6 +24,7 @@ import random
 import numpy as np
 import pandas as pd
 import pickle
+import constants as const
 
 @hydra.main(
         version_base=None,
@@ -178,10 +179,19 @@ def run(cfg_dot):
         'classifier_ckpt_base_name': classifier_ckpt_base_name,
         'pth_base_name': pth_base_name # mainly for the ct-rate dataset
     }
-    label_predictions = evaluate_classifier(params)
+    metric_results = evaluate_classifier(params)
 
-    return label_predictions
+    # save it to a csv file
+    df = pd.DataFrame(metric_results)
+
+    retrieval_results_dir = const.EXPERIMENT_RESULTS_SAVING_PATH
+    csv_filename = os.path.join(retrieval_results_dir, 'linear_probe_results.csv')
+    file_exists = os.path.isfile(csv_filename)
+    os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
     
+    # append the stats to the existing metric results (if exists)
+    df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
+    print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
 
 # Example usage
 if __name__ == "__main__":

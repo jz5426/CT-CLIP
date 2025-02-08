@@ -7,7 +7,9 @@ from transformer_maskgit import CTViT
 from transformers import BertTokenizer, BertModel
 import random
 import numpy as np
+import pandas as pd
 from retrieval_evaluation_utils import ctrate_retrieval_evaluation, mimic_retrieval_evaluation, radchest_ct_retrieval_evaluation
+import constants as const
 
 @hydra.main(
         version_base=None,
@@ -71,22 +73,19 @@ def run(cfg_dot):
 
     print('Starting Xray related retrieval experiments')
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip NOTE: shared
+
     baselines = [
-        ## newly add
-        # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch'
-        ## baseline pretrained model (not pretrained by us)
-        # 'cxr_clip_swin', # xray encoder weights from cxr_clip
-        # 'cxr_clip_resnet',
         'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'medclip_resnet',
-        # 'medclip_vit',
-        ## our pretrained model
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
-        ## missing
-        # 'gloria_densenet',
-        # 'gloria_resnet',
+        'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
+        'cxr_clip_swin_m',
+        'cxr_clip_resnet_m',
+        'medclip_vit',
+        'medclip_resnet',
+        'gloria_densenet',
+        'gloria_resnet',
+        # MISSING -> BI-Mamba
     ]
 
     params = {
@@ -97,17 +96,26 @@ def run(cfg_dot):
         'tokenizer': tokenizer,
         'metric_results_destination': ''
     }
+    retrieval_results_dir = const.EXPERIMENT_RESULTS_SAVING_PATH
     if cfg_dot.retrieval_params.evaluation_dataset == 'ct-rate':
-        params['metric_results_destination'] = './ct-rate_retrieval_results'
-        ctrate_retrieval_evaluation(params)
+        params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'ct-rate_retrieval_results.csv')
+        results = ctrate_retrieval_evaluation(params)
     elif cfg_dot.retrieval_params.evaluation_dataset == 'mimic':
-        params['metric_results_destination'] = './mimic_retrieval_results'
-        mimic_retrieval_evaluation(params)
+        params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'mimic_retrieval_results.csv')
+        results = mimic_retrieval_evaluation(params)
     elif cfg_dot.retrieval_params.evaluation_dataset == 'radchest_ct':
-        params['metric_results_destination'] = './radchest-ct_retrieval_results'
-        radchest_ct_retrieval_evaluation(params)
-    else:
-        assert False
+        params['metric_results_destination'] = os.path.join(retrieval_results_dir, 'radchest-ct_retrieval_results.csv')
+        results = radchest_ct_retrieval_evaluation(params)
+
+    df = pd.DataFrame(results)
+    csv_filename = params['metric_results_destination']
+    # Check if file exists
+    file_exists = os.path.isfile(csv_filename)
+    # create the directory if not exists
+    os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
+    # Append data if file exists, otherwise create new CSV
+    df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
+    print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
 
 if __name__ == '__main__':
 
