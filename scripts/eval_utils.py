@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import os
 
 class LinearProbeModel(nn.Module):
     def __init__(self, in_features: int, num_classes: int):
@@ -190,16 +191,17 @@ def metadata_base_on_model_type(baseline_type, pth_trailing_string='features'):
 
     return dim_xray, xray_model_type, pth_base_name, latent_size
 
+def save_metric_results(path, file_name, df, override_previous_saved_results=False):
+    assert 'csv' in file_name
 
-# Example usage
-# if __name__ == "__main__":
-    # from torchvision.models import resnet18
-
-    # # Load a pre-trained vision model
-    # pretrained_model = resnet18(pretrained=True)
-
-    # # Initialize the wrapper model
-    # model = XrayClassificationModel(vision_model=pretrained_model, isLinearProbe=True, in_features=512, num_classes=10)
-
-    # # Print model summary
-    # print(model)
+    csv_filename = os.path.join(path, file_name)
+    file_exists = os.path.isfile(csv_filename)
+    os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
+    
+    # append the stats to the existing metric results (if exists)
+    if override_previous_saved_results:
+        df.to_csv(csv_filename, mode='w', index=False, header=True)
+        print(f"New file created: {csv_filename}")
+    else: # append if there exist a file.
+        df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
+        print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")

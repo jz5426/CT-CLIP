@@ -569,7 +569,7 @@ def radchest_ct_retrieval_evaluation(params):
             results_folder="inference_zeroshot/",
             num_train_steps = 1,
             feature_extraction_mode = True, # extract only the text and ct features only
-            dataset='radchest_xray' # this is what differentiate with ct-rate one.
+            dataset=const.RADCHEST_XRAY # this is what differentiate with ct-rate one.
         )
 
         # get xray latent features from a model TODO: fix this!

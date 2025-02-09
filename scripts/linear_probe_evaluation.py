@@ -10,7 +10,7 @@ note that this file depends on the following are done:
 import torch
 
 from linear_probe_utils import evaluate_classifier, get_train_internal_split, get_pathologies, linear_probing_main
-from eval_utils import LinearProbeModel, metadata_base_on_model_type
+from eval_utils import LinearProbeModel, metadata_base_on_model_type, save_metric_results
 from transformers import BertModel
 import os
 from cxr_clip_utils import convert_dictconfig_to_dict
@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import constants as const
+from collections import defaultdict
 
 @hydra.main(
         version_base=None,
@@ -53,9 +54,7 @@ def main(cfg: DictConfig):
     if cfg.linear_probing_params.multi_sweep_evaluation:
         # List of seeds to iterate over
         seed_list = [1024, 1234, 4321, 5678, 8765, 1357, 2468, 9753, 8642, 3141]
-
-        results = {}
-
+        seed_dicts = []
         for i, seed in enumerate(seed_list):
             # Set the random seeds
             random.seed(seed)
@@ -65,18 +64,23 @@ def main(cfg: DictConfig):
             torch.cuda.manual_seed_all(seed)
 
             # Run the function and store the label_predictions
-            label_predictions = run(cfg)
-            results[seed] = label_predictions
+            metric_results = run(cfg)
+            seed_dicts.append(metric_results)
             print(f'finish the evaluation round {i+1}/{len(seed_list)}')
 
-        # Define save path so that it is unique to the baseline and the datasets
-        save_path = f"./lp_evaluation_results/multi_sweep/{cfg.linear_probing_params.evaluation_dataset}/{cfg.linear_probing_params.baseline_type}_trainPortion{cfg.linear_probing_params.train_data_portion}_sweeps_results.pkl"
-        os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        # Save results as a Pickle file
-        with open(save_path, "wb") as f:
-            pickle.dump(results, f)
-        print(f"full sweep results are saved to : {save_path}")
-        return 
+        # merge all of the seed dictionaries
+        merged_dict = defaultdict(list)
+        merged_dict[const.SEED] = seed_list
+        for d in seed_dicts:
+            for key, value in d.items():
+                merged_dict[key].extend(value)        
+
+        # save the results
+        save_metric_results(
+            const.EXPERIMENT_RESULTS_SAVING_PATH,
+            'linear_probe_multiRun_results.csv',
+            pd.DataFrame(dict(merged_dict)),
+            cfg.linear_probing_params.override_metric_results)
 
     # seed everything
     seed = 1024
@@ -86,7 +90,15 @@ def main(cfg: DictConfig):
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # If using multiple GPUs
 
-    run(cfg)
+    metric_results = run(cfg)
+    # NOTE: everything is saved to the same file.
+    # save it to a csv file
+    metric_results[const.SEED] = [seed]
+    save_metric_results(
+        const.EXPERIMENT_RESULTS_SAVING_PATH,
+        'linear_probe_results.csv',
+        pd.DataFrame(metric_results),
+        cfg.linear_probing_params.override_metric_results)
 
 
 def run(cfg_dot):
@@ -181,22 +193,24 @@ def run(cfg_dot):
     }
     metric_results = evaluate_classifier(params)
 
-    # NOTE: everything is saved to the same file.
-    # save it to a csv file
-    df = pd.DataFrame(metric_results)
+    return metric_results
 
-    retrieval_results_dir = const.EXPERIMENT_RESULTS_SAVING_PATH
-    csv_filename = os.path.join(retrieval_results_dir, 'linear_probe_results.csv')
-    file_exists = os.path.isfile(csv_filename)
-    os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
+    # # NOTE: everything is saved to the same file.
+    # # save it to a csv file
+    # df = pd.DataFrame(metric_results)
+
+    # retrieval_results_dir = const.EXPERIMENT_RESULTS_SAVING_PATH
+    # csv_filename = os.path.join(retrieval_results_dir, 'linear_probe_results.csv')
+    # file_exists = os.path.isfile(csv_filename)
+    # os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
     
-    # append the stats to the existing metric results (if exists)
-    if cfg_dot.linear_probing_params.override_metric_results:
-        df.to_csv(csv_filename, mode='w', index=False, header=True)
-        print(f"New file created: {csv_filename}")
-    else:
-        df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
-        print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
+    # # append the stats to the existing metric results (if exists)
+    # if cfg_dot.linear_probing_params.override_metric_results:
+    #     df.to_csv(csv_filename, mode='w', index=False, header=True)
+    #     print(f"New file created: {csv_filename}")
+    # else:
+    #     df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
+    #     print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
 
 # Example usage
 if __name__ == "__main__":

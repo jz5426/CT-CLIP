@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from retrieval_evaluation_utils import ctrate_retrieval_evaluation, mimic_retrieval_evaluation, radchest_ct_retrieval_evaluation
 import constants as const
+from eval_utils import save_metric_results
 
 @hydra.main(
         version_base=None,
@@ -104,21 +105,13 @@ def run(cfg_dot):
         params['dataset'] = cfg_dot.retrieval_params.evaluation_dataset
         results = radchest_ct_retrieval_evaluation(params)
 
-    #NOTE: each dataset has its own csv file for the experiment results.
-    df = pd.DataFrame(results)
-    csv_filename = params['metric_results_destination']
-    # Check if file exists
-    file_exists = os.path.isfile(csv_filename)
-    # create the directory if not exists
-    os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
-    
-    # Append data if file exists, otherwise create new CSV and depends on the toggle
-    if cfg_dot.retrieval_params.override_metric_results:
-        df.to_csv(csv_filename, mode='w', index=False, header=True)
-    else:
-        df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
-
-    print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
+    # all dataset share the same result files.
+    save_metric_results(
+        const.EXPERIMENT_RESULTS_SAVING_PATH,
+        'retrieval_results.csv',
+        pd.DataFrame(results),
+        cfg_dot.retrieval_params.override_metric_results
+    )
 
 if __name__ == '__main__':
 
