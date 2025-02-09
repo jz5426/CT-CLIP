@@ -1041,14 +1041,18 @@ class CTCLIPwithXray(nn.Module):
             if self.projector_type == 'siamese':
                 # projector
                 self.to_xray_latent = self._define_siamese_projector(dim_xray, dim_latent)
-
                 # bottleneck layers for predictor 
                 self.predictor = self._define_siamese_predictor(dim_latent)
+                print('Using siamese projector')
             else:
+                print('Using regular projector')
                 self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
             if self.loss_type == 'siamese':
+                print('Using siamese loss function')
                 self.cos_sim_loss = nn.CosineSimilarity(dim=1).to('cuda')
+            else:
+                print('Using infoNCE loss function')
 
             if not auto_load_pretrained_weights:
                 print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')

@@ -449,11 +449,14 @@ class CTClipTrainer(nn.Module):
                     val_data = next(self.valid_dl_iter)
 
                     if self.triplet:
-                        valid_data, text, onehotlabels, xray_image, _, _ = val_data
+                        # valid_data, text, onehotlabels, xray_image, _, _ = val_data
+                        valid_data, text, onehotlabels, xray_image = val_data['ct'], val_data['report'], val_data['label'], val_data['xray']
                         xray_image = xray_image.to(device)
                         text=text.to(device)
                     else:
-                        valid_data, text, onehotlabels, _, _ = val_data
+                        # valid_data, text, onehotlabels, _, _ = val_data
+                        valid_data, text, onehotlabels = val_data['ct'], val_data['report'], val_data['label']
+            
 
                     valid_data = valid_data.to(device)
 

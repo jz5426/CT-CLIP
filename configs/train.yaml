@@ -99,7 +99,7 @@ linear_probing_params:
 
 
 retrieval_params:
-  evaluation_dataset: 'radchest_ct' # ct-rate, mimic, radchest_ct, radchest_ct_pure
+  evaluation_dataset: '' # ct-rate, mimic, radchest_ct, radchest_ct_pure
   override_metric_results: false
 
 zero_shot_params:
