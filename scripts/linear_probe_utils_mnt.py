@@ -17,7 +17,8 @@ def load_cached_ct_rate_xray_features(pth_base_name, split):
     # split = 'train'
 
     # base on the baseline model, load the corresponding xray features
-    xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/{split}/{pth_base_name}'
+    # xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/{split}/{pth_base_name}'
+    xray_feature_path = f'/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/xray_features_embeddings/{split}/{pth_base_name}'
     xray_features = torch.load(xray_feature_path)
     print('Xray feature extraction completed')
     return xray_features
@@ -34,15 +35,15 @@ def get_train_internal_split(cfg_dot, cfg):
         print('Splitting ct-rate mimic version dataset: differences in the set of the labels')
 
         # base on the baseline model, load the corresponding xray features
-        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
+        xray_feature_path = f'/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
         train_xray_features = torch.load(xray_feature_path)
 
         # Set up the dataset and data loaders
         #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
         train_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
-            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+            csv_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+            labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
+            data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
             train_split=cfg_dot.linear_probing_params.train_data_portion,
@@ -69,15 +70,15 @@ def get_train_internal_split(cfg_dot, cfg):
         print('Splitting ct-rate dataset')
 
         # base on the baseline model, load the corresponding xray features
-        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
+        xray_feature_path = f'/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
         train_xray_features = torch.load(xray_feature_path)
 
         # Set up the dataset and data loaders
         #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
         train_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv', #NOTE: the label need to be the ct-rate version
-            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+            csv_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+            labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv', #NOTE: the label need to be the ct-rate version
+            data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
             train_split=cfg_dot.linear_probing_params.train_data_portion,
@@ -103,7 +104,7 @@ def get_train_internal_split(cfg_dot, cfg):
 
         print('Splitting ct-rate rachest_ct version dataset: differences in the set of the labels')
         # base on the baseline model, load the corresponding xray features
-        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
+        xray_feature_path = f'/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/xray_features_embeddings/train/{pth_base_name}'
         train_xray_features = torch.load(xray_feature_path)
 
         # Set up the dataset and data loaders
@@ -111,13 +112,13 @@ def get_train_internal_split(cfg_dot, cfg):
             # particularly, the calcification related labels are merged.
         dataset = cfg_dot.linear_probing_params.evaluation_dataset 
         if dataset == const.RADCHEST_CT:
-            labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv' 
+            labels = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv' 
         elif dataset == const.RADCHEST_CT_PURE:
-            labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_pure_labels.csv'
+            labels = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_pure_labels.csv'
         train_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+            csv_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
             labels=labels, #NOTE: the label need to be the radchest_ct or radchest_ct_pure version
-            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
+            data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
             train_split=cfg_dot.linear_probing_params.train_data_portion,
@@ -139,43 +140,7 @@ def get_train_internal_split(cfg_dot, cfg):
             model_type=xray_model_type,
             split='train'
         )
-        
-    elif 'vinBig' in cfg_dot.linear_probing_params.evaluation_dataset: # the ct dataset
-        print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
-    
-        dataset = cfg_dot.linear_probing_params.evaluation_dataset
-        split = 'train'
-        # base on the baseline model, load the corresponding xray features
-        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{dataset}/xray_features_embeddings/train/{pth_base_name}'
-        train_xray_features = torch.load(xray_feature_path)
 
-        train_data_splitter = VinBigChestXrayDataSplitter(
-            labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', #NOTE: the label need to be the mha version
-            data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
-            label_variant=cfg_dot.linear_probing_params.evaluation_dataset
-        )
-        train_sample, internal_val_samples = train_data_splitter.prepare_samples(
-            train_split=cfg_dot.linear_probing_params.train_data_portion,
-            val_split=0.2
-        ) # validation split is always, train_split is controlable
-
-
-        train_dataset = VinBigChestXrayClassificationDataset(
-            cfg=cfg,
-            data=train_sample, # actual data potentially with the embeddings
-            data_embeddings=train_xray_features,
-            model_type=xray_model_type,
-            split=split
-        )
-
-        internal_val_dataset = VinBigChestXrayClassificationDataset(
-            cfg=cfg,
-            data=internal_val_samples, # actual data potentially with the embeddings
-            data_embeddings=train_xray_features,
-            model_type=xray_model_type,
-            split=split
-        )
-    
     return train_dataset, internal_val_dataset
 
 
@@ -369,9 +334,9 @@ def evaluate_classifier(params):
     if dataset == 'mimic':
         test_dataset = MimicCTReportXRayDataset(
             cfg=cfg,
-            data_folder='/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
+            data_folder='/mnt/g/preprocessed_mimic/mimic_preprocessed_xray_mha',
+            csv_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
+            labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
             model_type=xray_model_type,
             split='valid'
         )
@@ -409,9 +374,9 @@ def evaluate_classifier(params):
 
         # the whole validation dataset for internal validation.
         test_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
+            csv_file='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
+            labels='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+            data_folder='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/valid_preprocessed_xray_mha',
         )
         test_samples = test_data_splitter.prepare_samples(train_split=1., val_split=0.) # no splitting
 
@@ -440,14 +405,13 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
     elif dataset in [const.RADCHEST_CT, const.RADCHEST_CT_PURE]:
-        # TODO: change the labels with option to be pure
         if dataset == const.RADCHEST_CT:
-            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv'
+            labels = '/mnt/g/radchest_preprocessed/final_labels.csv'
         elif dataset == const.RADCHEST_CT_PURE:
             # this file should be created in preprocess_radchestct_labels.py
-            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure.csv'
+            labels = '/mnt/g/radchest_preprocessed/final_labels_pure.csv'
         test_dataset = RadChestXrayDataset(
-            data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
+            data_folder = '/mnt/g/radchest_preprocessed/preprocessed_xray_mha',
             model_type=xray_model_type,
             cfg=cfg,
             labels=labels
@@ -460,41 +424,6 @@ def evaluate_classifier(params):
             batch_size=cfg_dot.linear_probing_params.batch_size, 
             shuffle=False)
 
-        classification_model = XrayClassificationModel(
-            vision_model=clip_xray.xray_encoder, # from pretrained
-            feature_projector=clip_xray.to_xray_latent, # from pretrained
-            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded in test_loop function
-            vision_model_type=xray_model_type
-        )
-        classification_model.to(device)
-
-        test_params = {
-            **test_params,
-            'test_loader': test_loader,
-            'model': classification_model,
-            'full_forward_pass': True,
-            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-        }
-        return test_loop(test_params)
-
-    elif 'vinBig' in dataset:
-        #NOTE: follow similarly to the mimic external validaion.
-        split = 'test'
-        test_dataset = VinBigDataChestXrayDataset(
-            cfg=cfg,
-            data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
-            labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', 
-            model_type=xray_model_type,
-            label_variant=dataset,
-            split=split)
-
-        # Split dataset into train and validation sets
-        test_loader = DataLoader(
-            test_dataset,
-            num_workers=cfg_dot.linear_probing_params.num_workers,
-            batch_size=cfg_dot.linear_probing_params.batch_size,
-            shuffle=False)
-    
         classification_model = XrayClassificationModel(
             vision_model=clip_xray.xray_encoder, # from pretrained
             feature_projector=clip_xray.to_xray_latent, # from pretrained

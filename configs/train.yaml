@@ -80,6 +80,8 @@ training_params:
 #   evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure (even smaller set of labels xray backone not seen)
 #   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
 #   override_metric_results: false
+#   windows_wsl_env: false
+#   mnt_cpt_dest: ''
 
 ## TOY
 linear_probing_params:
@@ -96,6 +98,8 @@ linear_probing_params:
   evaluation_dataset: 'radchest_ct_pure' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
   override_metric_results: false
+  windows_wsl_env: true # implies that the script is ran on the windows wsl environment
+  mnt_cpt_dest: './mnt_linear_probe_ckpts'
 
 ## FOR OFFICIAL
 retrieval_params:

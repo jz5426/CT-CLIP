@@ -1151,10 +1151,8 @@ class CTCLIPwithXray(nn.Module):
             sys.path.append('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/mamba-cxr')
 
             import models_mamba # this ensure the registration of timm model
-            import timm
             from models_mamba import vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2
             checkpoint_path = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/bi_mamba_ckpt/vim_s_midclstok_ft_81p6acc.pth'
-            # models = timm.list_models('*vim*') # sanity check
             bimamba_encoder = vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2()
             
             if not auto_load_pretrained_weights:
@@ -1171,6 +1169,7 @@ class CTCLIPwithXray(nn.Module):
             if 'pos_embed' in checkpoint_model:
                 print(f"Removing pos_embed from pretrained checkpoint")
                 del checkpoint_model['pos_embed']
+            # NOTE: the embedding should be averaged already: https://github.com/RPIDIAL/BI-Mamba/blob/19ef06a62841cfcaea97fd8a57c8cb42f0dce441/mamba-cxr/models_mamba.py#L570
             missing, unexpected = bimamba_encoder.load_state_dict(checkpoint_model, strict=False)
             print(f'Loaded pretrained weights for bi-mamba model from {checkpoint_path}')
         else: 

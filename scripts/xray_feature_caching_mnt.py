@@ -19,7 +19,7 @@ from zero_shot import CTClipInference, VinBigDataChestXrayInference
 
 @hydra.main(
         version_base=None,
-        config_path="/cluster/home/t135419uhn/CT-CLIP/configs", #"/cluster/home/t135419uhn/CT-CLIP/configs"
+        config_path="/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/configs", #"/cluster/home/t135419uhn/CT-CLIP/configs"
         config_name="train")
 def main(cfg: DictConfig):
 
@@ -57,14 +57,16 @@ def run(cfg_dot):
     cfg = convert_dictconfig_to_dict(cfg_dot)
 
     torch.cuda.empty_cache()
-    text_encoder = BertModel.from_pretrained(
-        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-        local_files_only=True
-    )
-    tokenizer = BertTokenizer.from_pretrained(
-        '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-        do_lower_case=True,
-        local_files_only=True)
+    # text_encoder = BertModel.from_pretrained(
+    #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+    #     local_files_only=True
+    # )
+    # tokenizer = BertTokenizer.from_pretrained(
+    #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+    #     do_lower_case=True,
+    #     local_files_only=True)
+    tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
+    text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
 
     image_encoder = CTViT(
         dim = 512,
@@ -104,75 +106,42 @@ def run(cfg_dot):
         train_split_inference = ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer)
         # get xray latent features from this particularly baseline model
         train_split_inference.xray_feature_extraction(
-            directory=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/',
+            directory='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/xray_features_embeddings',
             pth_name=pth_base_name, 
             append=True
         )
-
+        # /cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/
         split = 'valid'
         valid_split_inference = ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer)
         valid_split_inference.xray_feature_extraction(
-            directory=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/',
+            directory='/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/xray_features_embeddings',
             pth_name=pth_base_name, 
             append=True
         )
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
         return 
-    
-    if 'vinBig' in cfg_dot.xray_feature_caching_params.evaluation_dataset: # the full set of vinBig label 
-
-        split = 'train'
-        vinBigChestXray_train_evaluator = vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer, cfg_dot.xray_feature_caching_params.evaluation_dataset)
-        vinBigChestXray_train_evaluator.extract_xray_features(
-            directory=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/',
-            pth_name=pth_base_name, 
-            append=True
-        )
-
-        split = 'test'
-        vinBigChestXray_test_evaluator = vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer, cfg_dot.xray_feature_caching_params.evaluation_dataset)
-        vinBigChestXray_test_evaluator.extract_xray_features(
-            directory=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/',
-            pth_name=pth_base_name, 
-            append=True
-        )
-        print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
-    else:
-        print(f'NOT XRAY FEATURE EXTRACTION, THE DATASET {cfg_dot.xray_feature_caching_params.evaluation_dataset} IS NOT SUPPORTED')
-
-def vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer, label_variant):
-
-    vinBigChestXray_evaluator = VinBigDataChestXrayInference(
-        clip_xray,
-        split=split,
-        cfg=cfg,
-        tokenizer=tokenizer,
-        data_folder= f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
-        labels = f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv',
-        batch_size = cfg_dot.xray_feature_caching_params.batch_size,
-        label_variant=label_variant,
-        num_workers = cfg_dot.xray_feature_caching_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-        feature_extraction_mode = True # might be optional
-    )
-
-    return vinBigChestXray_evaluator
 
 def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
+    data_folder = f'/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/{split}_preprocessed_xray_mha'
+    img_embedding_path = f'/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct/{split}/image_features.pth'
+    text_embedding_path = f'/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct/{split}/text_features.pth'
+    reports_file = f'/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv'
+    labels = f'/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv'
 
     split_inference = CTClipInference(
         clip_xray,
         cfg=cfg,
         tokenizer=tokenizer,
-        data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
+        data_folder=data_folder,
         # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
         img_embedding_paths = {
-            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
+            f'{split}': img_embedding_path
         },
         text_embedding_paths = {
-            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
+            f'{split}': text_embedding_path
         },
-        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
-        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        reports_file = reports_file,
+        labels = labels,
         results_folder="./inference_zeroshot_retrieval",
         batch_size = cfg_dot.xray_feature_caching_params.batch_size,
         num_train_steps = -1, # placeholder

@@ -9,7 +9,7 @@ note that this file depends on the following are done:
 
 import torch
 
-from linear_probe_utils import evaluate_classifier, get_train_internal_split, get_pathologies, linear_probing_main
+from linear_probe_evaluation_mnt import evaluate_classifier, get_train_internal_split, get_pathologies, linear_probing_main
 from eval_utils import LinearProbeModel, metadata_base_on_model_type, save_metric_results
 from transformers import BertModel
 import os
@@ -108,10 +108,6 @@ def run(cfg_dot):
     cfg = convert_dictconfig_to_dict(cfg_dot)
 
     torch.cuda.empty_cache()
-    # text_encoder = BertModel.from_pretrained(
-    #     '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
-    #     local_files_only=True
-    # )
     text_encoder = BertModel.from_pretrained("microsoft/BiomedVLP-CXR-BERT-specialized")
 
     image_encoder = CTViT(
@@ -145,57 +141,58 @@ def run(cfg_dot):
         cfg=cfg,
         auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
-
-    # train_dataset, internal_val_dataset = get_train_internal_split(cfg_dot, cfg)
+    # TODO: toggle the path here.
+    train_dataset, internal_val_dataset = get_train_internal_split(cfg_dot, cfg)
     
-    # pathologies = get_pathologies(dataset=cfg_dot.linear_probing_params.evaluation_dataset)
+    pathologies = get_pathologies(dataset=cfg_dot.linear_probing_params.evaluation_dataset)
     
-    # # NOTE: perform linear probing training
+    # NOTE: perform linear probing training
 
-    # # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
-    # # that is, add a additional fc layer on top of the vision model and the feature_projector
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # model = LinearProbeModel(in_features=latent_size, num_classes=len(pathologies))
-    # model.to(device)
+    # Initialize the wrapper model for either NOTE: linear probe or full model finetuninng
+    # that is, add a additional fc layer on top of the vision model and the feature_projector
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = LinearProbeModel(in_features=latent_size, num_classes=len(pathologies))
+    model.to(device)
 
-    # # pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
-    # classifier_ckpt_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
+    # pth_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
+    classifier_ckpt_base_name = f'{pth_base_name}__train_portion_{cfg_dot.linear_probing_params.train_data_portion}'
 
-    # parent_dir = cfg_dot.linear_probing_params.evaluation_dataset
-    # ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.cpt_dest, parent_dir)
-    # best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{classifier_ckpt_base_name}_best_model.pth')
-    # params = {
-    #     'num_classes': len(pathologies),
-    #     'latent_size': latent_size,
-    #     'train_dataset': train_dataset,
-    #     'internal_val_dataset': internal_val_dataset,
-    #     'cfg_dot': cfg_dot,
-    #     'ckpt_parent_dir': ckpt_parent_dir,
-    #     'best_ckpt_destination': best_ckpt_destination,
-    #     'model': model,
-    #     'device': device
-    # }
-    # model = linear_probing_main(params)
+    parent_dir = cfg_dot.linear_probing_params.evaluation_dataset
+    ckpt_parent_dir = os.path.join(cfg_dot.linear_probing_params.mnt_cpt_dest, parent_dir)
+    best_ckpt_destination = os.path.join(ckpt_parent_dir, f'{classifier_ckpt_base_name}_best_model.pth')
+    params = {
+        'num_classes': len(pathologies),
+        'latent_size': latent_size,
+        'train_dataset': train_dataset,
+        'internal_val_dataset': internal_val_dataset,
+        'cfg_dot': cfg_dot,
+        'ckpt_parent_dir': ckpt_parent_dir,
+        'best_ckpt_destination': best_ckpt_destination,
+        'model': model,
+        'device': device
+    }
+    model = linear_probing_main(params)
 
-    # # NOTE: pay attention that mimic and ct-rate dataset load different model checkpoints
-    # #   mimic load the classifer only but with a additional backbone
-    # #   ct-rate only has the classifier
-    # #   vinBig TBD
-    # params = {
-    #     'dataset': cfg_dot.linear_probing_params.evaluation_dataset,
-    #     'cfg': cfg,
-    #     'cfg_dot': cfg_dot,
-    #     'clip_xray': clip_xray,
-    #     'device': device,
-    #     'xray_model_type': xray_model_type,
-    #     'model': model, # the linear classifier
-    #     'best_ckpt_destination': best_ckpt_destination,
-    #     'classifier_ckpt_base_name': classifier_ckpt_base_name,
-    #     'pth_base_name': pth_base_name # mainly for the ct-rate dataset
-    # }
-    # metric_results = evaluate_classifier(params)
+    # NOTE: pay attention that mimic and ct-rate dataset load different model checkpoints
+    #   mimic load the classifer only but with a additional backbone
+    #   ct-rate only has the classifier
+    #   vinBig TBD
+    params = {
+        'dataset': cfg_dot.linear_probing_params.evaluation_dataset,
+        'cfg': cfg,
+        'cfg_dot': cfg_dot,
+        'clip_xray': clip_xray,
+        'device': device,
+        'xray_model_type': xray_model_type,
+        'model': model, # the linear classifier
+        'best_ckpt_destination': best_ckpt_destination,
+        'classifier_ckpt_base_name': classifier_ckpt_base_name,
+        'pth_base_name': pth_base_name # mainly for the ct-rate dataset
+    }
+    # TODO: toggle the path here
+    metric_results = evaluate_classifier(params)
 
-    # return metric_results
+    return metric_results
 
 # Example usage
 if __name__ == "__main__":
