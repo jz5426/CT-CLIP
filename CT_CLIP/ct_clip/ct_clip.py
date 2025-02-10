@@ -1,4 +1,3 @@
-import math
 import copy
 from contextlib import contextmanager
 from functools import partial, wraps
@@ -18,6 +17,9 @@ from ct_clip.mlm import MLM
 from ct_clip.visual_ssl import SimSiam, SimCLR
 
 import warnings
+import os
+import sys
+
 # helper functions
 
 def identity(t, *args, **kwargs):
@@ -1144,6 +1146,33 @@ class CTCLIPwithXray(nn.Module):
             gloria_vision_encoder.vision_model.model.fc = nn.Identity() # delete the fc layer
             self.xray_encoder = copy.deepcopy(gloria_vision_encoder.vision_model.model)
             print('loaded xray encoder from gloria_resnet')
+        elif xray_model_type == 'bi-mamba':
+            # Add the mamba-cxr directory to sys.path
+            sys.path.append('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/mamba-cxr')
+
+            import models_mamba # this ensure the registration of timm model
+            import timm
+            from models_mamba import vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2
+            checkpoint_path = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/bi_mamba_ckpt/vim_s_midclstok_ft_81p6acc.pth'
+            # models = timm.list_models('*vim*') # sanity check
+            bimamba_encoder = vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2()
+            
+            if not auto_load_pretrained_weights:
+                print('NOT SUPPORTED FOR BI-MAMBA MODEL')
+                assert False
+            # code from main.py in BI-MAMBA REPO
+            checkpoint = torch.load(checkpoint_path, map_location='cpu')
+            checkpoint_model = checkpoint['model']
+            state_dict = bimamba_encoder.state_dict()
+            for k in ['head.weight', 'head.bias', 'head_dist.weight', 'head_dist.bias']:
+                if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
+                    print(f"Removing key {k} from pretrained checkpoint")
+                    del checkpoint_model[k]
+            if 'pos_embed' in checkpoint_model:
+                print(f"Removing pos_embed from pretrained checkpoint")
+                del checkpoint_model['pos_embed']
+            missing, unexpected = bimamba_encoder.load_state_dict(checkpoint_model, strict=False)
+            print(f'Loaded pretrained weights for bi-mamba model from {checkpoint_path}')
         else: 
             # our pretrained model
             ckpt_name = xray_model_type
