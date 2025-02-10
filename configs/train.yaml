@@ -66,40 +66,40 @@ training_params:
 #   projector_type: 'siamese' # either siamese style (3-layers projector) or infoNCE (on linear layer only without bn or anything)
 
 ## FOR OFFICIAL
-# linear_probing_params:
-#   baseline_type: ''
-#   is_linear_probe_eval: true
-#   multi_sweep_evaluation: false
-#   num_epochs: 200 # 1000 radchest: 100
-#   patience: 20
-#   batch_size: 256 # radchest: 256
-#   learning_rate: 5e-3 # 5e-2 radchest: 5e-2
-#   progress_window: 2
-#   num_workers: 10
-#   train_data_portion: 0.1
-#   evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure (even smaller set of labels xray backone not seen)
-#   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
-#   override_metric_results: false
-#   windows_wsl_env: false
-#   mnt_cpt_dest: ''
-
-## TOY
 linear_probing_params:
-  baseline_type: 'bi-mamba'
+  baseline_type: ''
   is_linear_probe_eval: true
   multi_sweep_evaluation: false
-  num_epochs: 1 # 1000
+  num_epochs: 100 # 1000 radchest: 100
   patience: 20
-  batch_size: 2
-  learning_rate: 5e-2 # 1e-2
+  batch_size: 4096 # radchest: 256
+  learning_rate: 5e-2 # 5e-2 radchest: 5e-2
   progress_window: 2
-  num_workers: 1
+  num_workers: 10
   train_data_portion: 0.1
-  evaluation_dataset: 'radchest_ct_pure' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure
+  evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure (even smaller set of labels xray backone not seen)
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
   override_metric_results: false
-  windows_wsl_env: true # implies that the script is ran on the windows wsl environment
-  mnt_cpt_dest: './mnt_linear_probe_ckpts'
+  windows_wsl_env: false
+  mnt_cpt_dest: ''
+
+## TOY
+# linear_probing_params:
+#   baseline_type: 'bi-mamba'
+#   is_linear_probe_eval: true
+#   multi_sweep_evaluation: false
+#   num_epochs: 1 # 1000
+#   patience: 20
+#   batch_size: 2
+#   learning_rate: 5e-2 # 1e-2
+#   progress_window: 2
+#   num_workers: 1
+#   train_data_portion: 0.1
+#   evaluation_dataset: 'radchest_ct_pure' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure
+#   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
+#   override_metric_results: false
+#   windows_wsl_env: true # implies that the script is ran on the windows wsl environment
+#   mnt_cpt_dest: './mnt_linear_probe_ckpts'
 
 ## FOR OFFICIAL
 retrieval_params:
