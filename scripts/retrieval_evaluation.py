@@ -116,6 +116,8 @@ def run(cfg_dot):
     elif cfg_dot.retrieval_params.evaluation_dataset == const.RADCHEST_CT or cfg_dot.retrieval_params.evaluation_dataset == const.RADCHEST_CT_PURE:
         params['dataset'] = cfg_dot.retrieval_params.evaluation_dataset
         results = radchest_ct_retrieval_evaluation(params)
+    elif cfg_dot.retrieval_params.evaluation_dataset == const.CT_CLIP:
+        results = ctrate_retrieval_evaluation(params)
 
     # all dataset share the same result files.
     save_metric_results(
