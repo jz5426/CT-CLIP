@@ -23,7 +23,6 @@ from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
 import pandas as pd
-import pickle
 import constants as const
 from collections import defaultdict
 

@@ -32,22 +32,22 @@ source activate ctclip
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=experiment training_params.training_pretrain_baseline=cxr_clip_swin training_params.epochs=52 training_params.use_pretrained_xray_encoder=false training_params.loss_function=siamese training_params.projector_type=siamese
 
 
-# instance pretrain is true
+# instance pretrain is true infoNCE
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.training_pretrain_baseline=cxr_clip_swin training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=true training_params.loss_function=infoNCE training_params.projector_type=infoNCE
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.training_pretrain_baseline=cxr_clip_resnet training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=true training_params.loss_function=infoNCE training_params.projector_type=infoNCE
 
-# instance pretrain is false
+# instance pretrain is false infoNCE
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.training_pretrain_baseline=cxr_clip_swin training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=false training_params.loss_function=infoNCE training_params.projector_type=infoNCE
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.training_pretrain_baseline=cxr_clip_resnet training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=false training_params.loss_function=infoNCE training_params.projector_type=infoNCE
 
-# experiment pretrain is true
+# experiment pretrain is true siamese
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=experiment training_params.training_pretrain_baseline=cxr_clip_swin training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=true training_params.loss_function=siamese training_params.projector_type=infoNCE
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=experiment training_params.training_pretrain_baseline=cxr_clip_resnet training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=true training_params.loss_function=siamese training_params.projector_type=infoNCE
 
-# instance pretrain is true
+# instance pretrain is true siamese
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.training_pretrain_baseline=cxr_clip_swin training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=true training_params.loss_function=siamese training_params.projector_type=infoNCE
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.training_pretrain_baseline=cxr_clip_resnet training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=true training_params.loss_function=siamese training_params.projector_type=infoNCE
 
-# instance pretrain is false
+# instance pretrain is false siamese
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.training_pretrain_baseline=cxr_clip_swin training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=false training_params.loss_function=siamese training_params.projector_type=infoNCE
 python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train.py training_params.batch_style=instance training_params.training_pretrain_baseline=cxr_clip_resnet training_params.epochs=52 training_params.min_epochs=50 training_params.use_pretrained_xray_encoder=false training_params.loss_function=siamese training_params.projector_type=infoNCE

@@ -572,7 +572,7 @@ def test_loop(params):
     auc_per_class = []
     for i in range(all_labels.shape[1]):
         auc = roc_auc_score(all_labels[:, i], all_probs[:, i])
-        auc_per_class.append(auc.item())
+        auc_per_class.append(auc.item() if isinstance(auc, np.float64) else auc)
 
     pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='micro')
     print(f"Test Results for micro average: F1 Score: {f1_micro:.4f}, Recall: {recall_micro:.4f}, Precision: {precision_micro:.4f}, AUC: {auc_micro:.4f}, PR_AUC: {pr_auc_score_micro:.4f}")

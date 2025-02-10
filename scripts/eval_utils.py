@@ -103,7 +103,7 @@ def  get_clean_model_name(messy_custom_model_name):
     # 'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
 
     messy_custom_model_name=messy_custom_model_name.lower()
-    if 'batchstyle' in messy_custom_model_name: # identifier for custom pretrained model
+    if 'batchstyle' in messy_custom_model_name: # identifier for custom pretrained model: whether the file name has cxr_clip or not
         parts = []
         if 'resnet' in messy_custom_model_name:
             parts.append('resnet')
@@ -125,7 +125,7 @@ def  get_clean_model_name(messy_custom_model_name):
         if 'siamese' in messy_custom_model_name:
             parts.append('siamese')
         else:
-            parts.append('infoNCE')
+            parts.append('infoNCE') # default option (even the model name does not have this)
 
         return '_'.join(parts)
     else:
