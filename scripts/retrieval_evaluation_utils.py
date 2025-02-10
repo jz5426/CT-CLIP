@@ -255,93 +255,93 @@ def ctrate_retrieval_evaluation(params):
         const.VALUE: []
     }
 
-    # report2ct
-    print('evaluating report 2 ct in recall')
-    results = recall_retrieval_evaluation(
-        query_latents=[embed[1] for embed in ct_report_embeddings],
-        target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
-        query_type=const.CT_REPORT,
-        target_type=const.CT_IMAGE,
-        model_baseline=get_clean_model_name(const.CT_CLIP),
-        dataset=const.CT_RATE
-    )
-    csv_results = extend_dictionary(parent=csv_results, child=results)
+    # # report2ct
+    # print('evaluating report 2 ct in recall')
+    # results = recall_retrieval_evaluation(
+    #     query_latents=[embed[1] for embed in ct_report_embeddings],
+    #     target_latents=[embed[0].reshape(-1) for embed in ct_report_embeddings],
+    #     query_type=const.CT_REPORT,
+    #     target_type=const.CT_IMAGE,
+    #     model_baseline=get_clean_model_name(const.CT_CLIP),
+    #     dataset=const.CT_RATE
+    # )
+    # csv_results = extend_dictionary(parent=csv_results, child=results)
 
-    # ct2report
-    print('evaluating ct 2 report in recall')
-    results = recall_retrieval_evaluation(
-        query_latents=[embed[0] for embed in ct_report_embeddings],
-        target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
-        query_type=const.CT_IMAGE,
-        target_type=const.CT_REPORT,
-        model_baseline=get_clean_model_name(const.CT_CLIP),
-        dataset=const.CT_RATE
-    )
-    csv_results = extend_dictionary(parent=csv_results, child=results)
+    # # ct2report
+    # print('evaluating ct 2 report in recall')
+    # results = recall_retrieval_evaluation(
+    #     query_latents=[embed[0] for embed in ct_report_embeddings],
+    #     target_latents=[embed[1].reshape(-1) for embed in ct_report_embeddings],
+    #     query_type=const.CT_IMAGE,
+    #     target_type=const.CT_REPORT,
+    #     model_baseline=get_clean_model_name(const.CT_CLIP),
+    #     dataset=const.CT_RATE
+    # )
+    # csv_results = extend_dictionary(parent=csv_results, child=results)
 
-    print('evaluating report 2 ct in MAP')
-    results = map_retrieval_evaluation(
-        text_features,
-        target_latents=image_features,
-        query_type=const.CT_REPORT,
-        target_type=const.CT_IMAGE,
-        model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        dataset=const.CT_RATE
-    )
-    csv_results = extend_dictionary(parent=csv_results, child=results)
-
-
-    print('evaluating report 2 ct in MAP')
-    results = map_retrieval_evaluation(
-        text_features,
-        target_latents=image_features,
-        query_type=const.CT_REPORT,
-        target_type=const.CT_IMAGE,
-        model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        dataset=const.CT_RATE
-    )
-    csv_results = extend_dictionary(parent=csv_results, child=results)
-
-    # ct2ct
-    print('evaluating ct 2 ct in MAP')
-    results = map_retrieval_evaluation(
-        image_features,
-        target_latents=image_features,
-        query_type=const.CT_IMAGE,
-        target_type=const.CT_IMAGE,
-        model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        dataset=const.CT_RATE
-    )
-    csv_results = extend_dictionary(parent=csv_results, child=results)
+    # print('evaluating report 2 ct in MAP')
+    # results = map_retrieval_evaluation(
+    #     text_features,
+    #     target_latents=image_features,
+    #     query_type=const.CT_REPORT,
+    #     target_type=const.CT_IMAGE,
+    #     model_baseline=get_clean_model_name(const.CT_CLIP),
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     dataset=const.CT_RATE
+    # )
+    # csv_results = extend_dictionary(parent=csv_results, child=results)
 
 
-    print('evaluating ct 2 report in MAP')
-    results = map_retrieval_evaluation(
-        image_features,
-        target_latents=text_features,
-        query_type=const.CT_IMAGE,
-        target_type=const.CT_REPORT,
-        model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        dataset=const.CT_RATE
-    )
-    csv_results = extend_dictionary(parent=csv_results, child=results)
+    # print('evaluating report 2 ct in MAP')
+    # results = map_retrieval_evaluation(
+    #     text_features,
+    #     target_latents=image_features,
+    #     query_type=const.CT_REPORT,
+    #     target_type=const.CT_IMAGE,
+    #     model_baseline=get_clean_model_name(const.CT_CLIP),
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     dataset=const.CT_RATE
+    # )
+    # csv_results = extend_dictionary(parent=csv_results, child=results)
+
+    # # ct2ct
+    # print('evaluating ct 2 ct in MAP')
+    # results = map_retrieval_evaluation(
+    #     image_features,
+    #     target_latents=image_features,
+    #     query_type=const.CT_IMAGE,
+    #     target_type=const.CT_IMAGE,
+    #     model_baseline=get_clean_model_name(const.CT_CLIP),
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     dataset=const.CT_RATE
+    # )
+    # csv_results = extend_dictionary(parent=csv_results, child=results)
+
+
+    # print('evaluating ct 2 report in MAP')
+    # results = map_retrieval_evaluation(
+    #     image_features,
+    #     target_latents=text_features,
+    #     query_type=const.CT_IMAGE,
+    #     target_type=const.CT_REPORT,
+    #     model_baseline=get_clean_model_name(const.CT_CLIP),
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     dataset=const.CT_RATE
+    # )
+    # csv_results = extend_dictionary(parent=csv_results, child=results)
 
     
-    print('evaluating report 2 report in MAP')
-    results = map_retrieval_evaluation(
-        text_features,
-        target_latents=text_features,
-        query_type=const.CT_REPORT,
-        target_type=const.CT_REPORT,
-        model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
-        dataset=const.CT_RATE
-    )
-    csv_results = extend_dictionary(parent=csv_results, child=results)
+    # print('evaluating report 2 report in MAP')
+    # results = map_retrieval_evaluation(
+    #     text_features,
+    #     target_latents=text_features,
+    #     query_type=const.CT_REPORT,
+    #     target_type=const.CT_REPORT,
+    #     model_baseline=get_clean_model_name(const.CT_CLIP),
+    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     dataset=const.CT_RATE
+    # )
+    # csv_results = extend_dictionary(parent=csv_results, child=results)
 
 
     for baseline in baselines:
