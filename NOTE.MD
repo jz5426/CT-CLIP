@@ -5,12 +5,7 @@ install the following
 - follow the instruction from ct-clip repo but install the transformer (uncomment) in the transformer_maskgit and make sure comment the torch==2.0.1
 
 pip uninstall attr
-pip install attrs
-pip install pydicom
-pip install albumentations 
-pip install scikit-multilearn
-pip install SimpleITK
-pip install hydra-core
+pip install attrs pydicom albumentations scikit-multilearn SimpleITK hydra-core
 
 # for the bi-mamba environment
 # note use cat /etc/os-release  to check the linux version for cuda toolkit installation

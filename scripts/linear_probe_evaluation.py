@@ -194,23 +194,6 @@ def run(cfg_dot):
 
     return metric_results
 
-    # # NOTE: everything is saved to the same file.
-    # # save it to a csv file
-    # df = pd.DataFrame(metric_results)
-
-    # retrieval_results_dir = const.EXPERIMENT_RESULTS_SAVING_PATH
-    # csv_filename = os.path.join(retrieval_results_dir, 'linear_probe_results.csv')
-    # file_exists = os.path.isfile(csv_filename)
-    # os.makedirs(os.path.dirname(csv_filename), exist_ok=True)
-    
-    # # append the stats to the existing metric results (if exists)
-    # if cfg_dot.linear_probing_params.override_metric_results:
-    #     df.to_csv(csv_filename, mode='w', index=False, header=True)
-    #     print(f"New file created: {csv_filename}")
-    # else:
-    #     df.to_csv(csv_filename, mode='a', index=False, header=not file_exists)
-    #     print(f"Data appended to {csv_filename}" if file_exists else f"New file created: {csv_filename}")
-
 # Example usage
 if __name__ == "__main__":
     main()

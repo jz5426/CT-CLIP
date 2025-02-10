@@ -128,5 +128,4 @@ def run(cfg_dot):
     )
 
 if __name__ == '__main__':
-
     main()
