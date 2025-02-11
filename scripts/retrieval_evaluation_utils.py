@@ -234,7 +234,7 @@ def get_ctclip_features(split='valid'):
         text_features = torch.load(text_feature_path)
     assert(image_features.keys() == text_features.keys())
 
-    return image_features, text_feature_path
+    return image_features, text_features
 
 def ctclip_retrieval_evaluation():
 

@@ -13,14 +13,14 @@
 
 source activate ctclip
 
-# mimic
-python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=mimic
+# # mimic
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=mimic
 
-# radchest_ct_pure
-python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=radchest_ct_pure
+# # radchest_ct_pure
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=radchest_ct_pure
 
-# radchest_ct
-python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=radchest_ct
+# # radchest_ct
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=radchest_ct
 
 # internal retrieval
 python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=ct-rate
