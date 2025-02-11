@@ -122,7 +122,7 @@ def run(cfg_dot):
     # all dataset share the same result files.
     save_metric_results(
         const.EXPERIMENT_RESULTS_SAVING_PATH,
-        'retrieval_results.csv',
+        f'{cfg.retrieval_params.evaluation_dataset}_retrieval_results.csv',
         pd.DataFrame(results),
         cfg_dot.retrieval_params.override_metric_results
     )

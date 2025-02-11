@@ -633,7 +633,7 @@ def radchest_ct_retrieval_evaluation(params):
             target_type=const.CT_IMAGE,
             model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
-            dataset=const.RADCHEST_CT)
+            dataset=dataset)
         csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating ct_volumes 2 xray MAP')
         results = map_retrieval_evaluation(
@@ -643,7 +643,7 @@ def radchest_ct_retrieval_evaluation(params):
             target_type=const.XRAY,
             model_baseline=get_clean_model_name(baseline),
             predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv',
-            dataset=const.RADCHEST_CT)
+            dataset=dataset)
         csv_results = extend_dictionary(parent=csv_results, child=results)
     
     return csv_results
