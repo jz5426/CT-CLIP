@@ -70,8 +70,14 @@ class XrayClassificationModel(nn.Module):
 
         if 'resnet' in self.vision_model_type.lower() or 'densenet' in self.vision_model_type.lower():
             enc_xray = enc_xray.view(enc_xray.shape[0], 1, -1)
-        elif self.vision_model_type == 'medclip_vit':
+        elif self.vision_model_type.lower() == 'medclip_vit':
             enc_xray = enc_xray.last_hidden_state
+        elif 'bi-mamba' in self.vision_model_type.lower():
+            # bi-mamaba already has meaned before the output so we can skip some steps
+            xray_latents = self.to_xray_latent(enc_xray)
+            xray_latents = F.normalize(xray_latents)
+            output = self.fc(xray_latents)
+            return output 
 
         enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features # [8, 768]
         enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch
@@ -185,9 +191,9 @@ def metadata_base_on_model_type(baseline_type, pth_trailing_string='features'):
         latent_size = 768 # the final size of the xray embedding is indeed different in gloria
     elif baseline_type == 'bi-mamba':
         xray_model_type = baseline_type
-        dim_xray = 384 #TODO: double check this.
+        dim_xray = 1000 #TODO: double check this.
         pth_base_name = f'bi_mamba_{pth_trailing_string}.pth'
-        latent_size = 512 #
+        latent_size = 1000 # no projection layer => the same as the dim_xray
     else:
         xray_model_type = baseline_type
         dim_xray = 768 if 'swin' in baseline_type.lower() else 2048
