@@ -73,7 +73,7 @@ linear_probing_params:
   num_epochs: 100 # 1000
   patience: 20
   batch_size: 4096
-  test_loader_batch_size: 128
+  test_loader_batch_size: 4
   learning_rate: 5e-2 # 1e-2
   progress_window: 2
   num_workers: 1

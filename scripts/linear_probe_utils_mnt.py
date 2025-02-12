@@ -345,7 +345,7 @@ def evaluate_classifier(params):
         test_loader = DataLoader(
             test_dataset, 
             num_workers=cfg_dot.linear_probing_params.num_workers, 
-            batch_size=cfg_dot.linear_probing_params.test_loader_batch_size, 
+            batch_size=cfg_dot.linear_probing_params.batch_size, 
             shuffle=False)
 
         # define a full classifier with encoder and projection layer learnt from the CT-RATE training set
@@ -421,7 +421,7 @@ def evaluate_classifier(params):
         test_loader = DataLoader(
             test_dataset, 
             num_workers=cfg_dot.linear_probing_params.num_workers, 
-            batch_size=cfg_dot.linear_probing_params.batch_size, 
+            batch_size=cfg_dot.linear_probing_params.test_loader_batch_size, 
             shuffle=False)
 
         classification_model = XrayClassificationModel(

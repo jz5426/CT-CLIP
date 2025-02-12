@@ -90,7 +90,7 @@ def main(cfg: DictConfig):
     torch.cuda.manual_seed_all(seed)  # If using multiple GPUs
 
     portions = [0.01, 0.025, 0.05, 0.1, 1.]
-    evaluation_datasets = ['mimic', 'ct-rate', 'radchest_ct_pure']
+    evaluation_datasets = ['radchest_ct_pure', 'mimic', 'ct-rate',]
     for p in portions:
         for eval_data in evaluation_datasets:
             cfg.linear_probing_params.train_data_portion = p
