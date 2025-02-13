@@ -154,14 +154,14 @@ def get_train_internal_split(cfg_dot, cfg):
     
         dataset = cfg_dot.linear_probing_params.evaluation_dataset
         # base on the baseline model, load the corresponding xray features
-        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/{pth_base_name}'
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/valid/{pth_base_name}'
         train_xray_features = torch.load(xray_feature_path)
         dataset = cfg_dot.linear_probing_params.evaluation_dataset
 
         # what kind of specific radchest ct data. 
-        if dataset == const.RADCHEST_CT:
+        if dataset == const.RADCHEST_CT_INTERNAL:
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv' 
-        elif dataset == const.RADCHEST_CT_PURE:
+        elif dataset == const.RADCHEST_CT_PURE_INTERNAL:
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure.csv' 
 
         data_splitter = RadChestXraySplitter(
@@ -508,7 +508,6 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
     elif dataset in [const.RADCHEST_CT, const.RADCHEST_CT_PURE]:
-        # TODO: change the labels with option to be pure
         if dataset == const.RADCHEST_CT:
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv'
         elif dataset == const.RADCHEST_CT_PURE:
@@ -554,58 +553,49 @@ def evaluate_classifier(params):
             batch_size=cfg_dot.linear_probing_params.test_loader_batch_size, 
             shuffle=False)
 
-        classification_model = XrayClassificationModel(
-            vision_model=clip_xray.xray_encoder, # from pretrained
-            feature_projector=clip_xray.to_xray_latent, # from pretrained
-            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded in test_loop function
-            vision_model_type=xray_model_type
-        )
-        classification_model.to(device)
-
-        # TODO: double check the following
         test_params = {
             **test_params,
             'test_loader': test_loader,
-            'model': classification_model,
-            'full_forward_pass': True,
+            'model': model,
+            'full_forward_pass': False, # if ran xray_feature_caching with this dataset => False, otherwise True
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
         }
         return test_loop(test_params)
 
-    elif 'vinBig' in dataset:
-        #NOTE: follow similarly to the mimic external validaion.
-        split = 'test'
-        test_dataset = VinBigDataChestXrayDataset(
-            cfg=cfg,
-            data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
-            labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', 
-            model_type=xray_model_type,
-            label_variant=dataset,
-            split=split)
+    # elif 'vinBig' in dataset:
+    #     #NOTE: follow similarly to the mimic external validaion.
+    #     split = 'test'
+    #     test_dataset = VinBigDataChestXrayDataset(
+    #         cfg=cfg,
+    #         data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
+    #         labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', 
+    #         model_type=xray_model_type,
+    #         label_variant=dataset,
+    #         split=split)
 
-        # Split dataset into train and validation sets
-        test_loader = DataLoader(
-            test_dataset,
-            num_workers=cfg_dot.linear_probing_params.num_workers,
-            batch_size=cfg_dot.linear_probing_params.batch_size,
-            shuffle=False)
+    #     # Split dataset into train and validation sets
+    #     test_loader = DataLoader(
+    #         test_dataset,
+    #         num_workers=cfg_dot.linear_probing_params.num_workers,
+    #         batch_size=cfg_dot.linear_probing_params.batch_size,
+    #         shuffle=False)
     
-        classification_model = XrayClassificationModel(
-            vision_model=clip_xray.xray_encoder, # from pretrained
-            feature_projector=clip_xray.to_xray_latent, # from pretrained
-            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded in test_loop function
-            vision_model_type=xray_model_type
-        )
-        classification_model.to(device)
+    #     classification_model = XrayClassificationModel(
+    #         vision_model=clip_xray.xray_encoder, # from pretrained
+    #         feature_projector=clip_xray.to_xray_latent, # from pretrained
+    #         pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded in test_loop function
+    #         vision_model_type=xray_model_type
+    #     )
+    #     classification_model.to(device)
 
-        test_params = {
-            **test_params,
-            'test_loader': test_loader,
-            'model': classification_model,
-            'full_forward_pass': True,
-            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-        }
-        return test_loop(test_params)
+    #     test_params = {
+    #         **test_params,
+    #         'test_loader': test_loader,
+    #         'model': classification_model,
+    #         'full_forward_pass': True,
+    #         'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
+    #     }
+    #     return test_loop(test_params)
 
     print('something wrong')
 

@@ -148,8 +148,8 @@ def run(cfg_dot):
     train_dataset = datasets['train_dataset']
     internal_val_dataset = datasets['internal_val_dataset']
     test_dataset = None
-    if 'test_data' in datasets:
-        test_dataset = datasets['test_data']
+    if 'test_dataset' in datasets:
+        test_dataset = datasets['test_dataset']
 
     pathologies = get_pathologies(dataset=cfg_dot.linear_probing_params.evaluation_dataset)
     

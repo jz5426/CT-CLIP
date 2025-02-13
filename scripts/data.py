@@ -292,8 +292,7 @@ class RadChestXraySplitter:
         self.xray_paths = []
         self.data_folder = data_folder
         self.parent_folder = os.path.basename(data_folder)
-        self.file_extension = 'mha' # make sure the xray data file path are the .mha file
-        assert self.file_extension in data_folder
+        self.file_extension = '.mha' # make sure the xray data file path are the .mha file
 
     def prepare_samples(self, train_split=1., val_split=0.2):
         """
@@ -466,14 +465,14 @@ class RadChestXrayClassificationDataset(XrayClassificationDataset):
         xray_file, label = selected_sample
         # TODO:
         # # get the corresonding embeddings
-        # name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
-        # xray_embedding = self.embeddings[name_acc]
-        # label = torch.from_numpy(label)
-        # data = {
-        #     'xray': xray_embedding,
-        #     'label': label
-        # }
-        # return data
+        name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
+        xray_embedding = self.embeddings[name_acc]
+        label = torch.from_numpy(label)
+        data = {
+            'xray': xray_embedding,
+            'label': label
+        }
+        return data
 
 class VinBigChestXrayClassificationDataset(XrayClassificationDataset):
 
