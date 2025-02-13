@@ -139,7 +139,8 @@ def get_train_internal_split(cfg_dot, cfg):
             model_type=xray_model_type,
             split='train'
         )
-        
+    elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
+        pass
     elif 'vinBig' in cfg_dot.linear_probing_params.evaluation_dataset: # the ct dataset
         print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
     

@@ -20,6 +20,7 @@ import random
 import numpy as np
 from eval_utils import metadata_base_on_model_type
 from zero_shot import CTClipInference, VinBigDataChestXrayInference
+import constants as const
 
 @hydra.main(
         version_base=None,
@@ -122,6 +123,10 @@ def run(cfg_dot):
         )
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
         return 
+
+    if cfg_dot.xray_feature_caching_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
+        
+        return
     
     if 'vinBig' in cfg_dot.xray_feature_caching_params.evaluation_dataset: # the full set of vinBig label 
 
@@ -163,6 +168,31 @@ def vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer, label_varia
 
 def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
 
+    split_inference = CTClipInference(
+        clip_xray,
+        cfg=cfg,
+        tokenizer=tokenizer,
+        data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
+        # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
+        img_embedding_paths = {
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
+        },
+        text_embedding_paths = {
+            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
+        },
+        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        results_folder="./inference_zeroshot_retrieval",
+        batch_size = cfg_dot.xray_feature_caching_params.batch_size,
+        num_train_steps = -1, # placeholder
+        num_workers = cfg_dot.xray_feature_caching_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        feature_extraction_mode = True # might be optional
+    )  
+
+    return split_inference
+
+def radchest_ct_split(split, clip_xray, cfg, cfg_dot, tokenizer):
+    # TODO: modify the following paths to the radchest ct equivalent
     split_inference = CTClipInference(
         clip_xray,
         cfg=cfg,
