@@ -407,13 +407,7 @@ class XrayClassificationDataset:
         self.normalize = 'huggingface' if 'swin' in model_type.lower() or 'vit' in model_type.lower() else 'imagenet' # when use swin or non-resnet architecture
         print('normalization used => ', self.normalize)
 
-        # self.normalize = "huggingface" # when use swin or non-resnet architecture
-        # if cfg["model"]["image_encoder"]["name"] == "resnet":
-        #     self.normalize = "imagenet" # only for resnet architecture
-
         self.xray_transform = load_transform(split=split, transform_config=cfg['transform'])
-            # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
-            # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
         self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
 
     def nii_img_to_tensor(self, path, transform):
@@ -450,6 +444,36 @@ class XrayClassificationDataset:
 
     def __len__(self):
         return len(self.samples)
+
+class RadChestXrayClassificationDataset(XrayClassificationDataset):
+    def __init__(self,
+                 cfg, 
+                 data, # list of data processed from the prepare_sample
+                 model_type,
+                 data_embeddings=None,
+                 split='train'):
+        super().__init__(
+            cfg,
+            data,
+            model_type,
+            data_embeddings,
+            split
+        )
+
+    def __getitem__(self, key_id):
+
+        selected_sample = self.samples[key_id] # based on index
+        xray_file, label = selected_sample
+        # TODO:
+        # # get the corresonding embeddings
+        # name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
+        # xray_embedding = self.embeddings[name_acc]
+        # label = torch.from_numpy(label)
+        # data = {
+        #     'xray': xray_embedding,
+        #     'label': label
+        # }
+        # return data
 
 class VinBigChestXrayClassificationDataset(XrayClassificationDataset):
 

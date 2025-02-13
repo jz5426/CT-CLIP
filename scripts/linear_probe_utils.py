@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestXrayDataset, RadChestXraySplitter, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestXrayClassificationDataset, RadChestXrayDataset, RadChestXraySplitter, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
 from eval_utils import XrayClassificationModel, get_clean_model_name, metadata_base_on_model_type
 import os
 import torch
@@ -99,6 +99,11 @@ def get_train_internal_split(cfg_dot, cfg):
             model_type=xray_model_type,
             split='train'
         )
+
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': internal_val_dataset
+        }
     elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT, const.RADCHEST_CT_PURE]:
 
         print('Splitting ct-rate rachest_ct version dataset: differences in the set of the labels')
@@ -139,6 +144,11 @@ def get_train_internal_split(cfg_dot, cfg):
             model_type=xray_model_type,
             split='train'
         )
+
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': internal_val_dataset
+        }
     elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
         print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
     
@@ -164,8 +174,36 @@ def get_train_internal_split(cfg_dot, cfg):
             val_split=0.2
         ) # validation split is always, train_split is controlable
 
-    
+        train_dataset = RadChestXrayClassificationDataset(
+            cfg=cfg,
+            data=train_sample, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='train'
+        )
 
+        internal_val_dataset = RadChestXrayClassificationDataset(
+            cfg=cfg,
+            data=internal_val_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='valid'
+        )
+
+        # do the same thing for test samples but make sure the labels are correct.
+        test_dataset = RadChestXrayClassificationDataset(
+            cfg=cfg,
+            data=test_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='valid'
+        )
+
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': internal_val_dataset,
+            'test_dataset': test_dataset
+        }
     elif 'vinBig' in cfg_dot.linear_probing_params.evaluation_dataset: # the ct dataset
         print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
     
@@ -202,8 +240,12 @@ def get_train_internal_split(cfg_dot, cfg):
             split=split
         )
     
-    return train_dataset, internal_val_dataset
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': internal_val_dataset,
+        }
 
+    return results
 
 def get_pathologies(dataset='ct-rate'):
     # NOTE: the order of the listed pathologies matter
@@ -494,6 +536,33 @@ def evaluate_classifier(params):
         )
         classification_model.to(device)
 
+        test_params = {
+            **test_params,
+            'test_loader': test_loader,
+            'model': classification_model,
+            'full_forward_pass': True,
+            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
+        }
+        return test_loop(test_params)
+    elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL]:
+        test_dataset = params['test_data']
+        print(f'size of the external radchest_ct data: {len(test_dataset)}')
+
+        test_loader = DataLoader(
+            test_dataset, 
+            num_workers=cfg_dot.linear_probing_params.num_workers, 
+            batch_size=cfg_dot.linear_probing_params.test_loader_batch_size, 
+            shuffle=False)
+
+        classification_model = XrayClassificationModel(
+            vision_model=clip_xray.xray_encoder, # from pretrained
+            feature_projector=clip_xray.to_xray_latent, # from pretrained
+            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded in test_loop function
+            vision_model_type=xray_model_type
+        )
+        classification_model.to(device)
+
+        # TODO: double check the following
         test_params = {
             **test_params,
             'test_loader': test_loader,

@@ -143,8 +143,14 @@ def run(cfg_dot):
         auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
 
-    train_dataset, internal_val_dataset = get_train_internal_split(cfg_dot, cfg)
-    
+    # train_dataset, internal_val_dataset = get_train_internal_split(cfg_dot, cfg)
+    datasets = get_train_internal_split(cfg_dot, cfg)
+    train_dataset = datasets['train_dataset']
+    internal_val_dataset = datasets['internal_val_dataset']
+    test_dataset = None
+    if 'test_data' in datasets:
+        test_dataset = datasets['test_data']
+
     pathologies = get_pathologies(dataset=cfg_dot.linear_probing_params.evaluation_dataset)
     
     # NOTE: perform linear probing training
@@ -188,7 +194,8 @@ def run(cfg_dot):
         'model': model, # the linear classifier
         'best_ckpt_destination': best_ckpt_destination,
         'classifier_ckpt_base_name': classifier_ckpt_base_name,
-        'pth_base_name': pth_base_name # mainly for the ct-rate dataset
+        'pth_base_name': pth_base_name, # mainly for the ct-rate dataset
+        'test_data': test_dataset
     }
     metric_results = evaluate_classifier(params)
 
