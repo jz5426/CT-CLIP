@@ -125,7 +125,13 @@ def run(cfg_dot):
         return 
 
     if cfg_dot.xray_feature_caching_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
-        
+        radchestct_evaluator = radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer)
+        radchestct_evaluator.xray_feature_extraction(
+            directory=f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/',
+            pth_name=pth_base_name, 
+            append=True
+        )
+        print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
         return
     
     if 'vinBig' in cfg_dot.xray_feature_caching_params.evaluation_dataset: # the full set of vinBig label 
@@ -191,28 +197,26 @@ def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
 
     return split_inference
 
-def radchest_ct_split(split, clip_xray, cfg, cfg_dot, tokenizer):
-    # TODO: modify the following paths to the radchest ct equivalent
+def radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer):
+
+    if cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_PURE_INTERNAL:
+        label_file = 'final_labels_pure.csv'
+    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_INTERNAL:
+        label_file = 'final_labels.csv'
+
     split_inference = CTClipInference(
         clip_xray,
-        cfg=cfg,
         tokenizer=tokenizer,
-        data_folder= f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha',
-        # NOTE: the embedding paths are MANDATORY for the dataloader to work. RUN THIS SCRIPT MAINLY AFTER THE CTCLIP EMBEDDINGS ARE EXTRACTED.
-        img_embedding_paths = {
-            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth'
-        },
-        text_embedding_paths = {
-            f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
-        },
-        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
-        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-        results_folder="./inference_zeroshot_retrieval",
+        cfg=cfg,
+        data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
+        labels = f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{label_file}',
         batch_size = cfg_dot.xray_feature_caching_params.batch_size,
-        num_train_steps = -1, # placeholder
         num_workers = cfg_dot.xray_feature_caching_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
-        feature_extraction_mode = True # might be optional
-    )  
+        results_folder="inference_zeroshot/",
+        num_train_steps = 1,
+        feature_extraction_mode = True, # extract only the text and ct features only
+        dataset=const.RADCHEST_XRAY # this is what differentiate with ct-rate one.
+    )
 
     return split_inference
 

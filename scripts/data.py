@@ -16,6 +16,7 @@ import SimpleITK as sitk
 import warnings
 import random
 from skmultilearn.model_selection import iterative_train_test_split
+import constants as const
 
 def resize_array(array, current_spacing, target_spacing):
     """
@@ -730,6 +731,7 @@ class MimicCTReportXRayDataset:
 
     def __len__(self):
         return len(self.samples)
+
     
 class VinBigDataChestXrayDataset:
     def __init__(self, 
@@ -859,8 +861,6 @@ def extract_label_variants(label_df, label_variant):
         return label_df
     elif label_variant == 'vinBig_ct_and_related':
         return
-
-
 class CTReportXRayDataset(CTReportDataset):
 
     def __init__(self,

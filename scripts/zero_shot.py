@@ -1,17 +1,12 @@
 from pathlib import Path
-from shutil import rmtree
-from transformer_maskgit.optimizer import get_optimizer
-from transformers import BertTokenizer, BertModel
+from transformers import BertTokenizer
 
-from data import CTReportDataset, CTReportXRayDataset, MimicCTReportXRayDataset, RadChestXrayDataset, VinBigDataChestXrayDataset
-from eval import evaluate_internal, plot_roc, accuracy, sigmoid, bootstrap, compute_cis
+from data import CTReportXRayDataset, MimicCTReportXRayDataset, RadChestXrayDataset, VinBigDataChestXrayDataset
 
-from sklearn.metrics import classification_report, confusion_matrix, multilabel_confusion_matrix, f1_score, accuracy_score
 
 import torch
 from torch import nn
-from torch.utils.data import Dataset, DataLoader, random_split
-from torch.utils.data.distributed import DistributedSampler
+from torch.utils.data import DataLoader
 
 # from data_inference_nii import CTReportDatasetinfer
 # from data_external_valid import CTReportDatasetinfer
@@ -19,14 +14,10 @@ from data_inference import CTReportDatasetinfer, CTReportXRayDatasetinfer
 from data import RadChestCTDataset
 import numpy as np
 import tqdm
-import pandas as pd
 import nibabel as nib
 
-from einops import rearrange
-import accelerate
 from accelerate import Accelerator
 from accelerate import DistributedDataParallelKwargs
-import math
 import torch.optim.lr_scheduler as lr_scheduler
 from ct_clip import CTCLIP, CTCLIPwithXray
 import os
@@ -139,8 +130,6 @@ class CosineAnnealingWarmUpRestarts(lr_scheduler._LRScheduler):
             self.iteration = 0
             self.T_0 *= self.T_mult
             self.eta_max *= self.gamma
-
-
 
 class VinBigDataChestXrayInference(nn.Module):
     """
