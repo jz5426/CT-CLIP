@@ -4,6 +4,7 @@ import scipy.stats
 import os
 import pickle
 from sklearn.metrics import roc_auc_score
+import ast
 
 # AUC comparison adapted from
 # https://github.com/Netflix/vmaf/
@@ -127,28 +128,74 @@ def delong_roc_test(ground_truth, predictions_one, predictions_two):
     return calc_pvalue(aucs, delongcov)
 
 
-def main_delong(df):
+def main_delong(labels, prob1, prob2):
 
-    labels = df['labels']
-
-    assert len(probabilities1) == len(probabilities2)
-
-    log_p = delong_roc_test(labels, probabilities1, probabilities2).item()
+    assert len(prob1) == len(prob2)
+    log_p = delong_roc_test(labels, prob1, prob2).item()
     p_val = 10**log_p
-    print(f'the p value is {p_val}, {'AUCs are significantly different' if p_val < 0.05 else 'No significant difference'}')
 
-    return auc1, auc2, p_val
+    return p_val
 
 
 if __name__ == '__main__':
     # directory path with csv file that contains the details
     detail_csv_path = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/experiment_results/linear_probing/group_by_dataset_modelsOfInterest_Details'
+    
     # directory path with csv file that DONOT contains the details
     abbreviated_csv_path = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/experiment_results/linear_probing/group_by_dataset_modelsOfInterest'
 
+    # anchors: the model that you want to compare other baseline for delong signficiant test
+    anchors = ["swin_exp_infoNCE", "resnet_exp_infoNCE", "swin_pretrained_exp_infoNCE", "resnet_pretrained_exp_infoNCE", "bi-mamba"]
+
     all_csvs = [_file for _file in os.listdir(detail_csv_path) if '.csv' in _file]
     for detail_csv_file in all_csvs:
+        # get the corresponding csv file from the clean directory
         abbreviated_csv_file = os.path.join(abbreviated_csv_path, os.path.basename(detail_csv_file))
-        
 
-    pass
+        # get the matching dataframe of the same csv file
+        detail_df = pd.read_csv(os.path.join(detail_csv_path, detail_csv_file))
+
+        # Convert pred_probs column (string of list) to actual list
+        detail_df["pred_probs"] = detail_df["pred_probs"].apply(ast.literal_eval)
+        detail_df["labels"] = detail_df["labels"].apply(ast.literal_eval)
+
+        # Identify models containing anchor substrings (Group A)
+        anchor_mask = detail_df["model"].astype(str).apply(lambda x: x in anchors)
+        anchor_df = detail_df[anchor_mask]  # Models that are in the anchors
+
+        # Identify models that are **not** in the anchors list (Group B)
+        non_anchor_df = detail_df[~anchor_mask]  # Models that do not contain anchor substrings
+
+        # List to store result tuples (list_A, list_B)
+        pairs_list = []
+
+        # Iterate over each row in anchor models and pair with non-anchor models
+        for a_index, row_A in anchor_df.iterrows():
+            if row_A['model'] == 'bi-mamba': # in bi-mamba, the label list is different than the ones ran in the cluster.
+                continue
+
+            pred_probs_A = row_A["pred_probs"]  # Now it's a list
+            model_A_index = row_A['model']
+            for b_index, row_B in non_anchor_df.iterrows():
+                pred_probs_B = row_B["pred_probs"]  # Now it's a list
+                model_B_index = row_B['model']
+                # Ensure the labels match
+                if not np.array_equal(row_A['labels'], row_B['labels']):
+                    raise ValueError("Error: The label lists from both pickle files do not match!")
+                pairs_list.append((row_A['labels'], (a_index, pred_probs_A), (b_index, pred_probs_B)))
+        print('size of the combinations: ', len(pairs_list))
+
+        # for each of the pair, compute the delong test.
+        abbr_df = pd.read_csv(abbreviated_csv_file)
+        # abbr_df['delong_stats'] = [None for _ in range(abbr_df.shape[0])]
+        pvals = ['None' for _ in range(abbr_df.shape[0])]
+        for pair in pairs_list:
+            labels = pair[0]
+            model_A_index, probs_A = pair[1]
+            model_B_index, probs_B = pair[2]
+            p_val = main_delong(np.array(labels), np.array(probs_A), np.array(probs_B))
+            if not isinstance(pvals[model_A_index], list) :
+                pvals[model_A_index] = []
+            pvals[model_A_index].append((abbr_df.iloc[model_B_index]['model'], p_val))
+        abbr_df['delong_stats'] = pvals
+        abbr_df.to_csv(abbreviated_csv_file)
