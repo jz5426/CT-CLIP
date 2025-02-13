@@ -9,7 +9,7 @@ note that this file depends on the following are done:
 
 import torch
 
-from linear_probe_evaluation_mnt import evaluate_classifier, get_train_internal_split, get_pathologies, linear_probing_main
+from linear_probe_utils_mnt import evaluate_classifier, get_train_internal_split, get_pathologies, linear_probing_main
 from eval_utils import LinearProbeModel, metadata_base_on_model_type, save_metric_results
 from transformers import BertModel
 import os
@@ -89,15 +89,21 @@ def main(cfg: DictConfig):
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # If using multiple GPUs
 
-    metric_results = run(cfg)
-    # NOTE: everything is saved to the same file.
-    # save it to a csv file
-    metric_results[const.SEED] = [seed]
-    save_metric_results(
-        const.EXPERIMENT_RESULTS_SAVING_PATH,
-        'linear_probe_results.csv',
-        pd.DataFrame(metric_results),
-        cfg.linear_probing_params.override_metric_results)
+    portions = [0.01, 0.025, 0.05, 0.1, 1.]
+    evaluation_datasets = ['radchest_ct_pure', 'mimic', 'ct-rate',]
+    for p in portions:
+        for eval_data in evaluation_datasets:
+            cfg.linear_probing_params.train_data_portion = p
+            cfg.linear_probing_params.evaluation_dataset = eval_data
+            metric_results = run(cfg)
+            # NOTE: everything is saved to the same file.
+            # save it to a csv file
+            metric_results[const.SEED] = [seed]
+            save_metric_results(
+                const.EXPERIMENT_RESULTS_SAVING_PATH,
+                f'{cfg.linear_probing_params.baseline_type}_linear_probe_results.csv',
+                pd.DataFrame(metric_results),
+                cfg.linear_probing_params.override_metric_results)
 
 
 def run(cfg_dot):

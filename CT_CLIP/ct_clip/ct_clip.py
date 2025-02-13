@@ -1147,13 +1147,13 @@ class CTCLIPwithXray(nn.Module):
             self.xray_encoder = copy.deepcopy(gloria_vision_encoder.vision_model.model)
             print('loaded xray encoder from gloria_resnet')
         elif xray_model_type == 'bi-mamba':
+
             # Add the mamba-cxr directory to sys.path
             sys.path.append('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/mamba-cxr')
-
             import models_mamba # this ensure the registration of timm model
             from models_mamba import vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2
             checkpoint_path = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/bi_mamba_ckpt/vim_s_midclstok_ft_81p6acc.pth'
-            bimamba_encoder = vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2()
+            self.xray_encoder = vim_small_patch16_224_bimambav2_final_pool_mean_abs_pos_embed_with_midclstok_div2()
             
             if not auto_load_pretrained_weights:
                 print('NOT SUPPORTED FOR BI-MAMBA MODEL')
@@ -1161,7 +1161,7 @@ class CTCLIPwithXray(nn.Module):
             # code from main.py in BI-MAMBA REPO
             checkpoint = torch.load(checkpoint_path, map_location='cpu')
             checkpoint_model = checkpoint['model']
-            state_dict = bimamba_encoder.state_dict()
+            state_dict = self.xray_encoder.state_dict()
             for k in ['head.weight', 'head.bias', 'head_dist.weight', 'head_dist.bias']:
                 if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
                     print(f"Removing key {k} from pretrained checkpoint")
@@ -1170,7 +1170,8 @@ class CTCLIPwithXray(nn.Module):
                 print(f"Removing pos_embed from pretrained checkpoint")
                 del checkpoint_model['pos_embed']
             # NOTE: the embedding should be averaged already: https://github.com/RPIDIAL/BI-Mamba/blob/19ef06a62841cfcaea97fd8a57c8cb42f0dce441/mamba-cxr/models_mamba.py#L570
-            missing, unexpected = bimamba_encoder.load_state_dict(checkpoint_model, strict=False)
+            missing, unexpected = self.xray_encoder.load_state_dict(checkpoint_model, strict=False)
+            self.to_xray_latent = nn.Identity()
             print(f'Loaded pretrained weights for bi-mamba model from {checkpoint_path}')
         else: 
             # our pretrained model
@@ -1326,6 +1327,11 @@ class CTCLIPwithXray(nn.Module):
             enc_xray = enc_xray.view(enc_xray.shape[0], 1, -1)
         elif self.xray_model_type == 'medclip_vit':
             enc_xray = enc_xray.last_hidden_state
+        elif 'bi-mamba' in self.xray_model_type.lower():
+            # bi-mamaba already has meaned before the output so we can skip some steps
+            xray_latents = self.to_xray_latent(enc_xray)
+            xray_latents = l2norm(xray_latents)
+            return xray_latents 
 
         enc_xray = torch.mean(enc_xray, dim=1) # pool the patch features [batch size, patches, features] => [batch size, features]
         enc_xray = enc_xray.view(enc_xray.shape[0], -1) # global view for each xray in a batch of shape [batch size, features]

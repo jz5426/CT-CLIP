@@ -421,7 +421,7 @@ def evaluate_classifier(params):
         test_loader = DataLoader(
             test_dataset, 
             num_workers=cfg_dot.linear_probing_params.num_workers, 
-            batch_size=cfg_dot.linear_probing_params.batch_size, 
+            batch_size=cfg_dot.linear_probing_params.test_loader_batch_size, 
             shuffle=False)
 
         classification_model = XrayClassificationModel(
@@ -499,7 +499,10 @@ def test_loop(params):
     # compute aucroc for each class in the multihot vector
     auc_per_class = []
     for i in range(all_labels.shape[1]):
-        auc = roc_auc_score(all_labels[:, i], all_probs[:, i])
+        try:
+            auc = roc_auc_score(all_labels[:, i], all_probs[:, i])
+        except:
+            auc = 'nan'
         auc_per_class.append(auc.item() if isinstance(auc, np.float64) else auc)
 
     pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='micro')
