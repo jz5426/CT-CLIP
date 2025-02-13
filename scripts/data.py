@@ -284,6 +284,52 @@ class CTReportDataSplitter:
         print(f'internal test size: {len(samples)}')
         return samples
 
+class RadChestXraySplitter:
+    def __init__(self, 
+                labels, 
+                data_folder):
+        self.labels = labels
+        self.xray_paths = []
+        self.data_folder = data_folder
+        self.parent_folder = os.path.basename(data_folder)
+        self.file_extension = 'mha' # make sure the xray data file path are the .mha file
+        assert self.file_extension in data_folder
+
+    def prepare_samples(self, train_split=1., val_split=0.2):
+        """
+        this prepare the xray data in a dictionary format
+        """
+        samples = prepare_radchestxray_samples(self.data_folder, self.labels, self.file_extension)
+        
+        # if the training size is smaller than 1, the internal validation should be extracted based on the splitted training set
+        if train_split < 1.0:
+            assert(val_split > 0)
+            sample_data, sample_labels = [s[0] for s in samples], [s[1] for s in samples]
+            # First split to retain `train_split` amount of data
+            train_data, train_label, test_data, test_label = iterative_train_test_split(
+                np.array(sample_data).reshape(-1, 1), 
+                np.array(sample_labels), 
+                test_size=(1.0 - train_split)
+            )
+            
+            # Further split train_samples into train and validation using val_split
+            train_data, train_label, val_data, val_label = iterative_train_test_split(
+                np.array(train_data).reshape(-1, 1), 
+                np.array(train_label), 
+                test_size=val_split
+            )
+            
+            train_split_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+            val_split_samples = [(x[0], np.array(y)) for x, y in zip(val_data.tolist(), val_label.tolist())]
+            test_split_samples = [(x[0], np.array(y)) for x, y in zip(test_data.tolist(), test_label.tolist())]
+
+            print(f'training size: {len(train_split_samples)} validation size: {len(val_split_samples)} test size: {len(test_split_samples)}')
+            return train_split_samples, val_split_samples, test_split_samples
+
+        elif train_split == 1. and val_split > 0.:
+            print('NOT SUPPORTED WITH TRAIN SPLIT = 1 FOR RADCHESTCT')
+            assert False
+
 class VinBigChestXrayDataSplitter:
     """mainly for the evaluation experiment"""
     def __init__(self, 
@@ -429,18 +475,11 @@ class VinBigChestXrayClassificationDataset(XrayClassificationDataset):
         # get the corresonding embeddings
         name_acc = os.path.basename(xray_file)[:-len(f'.{self.file_extension}')]
         xray_embedding = self.embeddings[name_acc]
-
-        # transformation borrowed from cxr_clip
-        # xray_image = self.xray_to_rgb(xray_file)
-        # xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
-        # return xray_image, label
-
         label = torch.from_numpy(label)
         data = {
             'xray': xray_embedding,
             'label': label
         }
-        # return xray_embedding, 'vinBig', label, 'PLACEHOLDER'
         return data
 
 
@@ -542,6 +581,8 @@ class RadChestCTDataset(Dataset):
         }
         # return video_tensor, 'no_report', onehotlabels, instance_name # add the nii_file for xray projections
         return data
+
+
 class RadChestXrayDataset(Dataset):
     def __init__(self,
                 data_folder, 
@@ -560,26 +601,7 @@ class RadChestXrayDataset(Dataset):
         self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
 
     def prepare_samples(self):
-        samples = []
-        patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
-
-        # Read labels once outside the loop
-        test_df = pd.read_csv(self.labels)
-        test_label_cols = list(test_df.columns[1:])
-        test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
-
-        for xray_file in tqdm.tqdm(patient_folders):
-
-            accession_number = xray_file.split(os.sep)[-1].replace(self.file_extension, '')
-            onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
-            if len(onehotlabels) == 1:
-                samples.append((xray_file, onehotlabels[0], accession_number))
-                self.paths.append(xray_file)
-            else:
-                # sanity check
-                assert False
-        print('size of the sample: ', len(samples))
-        return samples
+        return prepare_radchestxray_samples(self.data_folder, self.labels, self.file_extension)
 
     def __len__(self):
         return len(self.samples)
@@ -803,7 +825,28 @@ class VinBigDataChestXrayDataset:
 
     def __len__(self):
         return len(self.samples)
-    
+
+def prepare_radchestxray_samples(data_folder, labels, file_extension):
+    samples = []
+    patient_folders = glob.glob(os.path.join(data_folder, '*'))
+
+    # Read labels once outside the loop
+    test_df = pd.read_csv(labels)
+    test_label_cols = list(test_df.columns[1:])
+    test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
+
+    for xray_file in tqdm.tqdm(patient_folders):
+
+        accession_number = xray_file.split(os.sep)[-1].replace(file_extension, '')
+        onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
+        if len(onehotlabels) == 1:
+            samples.append((xray_file, onehotlabels[0], accession_number))
+        else:
+            # sanity check
+            assert False
+    print('size of the sample: ', len(samples))
+    return samples    
+
 def prepare_vinbig_samples(data_folder, labels, file_extension, label_variant='vinBig'):
     label_df = pd.read_csv(labels)
 

@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestXrayDataset, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestXrayDataset, RadChestXraySplitter, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
 from eval_utils import XrayClassificationModel, get_clean_model_name, metadata_base_on_model_type
 import os
 import torch
@@ -140,7 +140,32 @@ def get_train_internal_split(cfg_dot, cfg):
             split='train'
         )
     elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
-        pass
+        print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
+    
+        dataset = cfg_dot.linear_probing_params.evaluation_dataset
+        # base on the baseline model, load the corresponding xray features
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/{pth_base_name}'
+        train_xray_features = torch.load(xray_feature_path)
+        dataset = cfg_dot.linear_probing_params.evaluation_dataset
+
+        # what kind of specific radchest ct data. 
+        if dataset == const.RADCHEST_CT:
+            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels.csv' 
+        elif dataset == const.RADCHEST_CT_PURE:
+            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure.csv' 
+
+        data_splitter = RadChestXraySplitter(
+            labels=labels,
+            data_folder='/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha'
+        )
+        #NOTE: note that train_data_portion should be higher as it only contains 3630 images
+        train_sample, internal_val_samples, test_samples = data_splitter.prepare_samples(
+            train_split=cfg_dot.linear_probing_params.train_data_portion,
+            val_split=0.2
+        ) # validation split is always, train_split is controlable
+
+    
+
     elif 'vinBig' in cfg_dot.linear_probing_params.evaluation_dataset: # the ct dataset
         print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
     
@@ -243,7 +268,7 @@ def get_pathologies(dataset='ct-rate'):
         ]
     elif dataset == 'vinBig_ct':
         pathologies = ['Atelectasis', 'Cardiomegaly', 'Consolidation', 'Emphysema', 'Lung Opacity', 'Pleural effusion']
-    elif dataset == const.RADCHEST_CT:
+    elif dataset == const.RADCHEST_CT or dataset == const.RADCHEST_CT_INTERNAL:
         pathologies = [
             'calcification',
             'Cardiomegaly',
@@ -262,7 +287,7 @@ def get_pathologies(dataset='ct-rate'):
             'septal_thickening'
         ]
         pathologies = [p.lower() for p in pathologies]
-    elif dataset == const.RADCHEST_CT_PURE:
+    elif dataset == const.RADCHEST_CT_PURE or dataset == const.RADCHEST_CT_PURE_INTERNAL:
         pathologies = [
             'calcification',
             'pericardial_effusion',
