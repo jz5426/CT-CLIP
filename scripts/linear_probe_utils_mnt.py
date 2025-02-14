@@ -278,7 +278,7 @@ def get_pathologies(dataset='ct-rate'):
         ]
     elif dataset == 'vinBig_ct':
         pathologies = ['Atelectasis', 'Cardiomegaly', 'Consolidation', 'Emphysema', 'Lung Opacity', 'Pleural effusion']
-    elif dataset == const.RADCHEST_CT:
+    elif dataset == const.RADCHEST_CT or dataset == const.RADCHEST_CT_INTERNAL:
         pathologies = [
             'calcification',
             'Cardiomegaly',
@@ -297,7 +297,7 @@ def get_pathologies(dataset='ct-rate'):
             'septal_thickening'
         ]
         pathologies = [p.lower() for p in pathologies]
-    elif dataset == const.RADCHEST_CT_PURE:
+    elif dataset == const.RADCHEST_CT_PURE or dataset == const.RADCHEST_CT_PURE_INTERNAL:
         pathologies = [
             'calcification',
             'pericardial_effusion',
@@ -508,6 +508,24 @@ def evaluate_classifier(params):
             'test_loader': test_loader,
             'model': classification_model,
             'full_forward_pass': True,
+            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
+        }
+        return test_loop(test_params)
+    elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL]:
+        test_dataset = params['test_data']
+        print(f'size of the external radchest_ct data: {len(test_dataset)}')
+
+        test_loader = DataLoader(
+            test_dataset, 
+            num_workers=cfg_dot.linear_probing_params.num_workers, 
+            batch_size=cfg_dot.linear_probing_params.test_loader_batch_size, 
+            shuffle=False)
+
+        test_params = {
+            **test_params,
+            'test_loader': test_loader,
+            'model': model,
+            'full_forward_pass': False, # if ran xray_feature_caching with this dataset => False, otherwise True
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
         }
         return test_loop(test_params)
