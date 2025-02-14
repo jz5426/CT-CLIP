@@ -123,8 +123,8 @@ zero_shot_params:
 
 ## TOY
 xray_feature_caching_params:
-  baseline_type: 'cxr_clip_resnet'
-  num_workers: 2
+  baseline_type: 'bi-mamba'
+  num_workers: 3
   batch_size: 4
   evaluation_dataset: 'radchest_ct_pure_internal' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal we don't need vinBig/vinBit_ct for now
 
