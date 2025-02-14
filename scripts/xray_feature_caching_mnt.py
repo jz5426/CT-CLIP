@@ -16,6 +16,7 @@ import random
 import numpy as np
 from eval_utils import metadata_base_on_model_type
 from zero_shot import CTClipInference, VinBigDataChestXrayInference
+import constants as const
 
 @hydra.main(
         version_base=None,
@@ -121,6 +122,16 @@ def run(cfg_dot):
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
         return 
 
+    if cfg_dot.xray_feature_caching_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
+        radchestct_evaluator = radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer)
+        radchestct_evaluator.xray_feature_extraction(
+            directory=f'/mnt/g/radchest_preprocessed/{cfg_dot.linear_probing_params.evaluation_dataset}/features_embeddings',
+            pth_name=pth_base_name, 
+            append=True
+        )
+        print(f'Finished caching the xray feature of {cfg_dot.linear_probing_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
+        return
+
 def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
     data_folder = f'/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/{split}_preprocessed_xray_mha'
     img_embedding_path = f'/mnt/g/Chris/CT-RATE-FINAL/processed_dataset/features_embeddings_correct/{split}/image_features.pth'
@@ -148,6 +159,30 @@ def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
         num_workers = cfg_dot.xray_feature_caching_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
         feature_extraction_mode = True # might be optional
     )  
+
+    return split_inference
+
+
+def radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer):
+
+    if cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_PURE_INTERNAL:
+        label_file = 'final_labels_pure.csv'
+    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_INTERNAL:
+        label_file = 'final_labels.csv'
+
+    split_inference = CTClipInference(
+        clip_xray,
+        tokenizer=tokenizer,
+        cfg=cfg,
+        data_folder = '/mnt/g/radchest_preprocessed/preprocessed_xray_mha',
+        labels = f'/mnt/g/radchest_preprocessed/{label_file}',
+        batch_size = cfg_dot.xray_feature_caching_params.batch_size,
+        num_workers = cfg_dot.xray_feature_caching_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+        results_folder="inference_zeroshot/",
+        num_train_steps = 1,
+        feature_extraction_mode = True, # extract only the text and ct features only
+        dataset=const.RADCHEST_XRAY # this is what differentiate with ct-rate one.
+    )
 
     return split_inference
 
