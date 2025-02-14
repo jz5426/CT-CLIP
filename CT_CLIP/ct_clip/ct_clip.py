@@ -2,11 +2,11 @@ import copy
 from contextlib import contextmanager
 from functools import partial, wraps
 from pathlib import Path
-from chexzero_utils import CheXzeroVisionModel, CheXzeroVisionModelResNet
+from chexzero_utils import load_clip
 from cxr_clip_utils import load_cxr_clip_image_encoder
 from gloria_utils import GloRIaVisionModel, GloRIaVisionModelDenseNet, GloRIaVisionModelResNet
 from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT
-from medklip_utils import MedKlipVisionModel, MedKlipVisionModelResNet
+from medklip_utils import MedKLIP
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
@@ -1175,11 +1175,19 @@ class CTCLIPwithXray(nn.Module):
             missing, unexpected = self.xray_encoder.load_state_dict(checkpoint_model, strict=False)
             self.to_xray_latent = nn.Identity()
             print(f'Loaded pretrained weights for bi-mamba model from {checkpoint_path}')
-        elif xray_model_type == 'medklip':
-            medklip_vision_encoder = MedKlipVisionModel(MedKlipVisionModelResNet, checkpoint='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/models/medklip.pth')
-                        
-        elif xray_model_type == 'chexzero':
-            chexzero_vision_encoder = CheXzeroVisionModel(CheXzeroVisionModelResNet, checkpoint='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/models/chexzero_best_64_0.0002_original_23000_0.854.pt')
+        elif xray_model_type == 'medklip_resnet':
+            self.xray_encoder = MedKLIP()
+            checkpoint = torch.load('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/MedKlip/medklip_ckpt.pth', map_location='cpu') 
+            state_dict = checkpoint['model'] 
+            new_state_dict = {}
+            for key in state_dict.keys():
+                if 'module' in key:
+                    new_state_dict[key.replace('module.','')] = state_dict[key]                  
+            missing, unexpected = self.xray_encoder.load_state_dict(new_state_dict, strict=False)    
+            self.to_xray_latent = nn.Identity()
+
+            print(f'Loaded pretrained weights for medklip_resnet')
+
         else: 
             # our pretrained model
             ckpt_name = xray_model_type
