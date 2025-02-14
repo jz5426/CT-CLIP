@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestXrayDataset, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestXrayClassificationDataset, RadChestXrayDataset, RadChestXraySplitter, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
 from eval_utils import XrayClassificationModel, get_clean_model_name, metadata_base_on_model_type
 import os
 import torch
@@ -65,7 +65,11 @@ def get_train_internal_split(cfg_dot, cfg):
             model_type=xray_model_type,
             split='train'
         )
-        
+
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': internal_val_dataset
+        }
     elif cfg_dot.linear_probing_params.evaluation_dataset == 'ct-rate':
         print('Splitting ct-rate dataset')
 
@@ -100,6 +104,67 @@ def get_train_internal_split(cfg_dot, cfg):
             model_type=xray_model_type,
             split='train'
         )
+
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': internal_val_dataset
+        }
+    elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
+        print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
+    
+        dataset = cfg_dot.linear_probing_params.evaluation_dataset
+        # base on the baseline model, load the corresponding xray features
+        # xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/valid/{pth_base_name}'
+        xray_feature_path = f'/mnt/g/radchest_preprocessed/{cfg_dot.linear_probing_params.evaluation_dataset}/features_embeddings/valid/{pth_base_name}'
+        train_xray_features = torch.load(xray_feature_path)
+        dataset = cfg_dot.linear_probing_params.evaluation_dataset
+
+        # what kind of specific radchest ct data. 
+        if dataset == const.RADCHEST_CT_INTERNAL:
+            labels = '/mnt/g/radchest_preprocessed/final_labels.csv' 
+        elif dataset == const.RADCHEST_CT_PURE_INTERNAL:
+            labels = '/mnt/g/radchest_preprocessed/final_labels_pure.csv' 
+
+        data_splitter = RadChestXraySplitter(
+            labels=labels,
+            data_folder='/mnt/g/radchest_preprocessed/preprocessed_xray_mha'
+        )
+        #NOTE: note that train_data_portion should be higher as it only contains 3630 images
+        train_sample, internal_val_samples, test_samples = data_splitter.prepare_samples(
+            train_split=cfg_dot.linear_probing_params.train_data_portion,
+            val_split=0.2
+        ) # validation split is always, train_split is controlable
+
+        train_dataset = RadChestXrayClassificationDataset(
+            cfg=cfg,
+            data=train_sample, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='train'
+        )
+
+        internal_val_dataset = RadChestXrayClassificationDataset(
+            cfg=cfg,
+            data=internal_val_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='valid'
+        )
+
+        # do the same thing for test samples but make sure the labels are correct.
+        test_dataset = RadChestXrayClassificationDataset(
+            cfg=cfg,
+            data=test_samples, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='valid'
+        )
+
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': internal_val_dataset,
+            'test_dataset': test_dataset
+        }
     elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT, const.RADCHEST_CT_PURE]:
 
         print('Splitting ct-rate rachest_ct version dataset: differences in the set of the labels')
@@ -141,7 +206,13 @@ def get_train_internal_split(cfg_dot, cfg):
             split='train'
         )
 
-    return train_dataset, internal_val_dataset
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': internal_val_dataset
+        }
+
+    # return train_dataset, internal_val_dataset
+    return results
 
 
 def get_pathologies(dataset='ct-rate'):

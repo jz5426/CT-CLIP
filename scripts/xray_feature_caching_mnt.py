@@ -125,11 +125,11 @@ def run(cfg_dot):
     if cfg_dot.xray_feature_caching_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
         radchestct_evaluator = radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer)
         radchestct_evaluator.xray_feature_extraction(
-            directory=f'/mnt/g/radchest_preprocessed/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/features_embeddings',
+            directory=f'/mnt/g/radchest_preprocessed/{cfg_dot.linear_probing_params.evaluation_dataset}/features_embeddings',
             pth_name=pth_base_name, 
             append=True
         )
-        print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
+        print(f'Finished caching the xray feature of {cfg_dot.linear_probing_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
         return
 
 def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
