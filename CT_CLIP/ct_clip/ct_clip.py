@@ -2,9 +2,11 @@ import copy
 from contextlib import contextmanager
 from functools import partial, wraps
 from pathlib import Path
+from chexzero_utils import CheXzeroVisionModel, CheXzeroVisionModelResNet
 from cxr_clip_utils import load_cxr_clip_image_encoder
 from gloria_utils import GloRIaVisionModel, GloRIaVisionModelDenseNet, GloRIaVisionModelResNet
 from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT
+from medklip_utils import MedKlipVisionModel, MedKlipVisionModelResNet
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
@@ -1173,6 +1175,11 @@ class CTCLIPwithXray(nn.Module):
             missing, unexpected = self.xray_encoder.load_state_dict(checkpoint_model, strict=False)
             self.to_xray_latent = nn.Identity()
             print(f'Loaded pretrained weights for bi-mamba model from {checkpoint_path}')
+        elif xray_model_type == 'medklip':
+            medklip_vision_encoder = MedKlipVisionModel(MedKlipVisionModelResNet, checkpoint='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/models/medklip.pth')
+                        
+        elif xray_model_type == 'chexzero':
+            chexzero_vision_encoder = CheXzeroVisionModel(CheXzeroVisionModelResNet, checkpoint='/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/models/chexzero_best_64_0.0002_original_23000_0.854.pt')
         else: 
             # our pretrained model
             ckpt_name = xray_model_type
