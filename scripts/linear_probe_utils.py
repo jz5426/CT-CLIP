@@ -154,7 +154,7 @@ def get_train_internal_split(cfg_dot, cfg):
     
         dataset = cfg_dot.linear_probing_params.evaluation_dataset
         # base on the baseline model, load the corresponding xray features
-        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/valid/{pth_base_name}'
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{cfg_dot.linear_probing_params.evaluation_dataset}/xray_features_embeddings/valid/{pth_base_name}'
         train_xray_features = torch.load(xray_feature_path)
         dataset = cfg_dot.linear_probing_params.evaluation_dataset
 
