@@ -1,61 +1,51 @@
-
-import os
+import clip
 import torch
-from torch import nn
-import torchvision
-from transformers import AutoModel
+from chexzero_models import CLIP
 
-class CheXzeroVisionModelResNet(nn.Module):
+def load_clip(model_path=None, pretrained=False, context_length=77):
     '''
-    take resnet50 as backbone.
+    FUNCTION: load_clip
+    -------------------------------
+    This function loads in a model with the CLIP model 
+    architecture. 
+    
+    args: 
+        * model_path (optional) - path to model weights that the model
+        will be initialized with 
+        * pretrained (optional) - if True, will load the pretrained 
+        CLIP model
+        * context_length (optional) - length of the maximum number of 
+        tokens that can be inputted into the CLIP model
     '''
-    def __init__(self, medclip_checkpoint=None):
-        super().__init__()
-        self.model = torchvision.models.resnet50(pretrained=False) # prevent from download everything
-        num_fts = self.model.fc.in_features
-        self.model.fc = nn.Linear(num_fts, 512, bias=False) # projection head
-        self.WEIGHTS_NAME = 'pytorch_model.bin'
-        if medclip_checkpoint is not None:
-            self.load_from_cheXzero(medclip_checkpoint)
-        else:
-            print('NOT LOADING ANY MEDICAL RELATED PRETRAINED WEIGHTS')
-        
-    def load_from_cheXzero(self, checkpoint):
-        '''handle key mismatch of medclip and the vision encoder.
-        '''
-        # state_dict = torch.load(os.path.join(checkpoint, self.WEIGHTS_NAME))
-        # new_state_dict = {}
-        # for key in state_dict.keys():
-        #     if 'vision_model' in key:
-        #         new_state_dict[key.replace('vision_model.','')] = state_dict[key]
-        # missing_keys, unexpected_keys = self.load_state_dict(new_state_dict, strict=False)
 
-        # # find the intersection
-        # model_keys = set(self.state_dict().keys()) # this model's own dictionary
-        # ckpt_keys = set(new_state_dict.keys()) # the pretrained dictionary
-        # loaded_keys = ckpt_keys.intersection(model_keys) - set(missing_keys)
-        # assert (len(self.model.state_dict().keys())) == len(loaded_keys) # check the model is indeed successfully loaded including the projection head.
-
-        # # print('missing keys:', missing_keys)
-        # # print('unexpected keys:', unexpected_keys)
-        # print('load model weight from:', checkpoint)
-        return
-
-    def forward(self, pixel_values, **kwargs):
-        '''args:
-        pixel_values: tensor with shape [bs, 3, img_size, img_size]
-        '''
-        if pixel_values.shape[1] == 1: pixel_values = pixel_values.repeat((1,3,1,1))
-        img_embeds = self.model(pixel_values)
-        return img_embeds
-
-
-
-class CheXzeroVisionModel(nn.Module):
-    def __init__(self,
-        vision_cls=CheXzeroVisionModelResNet,
-        checkpoint=None,
-        ) -> None:
-        super().__init__()
-        assert vision_cls in [CheXzeroVisionModelResNet], 'vision_cls should be one of [MedCLIPVisionModel, MedCLIPVisionModelViT]'
-        self.vision_model = vision_cls(medclip_checkpoint=checkpoint)
+    params = {
+        'embed_dim':768,
+        'image_resolution': 320,
+        'vision_layers': 12,
+        'vision_width': 768,
+        'vision_patch_size': 16,
+        'context_length': context_length,
+        'vocab_size': 49408,
+        'transformer_width': 512,
+        'transformer_heads': 8,
+        'transformer_layers': 12
+    }
+    
+    # set device 
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = 'cpu'
+    
+    if pretrained: 
+        # load clip pre-trained model
+        model, preprocess = clip.load("ViT-B/32", device=device, jit=False)
+        print("Loaded in pretrained model.")
+    else: 
+        model = CLIP(**params)
+        print("Loaded in clip model.")
+    
+    # if a model_path is provided, load in weights to backbone
+    if model_path != None: 
+        state_dict = torch.load(model_path, map_location=device)
+        missing, unexpected = model.load_state_dict(state_dict, strict=False)
+    return model
+    
