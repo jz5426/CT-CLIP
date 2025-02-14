@@ -89,8 +89,12 @@ def main(cfg: DictConfig):
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # If using multiple GPUs
 
-    portions = [0.01, 0.025, 0.05, 0.1, 1.]
-    evaluation_datasets = ['radchest_ct_pure', 'mimic', 'ct-rate',]
+    # NOTE: external few shot
+    # portions = [0.01, 0.025, 0.05, 0.1, 1.]
+    # evaluation_datasets = ['radchest_ct_pure', 'mimic', 'ct-rate',]
+    # NOTE: internal few shot
+    portions = [0.1, 0.2, 0.5, 0.8]
+    evaluation_datasets = ['radchest_ct_pure_internal']
     for p in portions:
         for eval_data in evaluation_datasets:
             cfg.linear_probing_params.train_data_portion = p
@@ -148,7 +152,13 @@ def run(cfg_dot):
         auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
     # TODO: toggle the path here.
-    train_dataset, internal_val_dataset = get_train_internal_split(cfg_dot, cfg)
+    # train_dataset, internal_val_dataset = get_train_internal_split(cfg_dot, cfg)
+    datasets = get_train_internal_split(cfg_dot, cfg)
+    train_dataset = datasets['train_dataset']
+    internal_val_dataset = datasets['internal_val_dataset']
+    test_dataset = None
+    if 'test_dataset' in datasets:
+        test_dataset = datasets['test_dataset']
     
     pathologies = get_pathologies(dataset=cfg_dot.linear_probing_params.evaluation_dataset)
     
@@ -193,7 +203,8 @@ def run(cfg_dot):
         'model': model, # the linear classifier
         'best_ckpt_destination': best_ckpt_destination,
         'classifier_ckpt_base_name': classifier_ckpt_base_name,
-        'pth_base_name': pth_base_name # mainly for the ct-rate dataset
+        'pth_base_name': pth_base_name, # mainly for the ct-rate dataset
+        'test_data': test_dataset
     }
     # TODO: toggle the path here
     metric_results = evaluate_classifier(params)
