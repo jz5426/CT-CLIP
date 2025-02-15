@@ -314,7 +314,7 @@ def get_pathologies(dataset='ct-rate'):
         ]
     elif dataset == 'vinBig_ct':
         pathologies = ['Atelectasis', 'Cardiomegaly', 'Consolidation', 'Emphysema', 'Lung Opacity', 'Pleural effusion']
-    elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_INTERNAL_CLEAN]:
+    elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT]:
         pathologies = [
             'calcification',
             'Cardiomegaly',
@@ -333,7 +333,7 @@ def get_pathologies(dataset='ct-rate'):
             'septal_thickening'
         ]
         pathologies = [p.lower() for p in pathologies]
-    elif dataset in [const.RADCHEST_CT_PURE_INTERNAL,const.RADCHEST_CT_PURE_INTERNAL_CLEAN]:
+    elif dataset in [const.RADCHEST_CT_PURE_INTERNAL,const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_PURE]:
         pathologies = [
             'calcification',
             'pericardial_effusion',
