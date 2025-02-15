@@ -168,9 +168,9 @@ def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
 def radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer):
 
     if cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_PURE_INTERNAL:
-        label_file = 'final_labels_pure.csv'
+        label_file = 'final_labels_pure_clean.csv'
     elif cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_INTERNAL:
-        label_file = 'final_labels.csv'
+        label_file = 'final_labels_clean.csv'
 
     split_inference = CTClipInference(
         clip_xray,

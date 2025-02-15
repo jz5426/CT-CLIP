@@ -105,7 +105,7 @@ inference_train = CTClipInference(
     clip,
     tokenizer=None,
     data_folder = processed_ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
-    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv",
+    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels_clean.csv",
     batch_size = 4,
     num_workers = 5,
     results_folder="inference_zeroshot/",

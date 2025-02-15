@@ -86,9 +86,9 @@ def remove_zero_rows_and_save(df, output_path):
 
 if __name__ == "__main__":
     # NOTE: remove the non-zero row
-    # label_pure = '/mnt/g/radchest_preprocessed/final_labels_pure.csv'
+    # label_pure = '/mnt/g/radchest_preprocessed/final_labels_pure_clean.csv'
     # remove_zero_rows_and_save(pd.read_csv(label_pure), '/mnt/g/radchest_preprocessed/final_labels_pure_clean.csv')
-    # label_pure = '/mnt/g/radchest_preprocessed/final_labels.csv'
+    # label_pure = '/mnt/g/radchest_preprocessed/final_labels_clean.csv'
     # remove_zero_rows_and_save(pd.read_csv(label_pure), '/mnt/g/radchest_preprocessed/final_labels_clean.csv')
     
     # NOTE: double check the rows
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     #     "/cluster/projects/mcintoshgroup/publicData/RADChestCT/imgvalid_Abnormality_and_Location_Labels.csv"
     # ]
     # merge_labels_output_path = "/cluster/projects/mcintoshgroup/publicData/RADChestCT/merged_original_labels.csv"
-    # final_labels_output_path = "/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure.csv"
+    # final_labels_output_path = "/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure_clean.csv"
     # merged_labels_df = merge_excels(file_paths)
     # if merged_labels_df is not None:
     #     # merged_labels_df.to_csv(merge_labels_output_path, index=False)

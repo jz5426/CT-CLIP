@@ -121,9 +121,9 @@ def get_train_internal_split(cfg_dot, cfg):
 
         # what kind of specific radchest ct data. 
         if dataset == const.RADCHEST_CT_INTERNAL:
-            labels = '/mnt/g/radchest_preprocessed/final_labels.csv' 
+            labels = '/mnt/g/radchest_preprocessed/final_labels_clean.csv' 
         elif dataset == const.RADCHEST_CT_PURE_INTERNAL:
-            labels = '/mnt/g/radchest_preprocessed/final_labels_pure.csv' 
+            labels = '/mnt/g/radchest_preprocessed/final_labels_pure_clean.csv' 
 
         data_splitter = RadChestXraySplitter(
             labels=labels,
@@ -477,10 +477,10 @@ def evaluate_classifier(params):
         return test_loop(test_params)
     elif dataset in [const.RADCHEST_CT, const.RADCHEST_CT_PURE]:
         if dataset == const.RADCHEST_CT:
-            labels = '/mnt/g/radchest_preprocessed/final_labels.csv'
+            labels = '/mnt/g/radchest_preprocessed/final_labels_clean.csv'
         elif dataset == const.RADCHEST_CT_PURE:
             # this file should be created in preprocess_radchestct_labels.py
-            labels = '/mnt/g/radchest_preprocessed/final_labels_pure.csv'
+            labels = '/mnt/g/radchest_preprocessed/final_labels_pure_clean.csv'
         test_dataset = RadChestXrayDataset(
             data_folder = '/mnt/g/radchest_preprocessed/preprocessed_xray_mha',
             model_type=xray_model_type,

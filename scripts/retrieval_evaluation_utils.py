@@ -542,9 +542,9 @@ def radchest_ct_retrieval_evaluation(params):
     tokenizer = params['tokenizer']
     dataset = params['dataset']
     if dataset == const.RADCHEST_CT:
-        label_file = 'final_labels.csv'
+        label_file = 'final_labels_clean.csv'
     elif dataset == const.RADCHEST_CT_PURE:
-        label_file = 'final_labels_pure.csv'
+        label_file = 'final_labels_pure_clean.csv'
 
     embedding_directory = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/features_embeddings'
     saving_path = embedding_directory
