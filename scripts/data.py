@@ -575,9 +575,9 @@ class RadChestCTDataset(Dataset):
             if len(onehotlabels) == 1:
                 samples.append((nii_file, onehotlabels[0], accession_number))
                 self.paths.append(nii_file)
-            else:
-                # sanity check
-                assert False
+            # else:
+            #     # sanity check
+            #     assert False
         print('size of the sample: ', len(samples))
         return samples
 
@@ -864,9 +864,10 @@ def prepare_radchestxray_samples(data_folder, labels, file_extension):
         onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
         if len(onehotlabels) == 1:
             samples.append((xray_file, onehotlabels[0], accession_number))
-        else:
-            # sanity check
-            assert False
+        # else:
+        #     # sanity check
+        #     print('the xray file not found in the labels')
+        #     assert False
     print('size of the sample: ', len(samples))
     return samples    
 

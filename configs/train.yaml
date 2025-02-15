@@ -78,7 +78,7 @@ linear_probing_params:
   progress_window: 2
   num_workers: 1
   train_data_portion: 0.1
-  evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure
+  evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
   override_metric_results: false
   windows_wsl_env: false # implies that the script is ran on the windows wsl environment
@@ -105,7 +105,7 @@ linear_probing_params:
 
 ## FOR OFFICIAL
 retrieval_params:
-  evaluation_dataset: '' # ct-rate, mimic, radchest_ct, radchest_ct_pure
+  evaluation_dataset: '' # ct-rate, mimic, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
   override_metric_results: false
 
 zero_shot_params:
@@ -119,14 +119,14 @@ xray_feature_caching_params:
   baseline_type: ''
   num_workers: 10
   batch_size: 512
-  evaluation_dataset: '' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal we don't need vinBig/vinBit_ct for now
+  evaluation_dataset: '' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal, radchest_ct_pure_internal_clean, radchest_ct_internal_clean  we don't need vinBig/vinBit_ct for now
 
 ## TOY
 # xray_feature_caching_params:
-#   baseline_type: 'chexzero'
-#   num_workers: 3
+#   baseline_type: 'cxr_clip_resnet'
+#   num_workers: 1
 #   batch_size: 4
-#   evaluation_dataset: 'radchest_ct_pure_internal' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal we don't need vinBig/vinBit_ct for now
+#   evaluation_dataset: 'radchest_ct_pure_internal_clean' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal we don't need vinBig/vinBit_ct for now
 
 
 internal_split_caching_params:
