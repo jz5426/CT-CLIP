@@ -599,7 +599,10 @@ def radchest_ct_retrieval_evaluation(params):
 
         # get xray latent features from a model TODO: fix this!
         xray_features = retrival_evaluator.xray_feature_extraction(append=False)
+        if image_features.keys() > xray_features.keys():
+            image_features = {k: v for k, v in image_features.items() if k in xray_features}
         assert(image_features.keys() == xray_features.keys())
+
 
         triplet_embeddings = [(image_features[key], 'placeholder', xray_features[key]) for key in xray_features.keys()]
 

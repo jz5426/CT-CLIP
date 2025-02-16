@@ -566,40 +566,40 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
 
-    # elif 'vinBig' in dataset:
-    #     #NOTE: follow similarly to the mimic external validaion.
-    #     split = 'test'
-    #     test_dataset = VinBigDataChestXrayDataset(
-    #         cfg=cfg,
-    #         data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
-    #         labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', 
-    #         model_type=xray_model_type,
-    #         label_variant=dataset,
-    #         split=split)
+    elif 'vinBig' in dataset:
+        #NOTE: follow similarly to the mimic external validaion.
+        split = 'test'
+        test_dataset = VinBigDataChestXrayDataset(
+            cfg=cfg,
+            data_folder=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/preprocessed_vinbig_{split}/vinbig_preprocessed_xray_mha',
+            labels=f'/cluster/projects/mcintoshgroup/publicData/VinBigDataChestXray/image_labels_{split}.csv', 
+            model_type=xray_model_type,
+            label_variant=dataset,
+            split=split)
 
-    #     # Split dataset into train and validation sets
-    #     test_loader = DataLoader(
-    #         test_dataset,
-    #         num_workers=cfg_dot.linear_probing_params.num_workers,
-    #         batch_size=cfg_dot.linear_probing_params.batch_size,
-    #         shuffle=False)
+        # Split dataset into train and validation sets
+        test_loader = DataLoader(
+            test_dataset,
+            num_workers=cfg_dot.linear_probing_params.num_workers,
+            batch_size=cfg_dot.linear_probing_params.batch_size,
+            shuffle=False)
     
-    #     classification_model = XrayClassificationModel(
-    #         vision_model=clip_xray.xray_encoder, # from pretrained
-    #         feature_projector=clip_xray.to_xray_latent, # from pretrained
-    #         pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded in test_loop function
-    #         vision_model_type=xray_model_type
-    #     )
-    #     classification_model.to(device)
+        classification_model = XrayClassificationModel(
+            vision_model=clip_xray.xray_encoder, # from pretrained
+            feature_projector=clip_xray.to_xray_latent, # from pretrained
+            pretrained_classifier=model, # load the classifier layer, the pretrained weight will be loaded in test_loop function
+            vision_model_type=xray_model_type
+        )
+        classification_model.to(device)
 
-    #     test_params = {
-    #         **test_params,
-    #         'test_loader': test_loader,
-    #         'model': classification_model,
-    #         'full_forward_pass': True,
-    #         'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
-    #     }
-    #     return test_loop(test_params)
+        test_params = {
+            **test_params,
+            'test_loader': test_loader,
+            'model': classification_model,
+            'full_forward_pass': True,
+            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
+        }
+        return test_loop(test_params)
 
     print('something wrong')
 
@@ -655,6 +655,12 @@ def test_loop(params):
     # NOTE: might use the same one from the training file instead of using the sklearn one.
     precision_micro, recall_micro, f1_micro, _ = precision_recall_fscore_support(all_labels, all_preds, average='micro')
     auc_micro = roc_auc_score(all_labels, all_probs, average='micro', multi_class='ovr')
+    pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='micro')
+
+    #TODO: remove the following
+    # precision_micro, recall_micro, f1_micro, _ = precision_recall_fscore_support(all_labels, all_preds, average='macro')
+    # auc_micro = roc_auc_score(all_labels, all_probs, average='macro', multi_class='ovr')
+    # pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='macro')
 
     # compute aucroc for each class in the multihot vector
     auc_per_class = []
@@ -662,7 +668,6 @@ def test_loop(params):
         auc = roc_auc_score(all_labels[:, i], all_probs[:, i])
         auc_per_class.append(auc.item() if isinstance(auc, np.float64) else auc)
 
-    pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='micro')
     print(f"Test Results for micro average: F1 Score: {f1_micro:.4f}, Recall: {recall_micro:.4f}, Precision: {precision_micro:.4f}, AUC: {auc_micro:.4f}, PR_AUC: {pr_auc_score_micro:.4f}")
 
     assert(len(all_labels.flatten().tolist())==len(all_probs.flatten().tolist()))

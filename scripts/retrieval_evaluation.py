@@ -76,16 +76,16 @@ def run(cfg_dot):
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip NOTE: shared
 
     baselines = [
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
         'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
         'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
+        # 'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
+        # 'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
+        # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
+        # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
         'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
         'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
@@ -113,7 +113,8 @@ def run(cfg_dot):
         results = ctrate_retrieval_evaluation(params)
     elif cfg_dot.retrieval_params.evaluation_dataset == const.MIMIC:
         results = mimic_retrieval_evaluation(params)
-    elif cfg_dot.retrieval_params.evaluation_dataset == const.RADCHEST_CT or cfg_dot.retrieval_params.evaluation_dataset == const.RADCHEST_CT_PURE:
+    elif cfg_dot.retrieval_params.evaluation_dataset in [const.RADCHEST_CT, const.RADCHEST_CT_PURE]:
+
         params['dataset'] = cfg_dot.retrieval_params.evaluation_dataset
         results = radchest_ct_retrieval_evaluation(params)
     elif cfg_dot.retrieval_params.evaluation_dataset == const.CT_CLIP:
