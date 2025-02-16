@@ -124,7 +124,7 @@ def run(cfg_dot):
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
         return 
 
-    if cfg_dot.xray_feature_caching_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_INTERNAL_CLEAN]:
+    if cfg_dot.xray_feature_caching_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT_ALL_DISEASE_INTERNAL]:
         radchestct_evaluator = radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer)
         radchestct_evaluator.xray_feature_extraction(
             directory=f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/xray_features_embeddings/',
@@ -207,6 +207,8 @@ def radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer):
         label_file = 'final_labels_pure_clean.csv'
     elif cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_INTERNAL_CLEAN:
         label_file = 'final_labels_clean.csv'
+    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_ALL_DISEASE_INTERNAL:
+        label_file = 'final_labels_all_disease.csv'
         
     split_inference = CTClipInference(
         clip_xray,

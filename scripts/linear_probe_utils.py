@@ -168,7 +168,7 @@ def get_train_internal_split(cfg_dot, cfg):
         elif dataset == const.RADCHEST_CT_INTERNAL_CLEAN:
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_clean.csv' 
         elif dataset == const.RADCHEST_CT_ALL_DISEASE_INTERNAL:
-            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_all_disease.csv' #TODO: double check this
+            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_all_disease.csv'
 
         data_splitter = RadChestXraySplitter(
             labels=labels,
