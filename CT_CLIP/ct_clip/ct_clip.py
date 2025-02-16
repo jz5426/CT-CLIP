@@ -2,7 +2,6 @@ import copy
 from contextlib import contextmanager
 from functools import partial, wraps
 from pathlib import Path
-from chexzero_utils import load_clip
 from cxr_clip_utils import load_cxr_clip_image_encoder
 from gloria_utils import GloRIaVisionModel, GloRIaVisionModelDenseNet, GloRIaVisionModelResNet
 from medclip_utils import MedCLIPVisionModel, MedCLIPVisionModelResNet, MedCLIPVisionModelViT

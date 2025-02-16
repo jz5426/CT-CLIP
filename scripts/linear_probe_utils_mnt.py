@@ -109,7 +109,7 @@ def get_train_internal_split(cfg_dot, cfg):
             'train_dataset': train_dataset,
             'internal_val_dataset': internal_val_dataset
         }
-    elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
+    elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_INTERNAL_CLEAN]:
         print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
     
         dataset = cfg_dot.linear_probing_params.evaluation_dataset
@@ -120,9 +120,9 @@ def get_train_internal_split(cfg_dot, cfg):
         dataset = cfg_dot.linear_probing_params.evaluation_dataset
 
         # what kind of specific radchest ct data. 
-        if dataset == const.RADCHEST_CT_INTERNAL:
+        if dataset == const.RADCHEST_CT_INTERNAL or dataset == const.RADCHEST_CT_INTERNAL_CLEAN:
             labels = '/mnt/g/radchest_preprocessed/final_labels_clean.csv' 
-        elif dataset == const.RADCHEST_CT_PURE_INTERNAL:
+        elif dataset == const.RADCHEST_CT_PURE_INTERNAL or dataset == const.RADCHEST_CT_PURE_INTERNAL_CLEAN:
             labels = '/mnt/g/radchest_preprocessed/final_labels_pure_clean.csv' 
 
         data_splitter = RadChestXraySplitter(
@@ -278,7 +278,7 @@ def get_pathologies(dataset='ct-rate'):
         ]
     elif dataset == 'vinBig_ct':
         pathologies = ['Atelectasis', 'Cardiomegaly', 'Consolidation', 'Emphysema', 'Lung Opacity', 'Pleural effusion']
-    elif dataset == const.RADCHEST_CT or dataset == const.RADCHEST_CT_INTERNAL:
+    elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT]:
         pathologies = [
             'calcification',
             'Cardiomegaly',
@@ -297,7 +297,7 @@ def get_pathologies(dataset='ct-rate'):
             'septal_thickening'
         ]
         pathologies = [p.lower() for p in pathologies]
-    elif dataset == const.RADCHEST_CT_PURE or dataset == const.RADCHEST_CT_PURE_INTERNAL:
+    elif dataset in [const.RADCHEST_CT_PURE_INTERNAL,const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_PURE]:
         pathologies = [
             'calcification',
             'pericardial_effusion',
@@ -511,7 +511,7 @@ def evaluate_classifier(params):
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
         }
         return test_loop(test_params)
-    elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL]:
+    elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT_PURE_INTERNAL_CLEAN]:
         test_dataset = params['test_data']
         print(f'size of the external radchest_ct data: {len(test_dataset)}')
 

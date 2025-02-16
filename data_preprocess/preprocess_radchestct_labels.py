@@ -92,24 +92,130 @@ if __name__ == "__main__":
     # remove_zero_rows_and_save(pd.read_csv(label_pure), '/mnt/g/radchest_preprocessed/final_labels_clean.csv')
     
     # NOTE: double check the rows
-    label_pure = '/mnt/g/radchest_preprocessed/final_labels_pure_clean.csv'
-    count_zero_rows(pd.read_csv(label_pure))
+    # label_pure = '/mnt/g/radchest_preprocessed/final_labels_pure_clean.csv'
+    # count_zero_rows(pd.read_csv(label_pure))
 
-    label_pure = '/mnt/g/radchest_preprocessed/final_labels_clean.csv'
-    count_zero_rows(pd.read_csv(label_pure))
+    # label_pure = '/mnt/g/radchest_preprocessed/final_labels_clean.csv'
+    # count_zero_rows(pd.read_csv(label_pure))
 
-    # # Example file paths (update these with actual file paths)
+    
+    all_disease_labels = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels_all_disease.csv'
+    remove_zero_rows_and_save(pd.read_csv(all_disease_labels), all_disease_labels)
+    count_zero_rows(pd.read_csv(all_disease_labels))
+    pass
+
+    # NOTE: in the cluster
+    # Example file paths (update these with actual file paths)
     # file_paths = [
     #     "/cluster/projects/mcintoshgroup/publicData/RADChestCT/imgtest_Abnormality_and_Location_Labels.csv",
     #     "/cluster/projects/mcintoshgroup/publicData/RADChestCT/imgtrain_Abnormality_and_Location_Labels.csv",
     #     "/cluster/projects/mcintoshgroup/publicData/RADChestCT/imgvalid_Abnormality_and_Location_Labels.csv"
     # ]
     # merge_labels_output_path = "/cluster/projects/mcintoshgroup/publicData/RADChestCT/merged_original_labels.csv"
-    # final_labels_output_path = "/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure_clean.csv"
+    # final_labels_output_path = "/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_all_disease.csv"
+
+    # # NOTE: in the windows mnt machine
+    # file_paths = [
+    #     "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/imgtest_Abnormality_and_Location_Labels.csv",
+    #     "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/imgtrain_Abnormality_and_Location_Labels.csv",
+    #     "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/imgvalid_Abnormality_and_Location_Labels.csv"
+    # ]
+    # merge_labels_output_path = "/cluster/projects/mcintoshgroup/publicData/RADChestCT/merged_original_labels.csv"
+    # final_labels_output_path = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels_all_disease.csv"
+
+
     # merged_labels_df = merge_excels(file_paths)
     # if merged_labels_df is not None:
     #     # merged_labels_df.to_csv(merge_labels_output_path, index=False)
-    #     # print(f"Merged file saved as: {merge_labels_output_path}")
+    #     print(f"Merged file saved as: {merge_labels_output_path}")
+
+    #     path_col_names = [
+    #         'bandlike_or_linear',
+    #         'groundglass',
+    #         'honeycombing',
+    #         'reticulation',
+    #         'tree_in_bud',
+    #         'airspace_disease',
+    #         'air_trapping',
+    #         'aspiration',
+    #         'atelectasis',
+    #         'bronchial_wall_thickening',
+    #         'bronchiectasis',
+    #         'bronchiolectasis',
+    #         'bronchiolitis',
+    #         'bronchitis',
+    #         'emphysema',
+    #         'hemothorax',
+    #         'interstitial_lung_disease',
+    #         'lung_resection',
+    #         'mucous_plugging',
+    #         'pleural_effusion',
+    #         'pleural_thickening',
+    #         'pneumonia',
+    #         'pneumonitis',
+    #         'pneumothorax',
+    #         'pulmonary_edema',
+    #         'septal_thickening',
+    #         'tuberculosis',
+    #         # 'cabg',
+    #         'cardiomegaly',
+    #         'coronary_artery_disease',
+    #         'heart_failure',
+    #         # 'heart_valve_replacement',
+    #         # 'pacemaker_or_defib',
+    #         'pericardial_effusion',
+    #         'pericardial_thickening',
+    #         # 'sternotomy',
+    #         'arthritis',
+    #         'atherosclerosis',
+    #         'aneurysm',
+    #         # 'breast_implant',
+    #         # 'breast_surgery',
+    #         'calcification',
+    #         'cancer',
+    #         # 'catheter_or_port',
+    #         'cavitation',
+    #         # 'clip',
+    #         'congestion',
+    #         'consolidation',
+    #         'cyst',
+    #         'debris',
+    #         'deformity',
+    #         'density',
+    #         'dilation_or_ectasia',
+    #         'distention',
+    #         'fibrosis',
+    #         'fracture',
+    #         'granuloma',
+    #         # 'hardware', #
+    #         'hernia',
+    #         'infection',
+    #         'infiltrate',
+    #         'inflammation',
+    #         'lesion',
+    #         'lucency',
+    #         'lymphadenopathy',
+    #         'mass',
+    #         'nodule',
+    #         'nodulegr1cm',#
+    #         'opacity',
+    #         'plaque',
+    #         # 'postsurgical',
+    #         'scarring',
+    #         'scattered_calc',
+    #         'scattered_nod',
+    #         'secretion',
+    #         'soft_tissue',
+    #         # 'staple',
+    #         # 'stent',
+    #         # 'suture',
+    #         # 'transplant',
+    #         # 'chest_tube',
+    #         # 'tracheal_tube',
+    #         # 'gi_tube',
+    #     ]
+
+    #     #NOTE: the following are the diseases that exactly matches the one in CT-RATE
     #     # path_col_names = [
     #     #     'calcification',
     #     #     'Cardiomegaly',
@@ -127,17 +233,19 @@ if __name__ == "__main__":
     #     #     'Bronchiectasis',
     #     #     'septal_thickening'
     #     # ]
-    #     path_col_names = [
-    #         'calcification',
-    #         'pericardial_effusion',
-    #         'hernia',
-    #         'lymphadenopathy',
-    #         'emphysema',
-    #         'fibrosis',
-    #         'bronchial_wall_thickening',
-    #         'bronchiectasis',
-    #         'septal_thickening'
-    #     ]
+        
+    #     #NOTE: the following are the diseases that exists in the CT-RATE but with the xray-identifiable disease wapied away
+    #     # path_col_names = [
+    #     #     'calcification',
+    #     #     'pericardial_effusion',
+    #     #     'hernia',
+    #     #     'lymphadenopathy',
+    #     #     'emphysema',
+    #     #     'fibrosis',
+    #     #     'bronchial_wall_thickening',
+    #     #     'bronchiectasis',
+    #     #     'septal_thickening'
+    #     # ]
     #     merged_label_frames = process_labels(path_col_names, merged_labels_df)
 
     #     # Save the new DataFrame to a CSV file

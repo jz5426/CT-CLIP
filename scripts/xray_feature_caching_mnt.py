@@ -102,8 +102,6 @@ def run(cfg_dot):
         auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
 
-    pass
-
     if cfg_dot.xray_feature_caching_params.evaluation_dataset == 'ct-rate':
         split = 'train'
         train_split_inference = ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer)
@@ -124,14 +122,14 @@ def run(cfg_dot):
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
         return 
 
-    if cfg_dot.xray_feature_caching_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
+    if cfg_dot.xray_feature_caching_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL]:
         radchestct_evaluator = radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer)
         radchestct_evaluator.xray_feature_extraction(
-            directory=f'/mnt/g/radchest_preprocessed/{cfg_dot.linear_probing_params.evaluation_dataset}/features_embeddings',
+            directory=f'/mnt/g/radchest_preprocessed/{cfg_dot.xray_feature_caching_params.evaluation_dataset}/features_embeddings',
             pth_name=pth_base_name, 
             append=True
         )
-        print(f'Finished caching the xray feature of {cfg_dot.linear_probing_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
+        print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
         return
 
 def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
@@ -170,6 +168,10 @@ def radchest_ct_split(clip_xray, cfg, cfg_dot, tokenizer):
     if cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_PURE_INTERNAL:
         label_file = 'final_labels_pure_clean.csv'
     elif cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_INTERNAL:
+        label_file = 'final_labels_clean.csv'
+    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_PURE_INTERNAL_CLEAN:
+        label_file = 'final_labels_pure_clean.csv'
+    elif cfg_dot.xray_feature_caching_params.evaluation_dataset == const.RADCHEST_CT_INTERNAL_CLEAN:
         label_file = 'final_labels_clean.csv'
 
     split_inference = CTClipInference(

@@ -90,11 +90,11 @@ def main(cfg: DictConfig):
     torch.cuda.manual_seed_all(seed)  # If using multiple GPUs
 
     # NOTE: external few shot
-    # portions = [0.01, 0.025, 0.05, 0.1, 1.]
-    # evaluation_datasets = ['radchest_ct_pure', 'mimic', 'ct-rate',]
+    portions = [0.01, 0.025, 0.05, 0.1, 1.]
+    evaluation_datasets = ['radchest_ct_pure', 'mimic', 'ct-rate']
     # NOTE: internal few shot
-    portions = [0.1, 0.2, 0.5, 0.8]
-    evaluation_datasets = ['radchest_ct_pure_internal']
+    # portions = [0.1, 0.2, 0.5, 0.8]
+    # evaluation_datasets = ['radchest_ct_pure_internal_clean']
     for p in portions:
         for eval_data in evaluation_datasets:
             cfg.linear_probing_params.train_data_portion = p
