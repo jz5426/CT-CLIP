@@ -149,7 +149,7 @@ def get_train_internal_split(cfg_dot, cfg):
             'train_dataset': train_dataset,
             'internal_val_dataset': internal_val_dataset
         }
-    elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT_ALL_DISEASE_INTERNAL]:
+    elif cfg_dot.linear_probing_params.evaluation_dataset in [const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT_ALL_DISEASE_INTERNAL, const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL]:
         print(f'Splitting {cfg_dot.linear_probing_params.evaluation_dataset} dataset')
     
         dataset = cfg_dot.linear_probing_params.evaluation_dataset
@@ -168,7 +168,9 @@ def get_train_internal_split(cfg_dot, cfg):
         elif dataset == const.RADCHEST_CT_INTERNAL_CLEAN:
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_clean.csv' 
         elif dataset == const.RADCHEST_CT_ALL_DISEASE_INTERNAL:
-            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_all_disease.csv'
+            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_all_CT_disease.csv'
+        elif dataset == const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL:
+            labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_CT_only_disease.csv'
 
         data_splitter = RadChestXraySplitter(
             labels=labels,
@@ -348,91 +350,123 @@ def get_pathologies(dataset='ct-rate'):
             'septal_thickening'
         ]
     elif dataset == const.RADCHEST_CT_ALL_DISEASE_INTERNAL:
-
         pathologies = [
-            'bandlike_or_linear',
-            'groundglass',
-            'honeycombing',
-            'reticulation',
-            'tree_in_bud',
-            'airspace_disease',
-            'air_trapping',
-            'aspiration',
-            'atelectasis',
-            'bronchial_wall_thickening',
-            'bronchiectasis',
-            'bronchiolectasis',
-            'bronchiolitis',
-            'bronchitis',
-            'emphysema',
-            'hemothorax',
-            'interstitial_lung_disease',
-            'lung_resection',
-            'mucous_plugging',
-            'pleural_effusion',
-            'pleural_thickening',
-            'pneumonia',
-            'pneumonitis',
-            'pneumothorax',
-            'pulmonary_edema',
-            'septal_thickening',
-            'tuberculosis',
-            # 'cabg',
-            'cardiomegaly',
-            'coronary_artery_disease',
-            'heart_failure',
-            # 'heart_valve_replacement',
-            # 'pacemaker_or_defib',
-            'pericardial_effusion',
-            'pericardial_thickening',
-            # 'sternotomy',
-            'arthritis',
-            'atherosclerosis',
-            'aneurysm',
-            # 'breast_implant',
-            # 'breast_surgery',
-            'calcification',
-            'cancer',
-            # 'catheter_or_port',
-            'cavitation',
-            # 'clip',
-            'congestion',
-            'consolidation',
-            'cyst',
-            'debris',
-            'deformity',
-            'density',
-            'dilation_or_ectasia',
-            'distention',
-            'fibrosis',
-            'fracture',
-            'granuloma',
-            # 'hardware', #
-            'hernia',
-            'infection',
-            'infiltrate',
-            'inflammation',
-            'lesion',
-            'lucency',
-            'lymphadenopathy',
-            'mass',
-            'nodule',
-            'nodulegr1cm',#
-            'opacity',
-            'plaque',
-            # 'postsurgical',
-            'scarring',
-            'scattered_calc',
-            'scattered_nod',
-            'secretion',
-            'soft_tissue',
-            # 'staple',
-            # 'stent',
-            # 'suture',
-            # 'transplant',
-            # 'chest_tube',
-            # 'tracheal_tube',
-            # 'gi_tube',
+            "tree_in_bud",
+            "air_trapping",
+            "bronchiolectasis",
+            "bronchiolitis",
+            "cyst",
+            "honeycombing",
+            "groundglass",
+            "septal_thickening",
+            "mucous_plugging",
+            "pleural_thickening",
+            "pericardial_thickening",
+            "coronary_artery_disease",
+            "aneurysm",
+            "atherosclerosis",
+            "granuloma",
+            "nodulegr1cm",
+            "opacity",
+            "plaque",
+            "scattered_nod"
+        ]
+        # pathologies = [
+        #     'bandlike_or_linear',
+        #     'groundglass',
+        #     'honeycombing',
+        #     'reticulation',
+        #     'tree_in_bud',
+        #     'airspace_disease',
+        #     'air_trapping',
+        #     'aspiration',
+        #     'atelectasis',
+        #     'bronchial_wall_thickening',
+        #     'bronchiectasis',
+        #     'bronchiolectasis',
+        #     'bronchiolitis',
+        #     'bronchitis',
+        #     'emphysema',
+        #     'hemothorax',
+        #     'interstitial_lung_disease',
+        #     'lung_resection',
+        #     'mucous_plugging',
+        #     'pleural_effusion',
+        #     'pleural_thickening',
+        #     'pneumonia',
+        #     'pneumonitis',
+        #     'pneumothorax',
+        #     'pulmonary_edema',
+        #     'septal_thickening',
+        #     'tuberculosis',
+        #     # 'cabg',
+        #     'cardiomegaly',
+        #     'coronary_artery_disease',
+        #     'heart_failure',
+        #     # 'heart_valve_replacement',
+        #     # 'pacemaker_or_defib',
+        #     'pericardial_effusion',
+        #     'pericardial_thickening',
+        #     # 'sternotomy',
+        #     'arthritis',
+        #     'atherosclerosis',
+        #     'aneurysm',
+        #     # 'breast_implant',
+        #     # 'breast_surgery',
+        #     'calcification',
+        #     'cancer',
+        #     # 'catheter_or_port',
+        #     'cavitation',
+        #     # 'clip',
+        #     'congestion',
+        #     'consolidation',
+        #     'cyst',
+        #     'debris',
+        #     'deformity',
+        #     'density',
+        #     'dilation_or_ectasia',
+        #     'distention',
+        #     'fibrosis',
+        #     'fracture',
+        #     'granuloma',
+        #     # 'hardware', #
+        #     'hernia',
+        #     'infection',
+        #     'infiltrate',
+        #     'inflammation',
+        #     'lesion',
+        #     'lucency',
+        #     'lymphadenopathy',
+        #     'mass',
+        #     'nodule',
+        #     'nodulegr1cm',#
+        #     'opacity',
+        #     'plaque',
+        #     # 'postsurgical',
+        #     'scarring',
+        #     'scattered_calc',
+        #     'scattered_nod',
+        #     'secretion',
+        #     'soft_tissue',
+        #     # 'staple',
+        #     # 'stent',
+        #     # 'suture',
+        #     # 'transplant',
+        #     # 'chest_tube',
+        #     # 'tracheal_tube',
+        #     # 'gi_tube',
+        # ]
+    elif dataset == const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL:
+        pathologies = [
+            "tree_in_bud",
+            "bronchiolectasis",
+            "bronchiolitis",
+            "groundglass",
+            "septal_thickening",
+            "pericardial_thickening",
+            "coronary_artery_disease",
+            "aneurysm",
+            "atherosclerosis"
         ]
     return pathologies
 
@@ -636,7 +670,7 @@ def evaluate_classifier(params):
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
         }
         return test_loop(test_params)
-    elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_ALL_DISEASE_INTERNAL]:
+    elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_ALL_DISEASE_INTERNAL, const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL]:
         test_dataset = params['test_data']
         print(f'size of the external radchest_ct data: {len(test_dataset)}')
 
