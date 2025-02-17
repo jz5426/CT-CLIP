@@ -14,7 +14,7 @@ import shutil
 
 
 # df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv')
-df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\train_metadata.csv')
+df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 # "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
 # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
@@ -109,11 +109,11 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
     file_name = file_name.split(".")[0]+".png"
     xray_rgb_save_path = os.path.join(xray_folder_path_new, file_name)
 
-    # avoid duplicate processing.
-    if os.path.exists(ct_save_path) and os.path.exists(xray_save_path) and os.path.exists(xray_rgb_save_path):
-        # print(f"{file_name} already exists. Passing")
-        # os.remove(file_path)  # Remove the file
-        return
+    # # avoid duplicate processing.
+    # if os.path.exists(ct_save_path) and os.path.exists(xray_save_path) and os.path.exists(xray_rgb_save_path):
+    #     # print(f"{file_name} already exists. Passing")
+    #     # os.remove(file_path)  # Remove the file
+    #     return
 
     img_data = read_nii_data(file_path)
     if img_data is None:
@@ -143,7 +143,7 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
         _img_data = np.clip(_img_data, hu_min, hu_max)
         _img_data = (((_img_data ) / 1000)).astype(np.float32) # as float is important
 
-        _img_data = _img_data.transpose(2, 0, 1) # z, x, y
+        _img_data = _img_data.transpose(2, 0, 1) # becomes: z, x, y
         ct_tensor = torch.tensor(_img_data)
         ct_tensor = ct_tensor.unsqueeze(0).unsqueeze(0)
 
@@ -161,7 +161,7 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
     xray_image = _scale_clip_resize(img_data, current, (1,1,1))
 
     #TEST
-    # sitk.WriteImage(sitk.GetImageFromArray(ct_image), './test_{}'.format(original_file_name))
+    sitk.WriteImage(sitk.GetImageFromArray(ct_image), os.path.join(shared_dst_dir, original_file_name))
     
     # for xray
     xray_image = sitk.GetImageFromArray(xray_image)
@@ -171,15 +171,17 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
 
     #NOTE: not sure why we need manual flipping here to match nii image for the frontal view
     xray_array = sitk.GetArrayFromImage(xray_image)
-    # xray_array = np.flip(np.squeeze(xray_array), axis=0)
-    xray_array = np.rot90(np.squeeze(xray_array)) # make the image upright but NOTE that it is flipped with respect to the y-axis
-    # xray_array = np.squeeze(xray_array) # make the image upright but NOTE that it is flipped with respect to the y-axis
+    xray_array = np.squeeze(xray_array) # make the image upright but NOTE that it is flipped with respect to the y-axis
+    # xray_array = np.flip(xray_array, axis=0)
+    xray_array = np.rot90(xray_array) # make the image upright but NOTE that it is flipped with respect to the y-axis
 
     np_image = (xray_array - xray_array.min()) / (xray_array.max() - xray_array.min()) * 255
     np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
     rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
     rgb_image = Image.fromarray(rgb_image, mode="RGB")
-    # rgb_image.show()
+    rgb_image.show()
+    rgb_image.save(xray_rgb_save_path)
+    return
 
     xray_image = sitk.GetImageFromArray(xray_array)
     xray_image.SetSpacing((1.0, 1.0))  # Example spacing
@@ -237,11 +239,11 @@ if __name__ == "__main__":
     split = 'train' # change the split to valid to process the validation data instead.
 
     # split_to_preprocess = '/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/valid' #select the validation or test split
-    raw_ct_dir = f"F:\\Chris\\CT-RATE-FINAL\\dataset\\{split}" #select the validation or test split
+    raw_ct_dir = f"/mnt/g/CT-RATE/{split}" #select the validation or test split
     # split_to_preprocess = '/mnt/f/Chris/CT-RATE-FINAL/dataset/train' #select the validation or test split
 
     nii_files = read_nii_files(raw_ct_dir)
-    num_workers = 8  # Number of worker processes
+    num_workers = 1  # Number of worker processes
 
     # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
@@ -249,8 +251,8 @@ if __name__ == "__main__":
     # F:\\Chris\\dataset\\CT-RATE-FINAL\\processed_dataset
     # '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset'
     with Pool(num_workers) as pool:
-        func_with_arg = partial(process_file, split=split, shared_dst_dir='F:\\Chris\\CT-RATE-FINAL\\processed_dataset')
+        func_with_arg = partial(process_file, split=split, shared_dst_dir='./temp')
         list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
 
-    print('    removing raw ct files\n')
-    shutil.rmtree(raw_ct_dir)
+    # print('    removing raw ct files\n')
+    # shutil.rmtree(raw_ct_dir)

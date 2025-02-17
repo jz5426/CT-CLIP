@@ -17,8 +17,7 @@ from PIL import Image
 import nibabel as nib
 
 
-df = pd.read_csv('/Volumes/T7 Shield/radchest/CT_Scan_Metadata_Complete_35747.csv') #select the metadata file that contains all the metadata information.
-saving_dir = '/Volumes/T7 Shield/radchest_preprocessed/'
+df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/CT_Scan_Metadata_Complete_35747.csv') #select the metadata file that contains all the metadata information.
 
 def read_npz_files(directory):
     """
@@ -128,6 +127,9 @@ def process_file(file_path, shared_dst_dir):
     target_y_spacing = 0.75
     target_z_spacing = 1.5
 
+    #NOTE: rotate the axis so that it matches the ct orientation of the ct-rate dataset
+    img_data = np.rot90(img_data, k=-1, axes=(0,2)) 
+
     def _scale_clip_resize(nii_data, current, target):
 
         # scale
@@ -138,7 +140,7 @@ def process_file(file_path, shared_dst_dir):
         _img_data = np.clip(_img_data, hu_min, hu_max)
         _img_data = (((_img_data ) / 1000)).astype(np.float32) # as float is important
 
-        _img_data = _img_data.transpose(2, 0, 1) # z, x, y
+        _img_data = _img_data.transpose(2, 0, 1) #becomes z, x, y
         ct_tensor = torch.tensor(_img_data)
         ct_tensor = ct_tensor.unsqueeze(0).unsqueeze(0)
 
@@ -159,7 +161,7 @@ def process_file(file_path, shared_dst_dir):
     # print('ct shape after the preprocessing: {}'.format(ct_image.shape))
 
     #TEST
-    # sitk.WriteImage(sitk.GetImageFromArray(ct_image), './test_{}'.format(original_file_name))
+    # sitk.WriteImage(sitk.GetImageFromArray(ct_image), os.path.join(shared_dst_dir, original_file_name))
     # check the ct image
 
     # affine = np.diag([target_x_spacing, target_y_spacing, target_z_spacing, 1])
@@ -176,14 +178,18 @@ def process_file(file_path, shared_dst_dir):
 
     #NOTE: not sure why we need manual flipping here to match nii image for the frontal view
     xray_array = sitk.GetArrayFromImage(xray_image)
-    # xray_array = np.flip(np.squeeze(xray_array), axis=0)
+    # xray_array = np.flip(np.squeeze(xray_array), axis=0) # NOTE: if you want to flip it horizontally, but we didnt do it in ct-rate data
     xray_array = np.squeeze(xray_array) # make the image upright but NOTE that it is flipped with respect to the y-axis
+    xray_array = np.rot90(xray_array) # make the image upright but NOTE that it is flipped with respect to the y-axis
 
     np_image = (xray_array - xray_array.min()) / (xray_array.max() - xray_array.min()) * 255
     np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
     rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
     rgb_image = Image.fromarray(rgb_image, mode="RGB")
     # rgb_image.show()
+    # rgb_image.save(xray_rgb_save_path)
+    # return
+
     xray_image = sitk.GetImageFromArray(xray_array)
     xray_image.SetSpacing((1.0, 1.0))  # Example spacing
     xray_image.SetOrigin((0.0, 0.0))   # Example origin
@@ -232,10 +238,10 @@ def process_file(file_path, shared_dst_dir):
     
 # Example usage:
 if __name__ == "__main__":
-    nii_files = read_npz_files('/Volumes/T7 Shield/radchest/')
-    num_workers = 2  # Number of worker processes
+    nii_files = read_npz_files('/mnt/d/radchest')
+    num_workers = 8  # Number of worker processes
 
     # Process files using multiprocessing with tqdm progress bar
     with Pool(num_workers) as pool:
-        func_with_arg = partial(process_file, shared_dst_dir='/Volumes/T7 Shield/radchest_preprocessed/')
+        func_with_arg = partial(process_file, shared_dst_dir='/mnt/d/radchest_preprocessed_correct_ct') # '/mnt/d/radchest_preprocessed_correct_ct'
         list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
