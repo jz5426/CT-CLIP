@@ -550,7 +550,7 @@ class RadChestCTDataset(Dataset):
         self.min_slices = min_slices
         self.labels = labels
         self.paths=[]
-        self.file_extension = '.mha'
+        self.file_extension = '.pt'
         self.samples = self.prepare_samples()
         self.transform = transforms.Compose([
             transforms.Resize((resize_dim,resize_dim)),
@@ -570,7 +570,7 @@ class RadChestCTDataset(Dataset):
 
         for nii_file in tqdm.tqdm(patient_folders):
 
-            accession_number = nii_file.split(os.sep)[-1].replace(self.file_extension, '')
+            accession_number = nii_file.split(os.sep)[-1].replace(self.file_extension, '') # get rid of the file extension
             onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
             if len(onehotlabels) == 1:
                 samples.append((nii_file, onehotlabels[0], accession_number))

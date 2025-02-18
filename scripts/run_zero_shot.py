@@ -100,12 +100,12 @@ clip.load("/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/models/CT-CLIP_
 # )
 
 # NOTE: for RadChest_ct dataset
-processed_ct_dir = '/mnt/g/radchest_preprocessed/preprocessed_ct'
+processed_ct_dir = '/mnt/d/radchest_preprocessed_correct_ct/preprocessed_ct'
 inference_train = CTClipInference(
     clip,
     tokenizer=None,
     data_folder = processed_ct_dir, # "/mnt/f/Chris/dataset/train_preprocessed_ct",
-    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels_clean.csv",
+    labels = "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/radchest_ct_metadata/final_labels.csv",
     batch_size = 4,
     num_workers = 5,
     results_folder="inference_zeroshot/",
@@ -115,7 +115,7 @@ inference_train = CTClipInference(
 )
 
 # run to extract the radchest ct features
-inference_train.extract_radchest_ct_feature('/mnt/g/radchest_preprocessed/features_embeddings', append=True)
+inference_train.extract_radchest_ct_feature('/mnt/d/radchest_preprocessed_correct_ct/features_embeddings', append=True)
 
 # run to textract the ctclip features on the ct-rate dataset.
 # inference_train.ctclip_feature_extraction('/mnt/g/radchest_preprocessed/features_embeddings', 'test', True)
