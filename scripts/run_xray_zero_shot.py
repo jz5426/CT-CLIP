@@ -11,7 +11,7 @@ from einops import rearrange
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import torch
-from data import MimicCTReportXRayDataset
+from data import MimicCTReportXRayDataset, RadChestCTDataset, RadChestXrayDataset
 from data_inference import CTReportXRayDatasetinfer
 
 from transformer_maskgit import CTViT
@@ -27,6 +27,9 @@ import copy
 import torch.nn.functional as F
 
 from CTCLIPTrainer import UniqueLevelSampler
+from eval_utils import get_clean_model_name, metadata_base_on_model_type
+from linear_probe_utils import get_pathologies
+import constants as const
 
 def apply_softmax(array):
     """
@@ -142,6 +145,10 @@ def run(cfg_dot):
 		dim_xray = 768 if 'swin' in cfg_dot.zero_shot_params.baseline_type.lower() else 2048
 		pth_base_name = f'{xray_model_type}_xray.pth'
 
+	dim_xray, xray_model_type, pth_base_name, _ = metadata_base_on_model_type(
+		cfg_dot.zero_shot_params.baseline_type,
+		pth_trailing_string='')
+
 	# load the xray encoder or the pretrained one depends on the xray_model_type
 	# NOTE: this automatically loaded the xray encoderd depends on the baseline or type
 	clip_xray = CTCLIPwithXray(
@@ -165,33 +172,14 @@ def run(cfg_dot):
 	clip_xray.to(device)
 	clip_xray.eval()
 
-	# # pick the text encoder and its associated latent projector
-	# report_encoder = copy.deepcopy(clip_xray.CTCLIP.text_transformer)
-	# report_latent_projecter = copy.deepcopy(clip_xray.CTCLIP.to_text_latent)
-	# report_encoder.to(device)
-	# report_latent_projecter.to(device)
-	# report_encoder.eval()
-	# report_latent_projecter.eval()
-
-	# # pick the vision encoder (ct_encoder or any xray encoder, depends on the config params) and its associated latent projector
-	# vision_encoder = copy.deepcopy(clip_xray.CTCLIP.visual_transformer if cfg_dot.zero_shot_params.baseline_type == 'ct_clip' else clip_xray.xray_encoder)
-	# vision_latent_projector = copy.deepcopy(clip_xray.CTCLIP.to_visual_latent if cfg_dot.zero_shot_params.baseline_type == 'ct_clip' else clip_xray.to_xray_latent)
-	# vision_encoder.to(device)
-	# vision_latent_projector.to(device)
-	# vision_encoder.eval()
-	# vision_latent_projector.eval()
-
 	# load the test bed (the dataset) for zero-shot experiment
 	# e.g: the internal val dataset, the mimic dataset, and potential future integration
 	
 	# some integrity constraint
-	if cfg_dot.zero_shot_params.baseline_type == 'ct_clip':
-		assert cfg_dot.zero_shot_params.test_bed == 'internal_ct_val'
-	# if cfg_dot.zero_shot_params.baseline_type != 'ct_clip':
-	# 	assert cfg_dot.zero_shot_params.test_bed != 'internal_ct_val'
-
+	# if cfg_dot.zero_shot_params.baseline_type == 'ct_clip':
+		# assert cfg_dot.zero_shot_params.test_bed == 'ct-rate' or cfg_dot.zero_shot_params.test_bed == 'radchest_all_disease_ct_only_internal' or cfg_dot.zero_shot_params.test_bed == 'radchest_ct_pure'
 	# load the dataset for test zero-shot performance.
-	if cfg_dot.zero_shot_params.test_bed == 'mimic_ct':
+	if cfg_dot.zero_shot_params.test_bed == 'mimic':
 		test_bed = MimicCTReportXRayDataset(
 			cfg=cfg,
 			data_folder='/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
@@ -202,26 +190,14 @@ def run(cfg_dot):
 		)
 		# xray_image, report, label, accession_number
 		print(f'size of the {cfg_dot.zero_shot_params.test_bed}: {len(test_bed)}')
-		pathologies = [
-			'Arterial wall calcification',
-			'Pericardial effusion',
-			'Coronary artery wall calcification',
-			'Hiatal hernia',
-			'Lymphadenopathy',
-			'Emphysema',
-			'Atelectasis',
-			'Mosaic attenuation pattern',
-			'Peribronchial thickening',
-			'Bronchiectasis',
-			'Interlobular septal thickening'
-		]
+		pathologies = get_pathologies(cfg_dot.zero_shot_params.test_bed)
 		test_bed_dl = DataLoader(
 			test_bed, 
-			num_workers=cfg_dot.linear_probing_params.num_workers, 
-			batch_size=cfg_dot.linear_probing_params.batch_size, 
+			num_workers=cfg_dot.zero_shot_params.num_workers, 
+			batch_size=cfg_dot.zero_shot_params.batch_size, 
 			shuffle=False)
 
-	elif cfg_dot.zero_shot_params.test_bed == 'internal_ct_val':
+	elif cfg_dot.zero_shot_params.test_bed == 'ct-rate':
 		split = 'valid'
 		#NOTE: this returns the ct embeddings and the text embeddings and the xray image (paired up)
 		test_bed = CTReportXRayDatasetinfer(
@@ -236,26 +212,7 @@ def run(cfg_dot):
 		)
 		# img_embedding, text_embedding, onehotlabels, xray_image, name_acc, xray_file
 		print(f'size of the {cfg_dot.zero_shot_params.test_bed}: {len(test_bed)}')
-		pathologies = ['Medical material',
-			'Arterial wall calcification', 
-			'Cardiomegaly', 
-			'Pericardial effusion',
-			'Coronary artery wall calcification', 
-			'Hiatal hernia',
-			'Lymphadenopathy', 
-			'Emphysema', 
-			'Atelectasis', 
-			'Lung nodule',
-			'Lung opacity', 
-			'Pulmonary fibrotic sequela', 
-			'Pleural effusion', 
-			'Mosaic attenuation pattern',
-			'Peribronchial thickening', 
-			'Consolidation', 
-			'Bronchiectasis',
-			'Interlobular septal thickening'
-		]
-
+		pathologies = get_pathologies(cfg_dot.zero_shot_params.test_bed)
 		custom_sampler = UniqueLevelSampler(test_bed.key_ids, cfg_dot.zero_shot_params.batch_size)
 		test_bed_dl = DataLoader(
 			test_bed,
@@ -263,6 +220,38 @@ def run(cfg_dot):
 			shuffle = False,
 			batch_sampler=custom_sampler
 		)
+	elif cfg_dot.zero_shot_params.test_bed in [const.RADCHEST_CT_PURE, const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL, const.RADCHEST_CT_INTERNAL]:
+		dataset = cfg_dot.zero_shot_params.test_bed
+		# the following two are the one that we recorded in the paper
+		if dataset == const.RADCHEST_CT_PURE:
+			# this file should be created in preprocess_radchestct_labels.py
+			labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure_clean.csv'
+		elif dataset == const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL:
+			labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_CT_only_disease.csv'
+		elif dataset == const.RADCHEST_CT_INTERNAL:
+			labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_clean.csv' 
+
+		#TODO: handle if baseline model is ct_clip, we need to load the ct vols insteads of the xrays
+		if cfg_dot.zero_shot_params.baseline_type == 'ct_clip':
+			test_bed = RadChestCTDataset(
+				data_folder='/cluster/projects/mcintoshgroup/publicData/RADChestCT/features_embeddings/image_features.pth', 
+				labels=labels,
+				file_extension='.pth')
+		else:
+			test_bed = RadChestXrayDataset(
+				data_folder = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/preprocessed_xray_mha',
+				model_type=xray_model_type,
+				cfg=cfg,
+				labels=labels
+			)
+		# xray_image, report, label, accession_number
+		print(f'size of the {cfg_dot.zero_shot_params.test_bed}: {len(test_bed)}')
+		pathologies = get_pathologies(dataset)
+		test_bed_dl = DataLoader(
+			test_bed, 
+			num_workers=cfg_dot.zero_shot_params.num_workers, 
+			batch_size=cfg_dot.zero_shot_params.batch_size, 
+			shuffle=False)
 	else:
 		NotImplementedError(f'{cfg_dot.zero_shot_params.test_bed} is not supported at the moment')
 	
@@ -273,7 +262,7 @@ def run(cfg_dot):
 		pathologies,
 		tokenizer,
 		clip_xray,
-        metric_saving_path=f'./lp_evaluation_results/zero_shot/{pth_base_name}_zero_shot_metric_results.xlsx'
+        metric_saving_path=os.path.join(const.EXPERIMENT_RESULTS_SAVING_PATH , f'{cfg_dot.zero_shot_params.test_bed}_{get_clean_model_name(xray_model_type)}_zero_shot_metric_results.xlsx') # TODO: call the clean name function
 	)
 
 def zero_shot_evaluation(
@@ -290,14 +279,23 @@ def zero_shot_evaluation(
 	with torch.no_grad():
 		for val_data in valid_dl:
 			num_batch_texts = num_batch_images = 1
-			if cfg.zero_shot_params.test_bed == 'internal_ct_val':
-				vision_latents, _, onehotlabels, xray_image, _, _ = val_data
+			if cfg.zero_shot_params.test_bed == 'ct-rate':
+				vision_latents, onehotlabels = val_data['ct'], val_data['label']
 				vision_latents = vision_latents.to(device)
 				vision_latents = rearrange(vision_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
-			elif cfg.zero_shot_params.test_bed == 'mimic_ct':
+			elif cfg.zero_shot_params.test_bed == 'mimic':
 				# valid_data is the xray_image
-				xray_image, _, onehotlabels, _ = val_data
-			xray_image = xray_image.to(device)
+				xray_image, onehotlabels = val_data['xray'], val_data['label']
+				xray_image = xray_image.to(device)
+
+			elif cfg.zero_shot_params.test_bed in [const.RADCHEST_CT_PURE, const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL]:
+				if cfg.zero_shot_params.baseline_type == 'ct_clip':
+					vision_latents, onehotlabels = val_data['ct'], val_data['label']
+					vision_latents = vision_latents.to(device)
+					vision_latents = rearrange(vision_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
+				else:
+					xray_image, onehotlabels = val_data['xray'], val_data['label']
+					xray_image = xray_image.to(device)
 
 			# make zero-shot prediction for each batch of data of the test bed by computing dot product between text with ct or text and xray
 			preds = [[] for _ in range(onehotlabels.shape[0])] # hold the predicted multi-label vector for each sample in the batch

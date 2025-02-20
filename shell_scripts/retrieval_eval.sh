@@ -4,7 +4,7 @@
 #SBATCH --reservation=mcintoshgroup_gpu1
 #SBATCH -t 70:00:00
 #SBATCH --mem=40G
-#SBATCH -J retrieval_2
+#SBATCH -J radchest_retrieval
 #SBATCH -p gpu
 #SBATCH -c 10
 #SBATCH -N 1
@@ -22,4 +22,4 @@ python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieva
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=ct-rate
 
 # # # radchest_ct
-python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=radchest_ct
+# python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=radchest_ct
