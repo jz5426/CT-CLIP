@@ -145,30 +145,10 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
         super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames, labels, probing_mode)
         self.cfg = cfg
         self.key_ids = list(self.samples.keys())
-        # from trainer.py in cxr_clip
-        # the following is not needed for now as we use the synthic paired xray
-        # data_config = {}
-        # if "data_train" in cfg:
-        #     data_config["train"] = cfg["data_train"]
-        # if "data_valid" in cfg:
-        #     data_config["valid"] = cfg["data_valid"]
-        # if "data_test" in cfg:
-        #     data_config["test"] = cfg["data_test"]
-        # if cfg["model"]["image_encoder"]["name"] == "resnet":
-        #     for _split in data_config:
-        #         for _dataset in data_config[_split]:
-        #             data_config[_split][_dataset]["normalize"] = "imagenet"
 
         self.normalize = 'huggingface' if 'swin' in model_type.lower() or 'vit' in model_type.lower() else 'imagenet' # when use swin or non-resnet architecture
         print('normalization used => ', self.normalize)
-        # self.normalize = "huggingface" # when use swin or non-resnet architecture
-        # if cfg["model"]["image_encoder"]["name"] == "resnet":
-        #     self.normalize = "imagenet" # only for resnet architecture
-
         self.xray_transform = load_transform(split='valid', transform_config=cfg['transform'])
-            # image size 224, with clahe.yamel transformation during training and default.yaml transfomration during evaluation
-            # if it is resnet, then use the imagenet normalization, otherwise use the huggingface normalization (.5).
-            # NOTE: inference transformation would be different than that during training.
         self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
 
 
@@ -215,7 +195,6 @@ class CTReportXRayDatasetinfer(CTReportDatasetinfer):
             'xray_file_path':xray_file
         }
         return data
-        # return  img_embedding, text_embedding, onehotlabels, xray_image, name_acc, xray_file
 
     
     def xray_mha_to_rgb(self, path, transform):

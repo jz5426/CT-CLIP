@@ -545,12 +545,18 @@ class CTReportXRayClassificationDataset(XrayClassificationDataset):
         return data
 
 class RadChestCTDataset(Dataset):
-    def __init__(self, data_folder, min_slices=20, resize_dim=500, force_num_frames=True, labels = "labels.csv", probing_mode=False):
+    def __init__(self,
+                 data_folder,
+                 min_slices=20, resize_dim=500,
+                 force_num_frames=True,
+                 labels = "labels.csv",
+                 probing_mode=False,
+                 file_extension='.pt'):
         self.data_folder = data_folder
         self.min_slices = min_slices
         self.labels = labels
         self.paths=[]
-        self.file_extension = '.pt'
+        self.file_extension = file_extension
         self.samples = self.prepare_samples()
         self.transform = transforms.Compose([
             transforms.Resize((resize_dim,resize_dim)),
@@ -560,24 +566,32 @@ class RadChestCTDataset(Dataset):
         self.probing_mode = probing_mode
 
     def prepare_samples(self):
-        samples = []
-        patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
-
         # Read labels once outside the loop
         test_df = pd.read_csv(self.labels)
         test_label_cols = list(test_df.columns[1:])
         test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
+        samples = []
 
-        for nii_file in tqdm.tqdm(patient_folders):
+        # prepare sample based on the ct embeddings or based on preprocessed ct vols
+        if self.file_extension == '.pth':
+            img_feature_dict = torch.load(self.data_folder)
+            for accession_number in img_feature_dict:
+                onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
+                if len(onehotlabels) == 1:
+                    samples.append((img_feature_dict[accession_number], onehotlabels[0], accession_number))            
+        else:
+            patient_folders = glob.glob(os.path.join(self.data_folder, '*'))
 
-            accession_number = nii_file.split(os.sep)[-1].replace(self.file_extension, '') # get rid of the file extension
-            onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
-            if len(onehotlabels) == 1:
-                samples.append((nii_file, onehotlabels[0], accession_number))
-                self.paths.append(nii_file)
-            # else:
-            #     # sanity check
-            #     assert False
+            for nii_file in tqdm.tqdm(patient_folders):
+
+                accession_number = nii_file.split(os.sep)[-1].replace(self.file_extension, '') # get rid of the file extension
+                onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
+                if len(onehotlabels) == 1:
+                    samples.append((nii_file, onehotlabels[0], accession_number))
+                    self.paths.append(nii_file)
+                # else:
+                #     # sanity check
+                #     assert False
         print('size of the sample: ', len(samples))
         return samples
 
@@ -595,15 +609,25 @@ class RadChestCTDataset(Dataset):
         return img_data
 
     def __getitem__(self, index):
-        nii_file, onehotlabels, instance_name = self.samples[index]
-        video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
-        data = {
-            'ct': video_tensor,
-            'label': onehotlabels,
-            'instance_name': instance_name
-        }
-        # return video_tensor, 'no_report', onehotlabels, instance_name # add the nii_file for xray projections
-        return data
+        if self.file_extension == '.pth':
+            ct_features, onehotlabels, instance_name = self.samples[index]
+            data = {
+                'ct': ct_features,
+                'label': onehotlabels,
+                'instance_name': instance_name
+            }
+            # return video_tensor, 'no_report', onehotlabels, instance_name # add the nii_file for xray projections
+            return data
+        else:
+            nii_file, onehotlabels, instance_name = self.samples[index]
+            video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this']
+            data = {
+                'ct': video_tensor,
+                'label': onehotlabels,
+                'instance_name': instance_name
+            }
+            # return video_tensor, 'no_report', onehotlabels, instance_name # add the nii_file for xray projections
+            return data
 
 
 class RadChestXrayDataset(Dataset):

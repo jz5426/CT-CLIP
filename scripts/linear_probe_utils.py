@@ -159,17 +159,17 @@ def get_train_internal_split(cfg_dot, cfg):
         dataset = cfg_dot.linear_probing_params.evaluation_dataset
 
         # what kind of specific radchest ct data. 
-        if dataset == const.RADCHEST_CT_INTERNAL:
+        if dataset == const.RADCHEST_CT_INTERNAL: # without empty multi-hot vector maximum overlap with CT-RATE in the labels but potentially have xray labels
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_clean.csv' 
-        elif dataset == const.RADCHEST_CT_PURE_INTERNAL:
+        elif dataset == const.RADCHEST_CT_PURE_INTERNAL: 
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure_clean.csv' 
-        elif dataset == const.RADCHEST_CT_PURE_INTERNAL_CLEAN:
+        elif dataset == const.RADCHEST_CT_PURE_INTERNAL_CLEAN: # without empty multi-hot vector but for few-shot adaption
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_pure_clean.csv' 
-        elif dataset == const.RADCHEST_CT_INTERNAL_CLEAN:
+        elif dataset == const.RADCHEST_CT_INTERNAL_CLEAN: # without empty multi-hot vector maximum overlap with CT-RATE in the labels but potentially have xray labels
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_clean.csv' 
-        elif dataset == const.RADCHEST_CT_ALL_DISEASE_INTERNAL:
+        elif dataset == const.RADCHEST_CT_ALL_DISEASE_INTERNAL: # with xray labels, not fair for few-shot adaptation 
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_all_CT_disease.csv'
-        elif dataset == const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL:
+        elif dataset == const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL: # for few-shot adaptation task
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_CT_only_disease.csv'
 
         data_splitter = RadChestXraySplitter(
@@ -319,6 +319,7 @@ def get_pathologies(dataset='ct-rate'):
     elif dataset == 'vinBig_ct':
         pathologies = ['Atelectasis', 'Cardiomegaly', 'Consolidation', 'Emphysema', 'Lung Opacity', 'Pleural effusion']
     elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT]:
+        # _INTERNAL means uses the radchest ct data to train the classifier and evaluate on the remaining
         pathologies = [
             'calcification',
             'Cardiomegaly',
@@ -371,91 +372,6 @@ def get_pathologies(dataset='ct-rate'):
             "plaque",
             "scattered_nod"
         ]
-        # pathologies = [
-        #     'bandlike_or_linear',
-        #     'groundglass',
-        #     'honeycombing',
-        #     'reticulation',
-        #     'tree_in_bud',
-        #     'airspace_disease',
-        #     'air_trapping',
-        #     'aspiration',
-        #     'atelectasis',
-        #     'bronchial_wall_thickening',
-        #     'bronchiectasis',
-        #     'bronchiolectasis',
-        #     'bronchiolitis',
-        #     'bronchitis',
-        #     'emphysema',
-        #     'hemothorax',
-        #     'interstitial_lung_disease',
-        #     'lung_resection',
-        #     'mucous_plugging',
-        #     'pleural_effusion',
-        #     'pleural_thickening',
-        #     'pneumonia',
-        #     'pneumonitis',
-        #     'pneumothorax',
-        #     'pulmonary_edema',
-        #     'septal_thickening',
-        #     'tuberculosis',
-        #     # 'cabg',
-        #     'cardiomegaly',
-        #     'coronary_artery_disease',
-        #     'heart_failure',
-        #     # 'heart_valve_replacement',
-        #     # 'pacemaker_or_defib',
-        #     'pericardial_effusion',
-        #     'pericardial_thickening',
-        #     # 'sternotomy',
-        #     'arthritis',
-        #     'atherosclerosis',
-        #     'aneurysm',
-        #     # 'breast_implant',
-        #     # 'breast_surgery',
-        #     'calcification',
-        #     'cancer',
-        #     # 'catheter_or_port',
-        #     'cavitation',
-        #     # 'clip',
-        #     'congestion',
-        #     'consolidation',
-        #     'cyst',
-        #     'debris',
-        #     'deformity',
-        #     'density',
-        #     'dilation_or_ectasia',
-        #     'distention',
-        #     'fibrosis',
-        #     'fracture',
-        #     'granuloma',
-        #     # 'hardware', #
-        #     'hernia',
-        #     'infection',
-        #     'infiltrate',
-        #     'inflammation',
-        #     'lesion',
-        #     'lucency',
-        #     'lymphadenopathy',
-        #     'mass',
-        #     'nodule',
-        #     'nodulegr1cm',#
-        #     'opacity',
-        #     'plaque',
-        #     # 'postsurgical',
-        #     'scarring',
-        #     'scattered_calc',
-        #     'scattered_nod',
-        #     'secretion',
-        #     'soft_tissue',
-        #     # 'staple',
-        #     # 'stent',
-        #     # 'suture',
-        #     # 'transplant',
-        #     # 'chest_tube',
-        #     # 'tracheal_tube',
-        #     # 'gi_tube',
-        # ]
     elif dataset == const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL:
         pathologies = [
             "tree_in_bud",

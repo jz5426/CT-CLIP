@@ -133,6 +133,11 @@ def  get_clean_model_name(messy_custom_model_name):
         else:
             parts.append('infoNCE') # default option (even the model name does not have this)
 
+        if 'textcl_0__ctcl_1' in messy_custom_model_name:
+            parts.append('textcl_0__ctcl_1')
+        elif 'textcl_1__ctcl_0' in messy_custom_model_name:
+            parts.append('textcl_1__ctcl_0')
+
         return '_'.join(parts)
     else:
         return messy_custom_model_name

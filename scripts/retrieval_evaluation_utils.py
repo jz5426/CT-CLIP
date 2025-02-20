@@ -616,16 +616,16 @@ def radchest_ct_retrieval_evaluation(params):
             dataset=dataset
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
-        print('evaluating ct_volumes 2 xray recall')
-        results = recall_retrieval_evaluation(
-            query_latents=[triple[0] for triple in triplet_embeddings],
-            target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
-            query_type=const.CT_IMAGE,
-            target_type=const.XRAY,
-            model_baseline=get_clean_model_name(baseline),
-            dataset=dataset
-        )
-        csv_results = extend_dictionary(parent=csv_results, child=results)
+        # print('evaluating ct_volumes 2 xray recall')
+        # results = recall_retrieval_evaluation(
+        #     query_latents=[triple[0] for triple in triplet_embeddings],
+        #     target_latents=[triple[-1].reshape(-1) for triple in triplet_embeddings],
+        #     query_type=const.CT_IMAGE,
+        #     target_type=const.XRAY,
+        #     model_baseline=get_clean_model_name(baseline),
+        #     dataset=dataset
+        # )
+        # csv_results = extend_dictionary(parent=csv_results, child=results)
 
 
         print('evaluating xray 2 ct_volumes MAP')
@@ -638,16 +638,16 @@ def radchest_ct_retrieval_evaluation(params):
             predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{label_file}',
             dataset=dataset)
         csv_results = extend_dictionary(parent=csv_results, child=results)
-        print('evaluating ct_volumes 2 xray MAP')
-        results = map_retrieval_evaluation(
-            image_features,
-            target_latents=xray_features,
-            query_type=const.CT_IMAGE,
-            target_type=const.XRAY,
-            model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{label_file}',
-            dataset=dataset)
-        csv_results = extend_dictionary(parent=csv_results, child=results)
+        # print('evaluating ct_volumes 2 xray MAP')
+        # results = map_retrieval_evaluation(
+        #     image_features,
+        #     target_latents=xray_features,
+        #     query_type=const.CT_IMAGE,
+        #     target_type=const.XRAY,
+        #     model_baseline=get_clean_model_name(baseline),
+        #     predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/RADChestCT/{label_file}',
+        #     dataset=dataset)
+        # csv_results = extend_dictionary(parent=csv_results, child=results)
     
     return csv_results
 

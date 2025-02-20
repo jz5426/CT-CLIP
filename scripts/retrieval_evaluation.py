@@ -75,19 +75,12 @@ def run(cfg_dot):
     print('Starting Xray related retrieval experiments')
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip NOTE: shared
 
+    # NOTE: all comparison models run
     baselines = [
-        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
-        'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        # 'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True__ProjType_infoNCE__trainLoss_siamese_50_epoch',
-        'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
-        'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
+        # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
         'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
@@ -100,6 +93,18 @@ def run(cfg_dot):
         ## 'gloria_resnet', #NOTE: no retrieval for gloria
         # MISSING -> BI-Mamba
     ]
+
+    # baselines = [
+    #     # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0__ctcl_1__pretrained_True_50_epoch',
+    #     # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0__ctcl_1__pretrained_False_50_epoch',
+    #     # 'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0__pretrained_True_50_epoch',
+    #     # 'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0__pretrained_False_50_epoch'
+
+    #     'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0__pretrained_True_50_epoch',
+    #     'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0__pretrained_False_50_epoch',
+    #     'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0__ctcl_1__pretrained_True_50_epoch',
+    #     'modeltype_cxr_clip_resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0__ctcl_1__pretrained_False_50_epoch'
+    # ]
 
     params = {
         'cfg': cfg,
