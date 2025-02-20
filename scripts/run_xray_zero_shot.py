@@ -288,7 +288,7 @@ def zero_shot_evaluation(
 				xray_image, onehotlabels = val_data['xray'], val_data['label']
 				xray_image = xray_image.to(device)
 
-			elif cfg.zero_shot_params.test_bed in [const.RADCHEST_CT_PURE, const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL]:
+			elif cfg.zero_shot_params.test_bed in [const.RADCHEST_CT_PURE, const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL, const.RADCHEST_CT_INTERNAL]:
 				if cfg.zero_shot_params.baseline_type == 'ct_clip':
 					vision_latents, onehotlabels = val_data['ct'], val_data['label']
 					vision_latents = vision_latents.to(device)
