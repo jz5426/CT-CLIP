@@ -66,42 +66,42 @@ training_params:
 #   projector_type: 'siamese' # either siamese style (3-layers projector) or infoNCE (on linear layer only without bn or anything)
 
 ## FOR OFFICIAL
-linear_probing_params:
-  baseline_type: ''
-  is_linear_probe_eval: true
-  multi_sweep_evaluation: false
-  num_epochs: 300 # 1000
-  patience: 20
-  batch_size: 4096 # radchest: 256
-  test_loader_batch_size: 256
-  learning_rate: 5e-2 # 5e-2 radchest: 5e-2
-  progress_window: 2
-  num_workers: 1
-  train_data_portion: 0.1
-  evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
-  cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
-  override_metric_results: false
-  windows_wsl_env: false # implies that the script is ran on the windows wsl environment
-  mnt_cpt_dest: './mnt_linear_probe_ckpts'
-
-## TOY
 # linear_probing_params:
-#   baseline_type: 'cxr_clip_resnet_m'
+#   baseline_type: ''
 #   is_linear_probe_eval: true
 #   multi_sweep_evaluation: false
-#   num_epochs: 1 # 1000
+#   num_epochs: 300 # 1000
 #   patience: 20
-#   batch_size: 4096
-#   test_loader_batch_size: 4
-#   learning_rate: 5e-2 # 1e-2
+#   batch_size: 4096 # radchest: 256
+#   test_loader_batch_size: 256
+#   learning_rate: 5e-2 # 5e-2 radchest: 5e-2
 #   progress_window: 2
 #   num_workers: 1
 #   train_data_portion: 0.1
-#   evaluation_dataset: 'radchest_ct_all_disease_internal' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure
+#   evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
 #   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
 #   override_metric_results: false
 #   windows_wsl_env: false # implies that the script is ran on the windows wsl environment
 #   mnt_cpt_dest: './mnt_linear_probe_ckpts'
+
+## TOY
+linear_probing_params:
+  baseline_type: 'bi-mamba'
+  is_linear_probe_eval: true
+  multi_sweep_evaluation: false
+  num_epochs: 300 # 1000
+  patience: 20
+  batch_size: 4096
+  test_loader_batch_size: 4
+  learning_rate: 5e-2 # 1e-2
+  progress_window: 2
+  num_workers: 2
+  train_data_portion: 0.1
+  evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure
+  cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
+  override_metric_results: false
+  windows_wsl_env: true # implies that the script is ran on the windows wsl environment
+  mnt_cpt_dest: './mnt_linear_probe_ckpts'
 
 ## FOR OFFICIAL
 retrieval_params:
@@ -126,7 +126,7 @@ xray_feature_caching_params:
   baseline_type: 'bi-mamba'
   num_workers: 1
   batch_size: 4
-  evaluation_dataset: 'radchest_all_disease_ct_only_internal' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal we don't need vinBig/vinBit_ct for now
+  evaluation_dataset: '' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal we don't need vinBig/vinBit_ct for now
 
 
 internal_split_caching_params:

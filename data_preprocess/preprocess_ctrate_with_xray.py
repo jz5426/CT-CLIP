@@ -14,7 +14,8 @@ import shutil
 
 
 # df = pd.read_csv('C:\\Users\\MaxYo\\OneDrive\\Desktop\\MBP\\chris\\CT-CLIP\\dataset\\metadata\\dataset_metadata_validation_metadata.csv')
-df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/metadata/train_metadata.csv')
+# df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/metadata/train_metadata.csv')
+df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv')
 # "/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/dataset_metadata_validation_metadata.csv"
 # df = pd.read_csv('/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/metadata/train_metadata.csv')
 
@@ -250,9 +251,10 @@ if __name__ == "__main__":
     # Process files using multiprocessing with tqdm progress bar
     # F:\\Chris\\dataset\\CT-RATE-FINAL\\processed_dataset
     # '/mnt/f/Chris/CT-RATE-FINAL/processed_dataset'
-    with Pool(num_workers) as pool:
-        func_with_arg = partial(process_file, split=split, shared_dst_dir='./temp')
-        list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
+
+    # with Pool(num_workers) as pool:
+    #     func_with_arg = partial(process_file, split=split, shared_dst_dir='./temp')
+    #     list(tqdm(pool.imap_unordered(func_with_arg, nii_files), total=len(nii_files)))
 
     # print('    removing raw ct files\n')
     # shutil.rmtree(raw_ct_dir)

@@ -94,8 +94,8 @@ def main(cfg: DictConfig):
     # evaluation_datasets = ['radchest_ct_pure', 'mimic', 'ct-rate']
 
     # NOTE: internal few shot
-    portions = [0.1, 0.2, 0.5, 0.8]
-    evaluation_datasets = ['radchest_all_disease_ct_only_internal']
+    portions = [0.1, 0.2, 0.5]
+    evaluation_datasets = ['radchest_all_disease_ct_only_internal', 'ct-rate']
     for p in portions:
         for eval_data in evaluation_datasets:
             cfg.linear_probing_params.train_data_portion = p
