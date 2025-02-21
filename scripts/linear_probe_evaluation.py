@@ -102,6 +102,9 @@ def main(cfg: DictConfig):
 
 def run(cfg_dot):
 
+    # sanity check
+    cfg_dot.linear_probing_params.auc_type in ['micro', 'weighted', 'macro']
+
     # convert the config file to dictionary
     cfg = convert_dictconfig_to_dict(cfg_dot)
 

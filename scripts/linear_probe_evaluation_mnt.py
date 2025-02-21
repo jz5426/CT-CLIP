@@ -114,6 +114,7 @@ def main(cfg: DictConfig):
 def run(cfg_dot):
     # NOTE: this script only works for bi-mamba
     assert(cfg_dot.linear_probing_params.baseline_type == 'bi-mamba')
+    assert cfg_dot.linear_probing_params.auc_type in ['micro', 'weighted', 'macro']
 
     # convert the config file to dictionary
     cfg = convert_dictconfig_to_dict(cfg_dot)
