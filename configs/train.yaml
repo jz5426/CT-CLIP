@@ -103,7 +103,7 @@ linear_probing_params:
   override_metric_results: false
   windows_wsl_env: true # implies that the script is ran on the windows wsl environment
   mnt_cpt_dest: './mnt_linear_probe_ckpts'
-  auc_type: 'micro'
+  auc_type: 'weighted'
 
 ## FOR OFFICIAL
 retrieval_params:
