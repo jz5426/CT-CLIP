@@ -696,9 +696,9 @@ def test_loop(params):
     # Calculate metrics for multilabel classification
     # NOTE: might use the same one from the training file instead of using the sklearn one.
     try:
-        precision_micro, recall_micro, f1_micro, _ = precision_recall_fscore_support(all_labels, all_preds, average=auc_type)
+        precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average=auc_type)
     except Exception as e:
-        precision_micro, recall_micro, f1_micro = -1, -1, -1
+        precision, recall, f1 = -1, -1, -1
 
     try:
         auc = roc_auc_score(all_labels, all_probs, average=auc_type, multi_class='ovr')
@@ -719,7 +719,7 @@ def test_loop(params):
             auc = -1
         auc_per_class.append(auc.item() if isinstance(auc, np.float64) else auc)
 
-    print(f"Test Results for {auc_type} average: F1 Score: {f1_micro:.4f}, Recall: {recall_micro:.4f}, Precision: {precision_micro:.4f}, AUC: {auc:.4f}, PR_AUC: {pr_auc_score:.4f}")
+    print(f"Test Results for {auc_type} average: F1 Score: {f1:.4f}, Recall: {recall:.4f}, Precision: {precision:.4f}, AUC: {auc:.4f}, PR_AUC: {pr_auc_score:.4f}")
 
     assert(len(all_labels.flatten().tolist())==len(all_probs.flatten().tolist()))
 

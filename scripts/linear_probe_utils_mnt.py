@@ -438,6 +438,7 @@ def evaluate_classifier(params):
         'dataset': dataset,
         'xray_model_type': xray_model_type,
         'train_data_portion': cfg_dot.linear_probing_params.train_data_portion,
+        'cfg_dot': cfg_dot
     }
 
     if dataset == 'mimic':
@@ -580,6 +581,8 @@ def test_loop(params):
     dataset = params['dataset']
     xray_model_type = params['xray_model_type']
     train_portion = params['train_data_portion']
+    cfg = params['cfg_dot']
+    auc_type = cfg.linear_probing_params.auc_type
     
     all_labels = []
     all_preds = []
@@ -620,20 +623,32 @@ def test_loop(params):
 
     # Calculate metrics for multilabel classification
     # NOTE: might use the same one from the training file instead of using the sklearn one.
-    precision_micro, recall_micro, f1_micro, _ = precision_recall_fscore_support(all_labels, all_preds, average='micro')
-    auc_micro = roc_auc_score(all_labels, all_probs, average='micro', multi_class='ovr')
+    try:
+        precision, recall, f1, _ = precision_recall_fscore_support(all_labels, all_preds, average=auc_type)
+    except Exception as e:
+        precision, recall, f1 = -1, -1, -1
+
+    try:
+        auc = roc_auc_score(all_labels, all_probs, average=auc_type, multi_class='ovr')
+    except Exception as e:
+        auc = -1
+    
+    try:
+        pr_auc_score = average_precision_score(all_labels, all_probs, average=auc_type)
+    except Exception as e:
+        pr_auc_score = -1
 
     # compute aucroc for each class in the multihot vector
     auc_per_class = []
     for i in range(all_labels.shape[1]):
         try:
             auc = roc_auc_score(all_labels[:, i], all_probs[:, i])
-        except:
-            auc = 'nan'
+        except Exception as e:
+            auc = -1
         auc_per_class.append(auc.item() if isinstance(auc, np.float64) else auc)
 
-    pr_auc_score_micro = average_precision_score(all_labels, all_probs, average='micro')
-    print(f"Test Results for micro average: F1 Score: {f1_micro:.4f}, Recall: {recall_micro:.4f}, Precision: {precision_micro:.4f}, AUC: {auc_micro:.4f}, PR_AUC: {pr_auc_score_micro:.4f}")
+    # pr_auc_score = average_precision_score(all_labels, all_probs, average='micro')
+    print(f"Test Results for micro average: F1 Score: {f1:.4f}, Recall: {recall:.4f}, Precision: {precision:.4f}, AUC: {auc:.4f}, PR_AUC: {pr_auc_score:.4f}")
 
     assert(len(all_labels.flatten().tolist())==len(all_probs.flatten().tolist()))
 
@@ -642,8 +657,8 @@ def test_loop(params):
         const.DATASET: [dataset], # evaluation dataset
         const.MODEL: [get_clean_model_name(xray_model_type)], # the xray model that the metrics belong to 
         const.FEW_SHOT: [train_portion], # the few-shots
-        const.AUC: [auc_micro],
-        const.PR_AUC: [pr_auc_score_micro],
+        const.AUC: [auc],
+        const.PR_AUC: [pr_auc_score],
         const.LABELS: [all_labels.flatten().tolist()],
         const.PRED_PROBS: [all_probs.flatten().tolist()],
         const.PER_CLASS_AUC: [auc_per_class]
