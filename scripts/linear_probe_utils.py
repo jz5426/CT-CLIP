@@ -64,7 +64,10 @@ def get_train_internal_split(cfg_dot, cfg):
             model_type=xray_model_type,
             split='train'
         )
-        
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': internal_val_dataset
+        }
     elif cfg_dot.linear_probing_params.evaluation_dataset == 'ct-rate':
         print('Splitting ct-rate dataset')
 
