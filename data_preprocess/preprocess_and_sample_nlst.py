@@ -80,8 +80,31 @@ def resize_array(array, current_spacing, target_spacing):
     return resized_array
 
 # Function to convert DICOM files to NIfTI
-def convert_dicom_to_cxr(dicom_dir, nift_output_path, rgb_output_path):
+def convert_dicom_to_cxr(fitlered_df, input_dir, patient_id, output_dir):
+    # dicom_dir, nift_output_path, rgb_output_path
     try:
+
+        nlst_location = fitlered_df.loc[fitlered_df['pid'] == patient_id, 'File Location'].values[0]
+        dicom_dir = os.path.join(os.path.dirname(input_dir), nlst_location)
+
+        path_parts = Path(nlst_location).parts
+        patient, experiment, instance = path_parts[1], path_parts[2], path_parts[-1]
+        assert int(patient) == patient_id
+        instance = instance.replace('.', '_')
+        image_name = f'{experiment}__{instance}' # __ is the separator for the experiment and the instance name
+
+        # Create output directory structure
+        nifti_output_path = os.path.join(output_dir, 'preprocessed_xray_mha', patient)
+        rgb_output_path = os.path.join(output_dir, 'preprocessed_xray_rgb', patient)
+        os.makedirs(nifti_output_path, exist_ok=True)
+        os.makedirs(rgb_output_path, exist_ok=True)
+
+        # Convert DICOM files to NIfTI format and save
+        nifti_output_path = os.path.join(nifti_output_path, f'{image_name}.mha')
+        rgb_output_path = os.path.join(rgb_output_path, f'{image_name}.rgb')
+
+        # start real processing here.
+
         dicom_files = [os.path.join(dicom_dir, f) for f in os.listdir(dicom_dir) if f.endswith('.dcm')]
         if not dicom_files:
             return False
@@ -167,7 +190,7 @@ def convert_dicom_to_cxr(dicom_dir, nift_output_path, rgb_output_path):
         xray_image = sitk.GetImageFromArray(xray_array)
         xray_image.SetSpacing((1.0, 1.0))  # Example spacing
         xray_image.SetOrigin((0.0, 0.0))   # Example origin
-        sitk.WriteImage(xray_image, nift_output_path)
+        sitk.WriteImage(xray_image, nifti_output_path)
 
         return True
     except Exception as e:
@@ -197,25 +220,7 @@ def main():
     progress_bar = tqdm(total=num_samples, desc="Processing Patients")
 
     for patient_id in patients:
-        nlst_location = fitlered_df.loc[fitlered_df['pid'] == patient_id, 'File Location'].values[0]
-        instance_path = os.path.join(os.path.dirname(input_dir), nlst_location)
-
-        path_parts = Path(nlst_location).parts
-        patient, experiment, instance = path_parts[1], path_parts[2], path_parts[-1]
-        assert int(patient) == patient_id
-        instance = instance.replace('.', '_')
-        image_name = f'{experiment}__{instance}' # __ is the separator for the experiment and the instance name
-
-        # Create output directory structure
-        nifti_output_path = os.path.join(output_dir, 'preprocessed_xray_mha', patient)
-        rgb_output_path = os.path.join(output_dir, 'preprocessed_xray_rgb', patient)
-        os.makedirs(nifti_output_path, exist_ok=True)
-        os.makedirs(rgb_output_path, exist_ok=True)
-
-        # Convert DICOM files to NIfTI format and save
-        nifti_output_path = os.path.join(nifti_output_path, f'{image_name}.mha')
-        rgb_output_path = os.path.join(rgb_output_path, f'{image_name}.rgb')
-        results = convert_dicom_to_cxr(instance_path, nifti_output_path, rgb_output_path)
+        results = convert_dicom_to_cxr(fitlered_df, input_dir, patient_id, output_dir)
 
         if results:
             # update the progress only when a patient is successfully processed
