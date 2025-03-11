@@ -13,6 +13,7 @@ import pandas as pd
 from pathlib import Path
 
 def filter_split(
+        input_dir='/mnt/g/NLST/manifest-NLST_allCT/',
         nlst_split_csv='/mnt/g/NLST/manifest-NLST_allCT/NLST_data_split_from_CVD_risk_estimator.csv', 
         nlst_metadata='/mnt/g/NLST/manifest-NLST_allCT/metadata.csv',
         split='ALL'
@@ -42,7 +43,7 @@ def filter_split(
 
     # Check if DICOM files exist in each file location
     def _contains_dicom_files(file_location):
-        dicoms_path = os.path.join('/mnt/g/NLST/manifest-NLST_allCT/', file_location)
+        dicoms_path = os.path.join(input_dir, file_location)
         if pd.isna(file_location) or not os.path.isdir(dicoms_path):
             return False
         return len(os.listdir(dicoms_path)) > 0
@@ -184,7 +185,7 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Number of unique patients to sample
-    fitlered_df = filter_split(split='TEST')
+    fitlered_df = filter_split(input_dir=os.path.dirname(input_dir), split='TEST')
     num_samples = fitlered_df.shape[0]
 
     # Get list of patient IDs in the input directory
@@ -197,7 +198,7 @@ def main():
 
     for patient_id in patients:
         nlst_location = fitlered_df.loc[fitlered_df['pid'] == patient_id, 'File Location'].values[0]
-        instance_path = os.path.join('/mnt/g/NLST/manifest-NLST_allCT/', nlst_location)
+        instance_path = os.path.join(input_dir, nlst_location)
 
         path_parts = Path(nlst_location).parts
         patient, experiment, instance = path_parts[1], path_parts[2], path_parts[-1]
