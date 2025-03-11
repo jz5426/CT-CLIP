@@ -198,7 +198,7 @@ def main():
 
     for patient_id in patients:
         nlst_location = fitlered_df.loc[fitlered_df['pid'] == patient_id, 'File Location'].values[0]
-        instance_path = os.path.join(input_dir, nlst_location)
+        instance_path = os.path.join(os.path.dirname(input_dir), nlst_location)
 
         path_parts = Path(nlst_location).parts
         patient, experiment, instance = path_parts[1], path_parts[2], path_parts[-1]
@@ -209,7 +209,6 @@ def main():
         # Create output directory structure
         nifti_output_path = os.path.join(output_dir, 'preprocessed_xray_mha', patient)
         rgb_output_path = os.path.join(output_dir, 'preprocessed_xray_rgb', patient)
-        # sampled_dicoms_output_path = os.path.join(output_dir, 'sampled_dicoms', patient) # for the ct file.
         os.makedirs(nifti_output_path, exist_ok=True)
         os.makedirs(rgb_output_path, exist_ok=True)
 
@@ -219,14 +218,6 @@ def main():
         results = convert_dicom_to_cxr(instance_path, nifti_output_path, rgb_output_path)
 
         if results:
-            # save the corresponding dicom images to the output directory
-            # os.makedirs(sampled_dicoms_output_path, exist_ok=True)
-
-            # # Copy all the DICOM slices from instance_path to sampled_dicoms_output_path
-            # for dicom_file in os.listdir(instance_path):
-            #     if dicom_file.lower().endswith('.dcm'):
-            #         shutil.copy(os.path.join(instance_path, dicom_file), os.path.join(sampled_dicoms_output_path, dicom_file))
-
             # update the progress only when a patient is successfully processed
             total_processed += 1
             progress_bar.update(1)
