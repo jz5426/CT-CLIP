@@ -81,7 +81,6 @@ def resize_array(array, current_spacing, target_spacing):
 
 # Function to convert DICOM files to NIfTI
 def convert_dicom_to_cxr(fitlered_df, input_dir, patient_id, output_dir):
-    # dicom_dir, nift_output_path, rgb_output_path
     try:
 
         nlst_location = fitlered_df.loc[fitlered_df['pid'] == patient_id, 'File Location'].values[0]
