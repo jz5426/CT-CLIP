@@ -1,6 +1,4 @@
 import os
-import random
-import shutil
 import pydicom
 import nibabel as nib
 import numpy as np
@@ -8,7 +6,9 @@ import torch
 import torch.nn.functional as F
 import SimpleITK as sitk
 from PIL import Image
+from multiprocessing import Pool
 from tqdm import tqdm
+from functools import partial
 import pandas as pd
 from pathlib import Path
 
@@ -80,10 +80,9 @@ def resize_array(array, current_spacing, target_spacing):
     return resized_array
 
 # Function to convert DICOM files to NIfTI
-def convert_dicom_to_cxr(fitlered_df, input_dir, patient_id, output_dir):
+def convert_dicom_to_cxr(patient_id, filtered_df, input_dir, output_dir):
     try:
-
-        nlst_location = fitlered_df.loc[fitlered_df['pid'] == patient_id, 'File Location'].values[0]
+        nlst_location = filtered_df.loc[filtered_df['pid'] == patient_id, 'File Location'].values[0]
         dicom_dir = os.path.join(os.path.dirname(input_dir), nlst_location)
 
         path_parts = Path(nlst_location).parts
@@ -207,11 +206,11 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     # Number of unique patients to sample
-    fitlered_df = filter_split(input_dir=os.path.dirname(input_dir), split='TEST')
-    num_samples = fitlered_df.shape[0]
+    filtered_df = filter_split(input_dir=os.path.dirname(input_dir), split='TEST')
+    num_samples = filtered_df.shape[0]
 
     # Get list of patient IDs in the input directory
-    patients = list(fitlered_df['pid'])
+    patients = list(filtered_df['pid'])
 
     # Iterate over each sampled patient
     total_processed = 0
@@ -219,8 +218,7 @@ def main():
     progress_bar = tqdm(total=num_samples, desc="Processing Patients")
 
     for patient_id in patients:
-        results = convert_dicom_to_cxr(fitlered_df, input_dir, patient_id, output_dir)
-
+        results = convert_dicom_to_cxr(patient_id, filtered_df, input_dir, output_dir)
         if results:
             # update the progress only when a patient is successfully processed
             total_processed += 1
@@ -230,4 +228,25 @@ def main():
             break
 
 if __name__ == "__main__":
-    main()
+    # main()
+    
+    # Directory paths
+    input_dir = '/mnt/g/NLST/manifest-NLST_allCT/NLST'
+    output_dir = '/mnt/g/NLST/manifest-NLST_allCT/preprocessed_NLST'
+
+    # Ensure output directory is created
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Number of unique patients to sample
+    filtered_df = filter_split(input_dir=os.path.dirname(input_dir), split='ALL')
+    num_samples = filtered_df.shape[0]
+
+    # Get list of patient IDs in the input directory
+    patients = list(filtered_df['pid'])[:16]
+
+    num_workers = 8  # Number of worker processes
+
+    # Process files using multiprocessing with tqdm progress bar
+    with Pool(num_workers) as pool:
+        func_with_arg = partial(convert_dicom_to_cxr, filtered_df=filtered_df, input_dir=input_dir, output_dir=output_dir) # '/mnt/d/radchest_preprocessed_correct_ct'
+        list(tqdm(pool.imap_unordered(func_with_arg, patients), total=len(patients)))
