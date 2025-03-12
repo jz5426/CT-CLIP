@@ -238,11 +238,11 @@ if __name__ == "__main__":
     os.makedirs(output_dir, exist_ok=True)
 
     # Number of unique patients to sample
-    filtered_df = filter_split(input_dir=os.path.dirname(input_dir), split='ALL')
+    filtered_df = filter_split(input_dir=os.path.dirname(input_dir), split='ALL') #NOTE: ALL might takes longer to process
     num_samples = filtered_df.shape[0]
 
     # Get list of patient IDs in the input directory
-    patients = list(filtered_df['pid'])[:16]
+    patients = list(filtered_df['pid'])
 
     num_workers = 8  # Number of worker processes
 
