@@ -228,7 +228,7 @@ def main():
             break
 
 if __name__ == "__main__":
-    # main()
+    # main() # NOTE: test bed without multiworkers
     
     # Directory paths
     input_dir = '/mnt/g/NLST/manifest-NLST_allCT/NLST'
@@ -248,5 +248,5 @@ if __name__ == "__main__":
 
     # Process files using multiprocessing with tqdm progress bar
     with Pool(num_workers) as pool:
-        func_with_arg = partial(convert_dicom_to_cxr, filtered_df=filtered_df, input_dir=input_dir, output_dir=output_dir) # '/mnt/d/radchest_preprocessed_correct_ct'
+        func_with_arg = partial(convert_dicom_to_cxr, filtered_df=filtered_df, input_dir=input_dir, output_dir=output_dir)
         list(tqdm(pool.imap_unordered(func_with_arg, patients), total=len(patients)))
