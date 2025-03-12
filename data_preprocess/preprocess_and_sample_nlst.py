@@ -137,6 +137,7 @@ def convert_dicom_to_cxr(patient_id, filtered_df, input_dir, output_dir):
         img_data = nifti_image.get_fdata()
 
         # remove the defected vols (unreadable vols)
+        #TODO: double check this one more time.
         if len(img_data.shape) != 3 or img_data.shape[0] == 1 or z_spacing == 0 or z_spacing == 0.0:
             return False
 
