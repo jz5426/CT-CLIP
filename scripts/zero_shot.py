@@ -140,10 +140,8 @@ class NlstXrayInference(nn.Module):
         split,
         tokenizer,
         batch_size,
-        label_variant,
         cfg=None,
-        num_workers = 1,
-        feature_extraction_mode = True,
+        num_workers = 10,
         data_folder = "external_valid",
         labels = "labels.csv",
         accelerate_kwargs: dict = dict()
@@ -176,8 +174,44 @@ class NlstXrayInference(nn.Module):
             shuffle = True,
         )
 
-    def extract_xray_features(self, directory, pth_name='xray_features.pth', append=True):
-        pass
+    def extract_xray_features(self, 
+                              directory, 
+                              pth_name='xray_features.pth', 
+                              append=True
+                            ):
+        # save the correct split directory
+        saving_directory = os.path.join(directory, self.split)
+        # make sure the file have the correct name under the directory
+        xray_feature_path = os.path.join(saving_directory, pth_name)
+
+        if not append:
+            print('NOT SAVING IT THE EMBEDDINGS!!!')
+
+        xray_features = {}
+        device = self.device
+        with torch.no_grad():
+            self.CTClip.eval()
+            for batch_data in tqdm.tqdm(self.dl, desc="Xray Feature Extraction", leave=False):
+                xrays, instance_name = batch_data['xray'], batch_data['instance_name']
+
+                # forward the input
+                xrays = xrays.to(device)
+                xray_latents = self.CTClip.get_xray_latents(xrays)
+                xray_latents = xray_latents.cpu().numpy()
+
+                # Assign the features to the respective dictionaries
+                for i, key in enumerate(instance_name):
+                    xray_features[key] = xray_latents[i, :]
+
+        # save the remaining.
+        if append:
+            os.makedirs(saving_directory, exist_ok=True)
+            torch.save(xray_features, xray_feature_path)
+
+        #sanity check
+        loaded_img_features = torch.load(xray_feature_path)
+        print(f'size of xray features {len(loaded_img_features)}')
+        return xray_features
 
 class VinBigDataChestXrayInference(nn.Module):
     """
@@ -226,7 +260,7 @@ class VinBigDataChestXrayInference(nn.Module):
             self.ds,
             num_workers=num_workers,
             batch_size=batch_size,
-            shuffle = True,
+            shuffle = True
         )
 
         self.feature_extraction_mode = feature_extraction_mode

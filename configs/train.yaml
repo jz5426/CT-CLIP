@@ -67,7 +67,7 @@ training_params:
 
 ## FOR OFFICIAL
 linear_probing_params:
-  baseline_type: ''
+  baseline_type: 'medclip'
   is_linear_probe_eval: true
   multi_sweep_evaluation: false
   num_epochs: 300 # 1000
@@ -117,18 +117,18 @@ zero_shot_params:
   batch_size: 512 # 1024
 
 ## FOR OFFICIAL
-xray_feature_caching_params:
-  baseline_type: ''
-  num_workers: 10
-  batch_size: 512
-  evaluation_dataset: 'ct-rate' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal, radchest_ct_pure_internal_clean, radchest_ct_internal_clean  we don't need vinBig/vinBit_ct for now
+# xray_feature_caching_params:
+#   baseline_type: 'medclip'
+#   num_workers: 10
+#   batch_size: 512
+#   evaluation_dataset: 'nlst' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal, radchest_ct_pure_internal_clean, radchest_ct_internal_clean  we don't need vinBig/vinBit_ct for now
 
 ## TOY
-# xray_feature_caching_params:
-#   baseline_type: 'bi-mamba'
-#   num_workers: 1
-#   batch_size: 4
-#   evaluation_dataset: 'radchest_all_disease_ct_only_internal' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal we don't need vinBig/vinBit_ct for now
+xray_feature_caching_params:
+  baseline_type: 'medclip_resnet'
+  num_workers: 1
+  batch_size: 512
+  evaluation_dataset: 'nlst' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal, radchest_ct_pure_internal_clean, radchest_ct_internal_clean  we don't need vinBig/vinBit_ct for now
 
 hydra:
   run:

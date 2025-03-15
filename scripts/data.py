@@ -693,7 +693,7 @@ class NlstXrayDataset(Dataset):
             data_folder, 
             labels,
             model_type, 
-            split='valid'):
+            split):
         self.file_extension = '.mha'
         self.data_folder = data_folder
         self.labels = labels
@@ -741,7 +741,6 @@ class NlstXrayDataset(Dataset):
             'label': label,
             'instance_name': instance_name
         }
-        # return xray_image, 'no_report', label, instance_name # add the nii_file for xray projections
         return data
 
 class MimicCTReportXRayDataset:
@@ -933,15 +932,16 @@ def prepare_nlst_samples(data_folder, labels, file_extension):
 
     # Read labels once outside the loop
     test_df = pd.read_csv(labels)
-    test_label_cols = list(test_df.columns[1:])
-    test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
+    test_label_col = test_df.columns[4]
+    test_df['one_hot_labels'] = list(test_df[test_label_col].values)
 
     for xray_file in tqdm.tqdm(patient_folders):
-
-        accession_number = xray_file.split(os.sep)[-1].replace(file_extension, '')
-        onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
+        accession_number = os.path.basename(xray_file)
+        onehotlabels = test_df[test_df["pid"] == int(accession_number)]["one_hot_labels"].values
         if len(onehotlabels) == 1:
-            samples.append((xray_file, onehotlabels[0], accession_number))
+            samples.append((xray_file, onehotlabels[0], test_df["pid"]))
+            #TODO: there are multiple labels, just use one and stick to this.
+            #TODO: check either use single number of two-class one-hot (preferred)
         # else:
         #     # sanity check
         #     print('the xray file not found in the labels')

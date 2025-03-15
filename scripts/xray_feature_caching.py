@@ -19,7 +19,7 @@ from ct_clip import CTCLIPwithXray
 import random
 import numpy as np
 from eval_utils import metadata_base_on_model_type
-from zero_shot import CTClipInference, VinBigDataChestXrayInference
+from zero_shot import CTClipInference, NlstXrayInference, VinBigDataChestXrayInference
 import constants as const
 
 @hydra.main(
@@ -181,10 +181,23 @@ def run(cfg_dot):
         print(f'NOT XRAY FEATURE EXTRACTION, THE DATASET {cfg_dot.xray_feature_caching_params.evaluation_dataset} IS NOT SUPPORTED')
 
 def nlst_split(split, clip_xray, cfg, cfg_dot, tokenizer):
-
-    #TODO:
-
-    return
+    if split == 'train':
+        split_str = 'TRAIN'
+    elif split == 'valid':
+        split_str = 'VAL'
+    elif split == 'test':
+        split_str = 'TEST'
+    nlst_evaluator = NlstXrayInference(
+        clip_xray,
+        split=split,
+        cfg=cfg,
+        tokenizer=tokenizer,
+        data_folder= f'/cluster/projects/mcintoshgroup/publicData/NLST/preprocessed_NLST_{split_str}/preprocessed_xray_mha',
+        labels = '/cluster/projects/mcintoshgroup/publicData/NLST/NLST_data_split_from_CVD_risk_estimator_with_cvd_abnormal_labels.csv',
+        batch_size = cfg_dot.xray_feature_caching_params.batch_size,
+        num_workers = cfg_dot.xray_feature_caching_params.num_workers, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
+    )
+    return nlst_evaluator
 
 def vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer, label_variant):
 
