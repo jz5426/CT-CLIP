@@ -30,7 +30,17 @@ def get_train_internal_split(cfg_dot, cfg):
         cfg_dot.linear_probing_params.baseline_type,
         pth_trailing_string='features')
 
-    if cfg_dot.linear_probing_params.evaluation_dataset == 'mimic':
+    if cfg_dot.linear_probing_params.evaluation_dataset == const.NLST:
+        print('Splitting NLST dataset')
+        
+        # TODO:
+
+        # base on the baseline model, load the corresponding xray features
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/NLST/xray_features_embeddings/train/{pth_base_name}'
+        train_xray_features = torch.load(xray_feature_path)
+
+        pass
+    elif cfg_dot.linear_probing_params.evaluation_dataset == 'mimic':
         print('Splitting ct-rate mimic version dataset: differences in the set of the labels')
 
         # base on the baseline model, load the corresponding xray features
@@ -387,6 +397,11 @@ def get_pathologies(dataset='ct-rate'):
             "aneurysm",
             "atherosclerosis"
         ]
+    elif dataset == const.NLST:
+        pathologies = [
+            'cvd',
+            'no_cvd'
+        ]
     return pathologies
 
 
@@ -643,6 +658,9 @@ def evaluate_classifier(params):
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
         }
         return test_loop(test_params)
+    elif dataset == const.NLST:
+        #TODO:
+        pass
 
     print('something wrong')
 

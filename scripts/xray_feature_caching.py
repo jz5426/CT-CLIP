@@ -31,18 +31,13 @@ def main(cfg: DictConfig):
     OmegaConf.resolve(cfg)
 
     if "LOCAL_RANK" in os.environ:
-        # for ddp
-        # passed by torchrun or torch.distributed.launch
         local_rank = int(os.environ["LOCAL_RANK"])
     else:
-        # for debugging
         local_rank = -1
 
     if local_rank < 1:
         print(f"Configurations:\n{OmegaConf.to_yaml(cfg)}")
 
-    # seed_everything(1234)
-    # torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
 
     # seed everything
@@ -103,10 +98,40 @@ def run(cfg_dot):
         cfg=cfg,
         auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
-    pass
-    if cfg_dot.xray_feature_caching_params.evaluation_dataset == 'ct-rate':
+
+    if cfg_dot.xray_feature_caching_params.evaluation_dataset == 'nlst':
+        #TODO:
+        split = 'train'
+        train_split_inference = nlst_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+        train_split_inference.xray_feature_extraction( # get xray latent features from this particularly baseline model
+            directory='',
+            pth_name=pth_base_name, 
+            append=True
+        )
+
+        split = 'valid'
+        train_split_inference = nlst_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+        train_split_inference.xray_feature_extraction( # get xray latent features from this particularly baseline model
+            directory='',
+            pth_name=pth_base_name, 
+            append=True
+        )
+
+        split = 'test'
+        train_split_inference = nlst_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+        train_split_inference.xray_feature_extraction( # get xray latent features from this particularly baseline model
+            directory='',
+            pth_name=pth_base_name, 
+            append=True
+        )
+
+        print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
+        return 
+
+    if cfg_dot.xray_feature_caching_params.evaluation_dataset == 'ct-rate': # NOTE: mimic share the same pretraining data for evaluation.
         split = 'train'
         train_split_inference = ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer)
+
         # get xray latent features from this particularly baseline model
         train_split_inference.xray_feature_extraction(
             directory=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/xray_features_embeddings/',
@@ -154,6 +179,12 @@ def run(cfg_dot):
         print(f'Finished caching the xray feature of {cfg_dot.xray_feature_caching_params.evaluation_dataset} extracted from the baseline: {cfg_dot.xray_feature_caching_params.baseline_type}')
     else:
         print(f'NOT XRAY FEATURE EXTRACTION, THE DATASET {cfg_dot.xray_feature_caching_params.evaluation_dataset} IS NOT SUPPORTED')
+
+def nlst_split(split, clip_xray, cfg, cfg_dot, tokenizer):
+
+    #TODO:
+
+    return
 
 def vinBigChestXray_split(split, clip_xray, cfg, cfg_dot, tokenizer, label_variant):
 

@@ -685,6 +685,64 @@ class RadChestXrayDataset(Dataset):
         }
         # return xray_image, 'no_report', label, instance_name # add the nii_file for xray projections
         return data
+    
+class NlstXrayDataset(Dataset):
+    def __init__(
+            self,
+            cfg,
+            data_folder, 
+            labels,
+            model_type, 
+            split='valid'):
+        self.file_extension = '.mha'
+        self.data_folder = data_folder
+        self.labels = labels
+        self.split = split
+        self.paths=[]
+        self.samples = self.prepare_samples()
+        self.normalize = 'huggingface' if 'swin' in model_type.lower() or 'vit' in model_type.lower() else 'imagenet' # when use swin or non-resnet architecture
+        print('normalization used => ', self.normalize)
+        self.xray_transform = load_transform(split=split, transform_config=cfg['transform'])
+        self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
+
+    def prepare_samples(self):
+        return prepare_nlst_samples(self.data_folder, self.labels, self.file_extension)
+
+    def __len__(self):
+        return len(self.samples)
+
+    def xray_mha_to_rgb(self, path, transform):
+        """
+        assume the path to the xray is mha format
+        """
+        
+        # Step 1: Read the .mha file using SimpleITK
+        itk_image = sitk.ReadImage(path)
+        
+        # Step 2: Convert to a NumPy array
+        np_image = sitk.GetArrayFromImage(itk_image)  # Shape: (H, W)
+
+        np_image = (np_image - np_image.min()) / (np_image.max() - np_image.min()) * 255
+        np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
+
+        rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
+        rgb_image = Image.fromarray(rgb_image, mode="RGB")
+
+        return rgb_image
+
+    def __getitem__(self, index):
+        xray_file, label, instance_name = self.samples[index]
+        # transformation borrowed from cxr_clip
+        xray_image = self.xray_to_rgb(xray_file)
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+        label = torch.from_numpy(label)
+        data = {
+            'xray': xray_image,
+            'label': label,
+            'instance_name': instance_name
+        }
+        # return xray_image, 'no_report', label, instance_name # add the nii_file for xray projections
+        return data
 
 class MimicCTReportXRayDataset:
     """mainly used in retrieval evaluation and linear probe evaluation in the MimicCTClipInference class"""
@@ -810,10 +868,6 @@ class VinBigDataChestXrayDataset:
                  model_type,
                  label_variant,
                  split):
-        super().__init__()
-        # self.image_ids = dataframe["image_id"].unique()
-        # self.df = dataframe
-        # self.image_dir = image_dir
 
         self.file_extension = 'mha'
         self.xray_paths = []
@@ -872,6 +926,28 @@ class VinBigDataChestXrayDataset:
 
     def __len__(self):
         return len(self.samples)
+    
+def prepare_nlst_samples(data_folder, labels, file_extension):
+    samples = []
+    patient_folders = glob.glob(os.path.join(data_folder, '*'))
+
+    # Read labels once outside the loop
+    test_df = pd.read_csv(labels)
+    test_label_cols = list(test_df.columns[1:])
+    test_df['one_hot_labels'] = list(test_df[test_label_cols].values)
+
+    for xray_file in tqdm.tqdm(patient_folders):
+
+        accession_number = xray_file.split(os.sep)[-1].replace(file_extension, '')
+        onehotlabels = test_df[test_df["NoteAcc_DEID"] == accession_number]["one_hot_labels"].values
+        if len(onehotlabels) == 1:
+            samples.append((xray_file, onehotlabels[0], accession_number))
+        # else:
+        #     # sanity check
+        #     print('the xray file not found in the labels')
+        #     assert False
+    print('size of the sample: ', len(samples))
+    return samples    
 
 def prepare_radchestxray_samples(data_folder, labels, file_extension):
     samples = []

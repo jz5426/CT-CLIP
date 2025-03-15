@@ -78,7 +78,7 @@ linear_probing_params:
   progress_window: 2
   num_workers: 10
   train_data_portion: 0.1
-  evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
+  evaluation_dataset: 'nlst' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
   override_metric_results: false
   windows_wsl_env: false # implies that the script is ran on the windows wsl environment

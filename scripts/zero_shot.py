@@ -1,7 +1,7 @@
 from pathlib import Path
 from transformers import BertTokenizer
 
-from data import CTReportXRayDataset, MimicCTReportXRayDataset, RadChestXrayDataset, VinBigDataChestXrayDataset
+from data import CTReportXRayDataset, MimicCTReportXRayDataset, NlstXrayDataset, RadChestXrayDataset, VinBigDataChestXrayDataset
 
 
 import torch
@@ -130,6 +130,54 @@ class CosineAnnealingWarmUpRestarts(lr_scheduler._LRScheduler):
             self.iteration = 0
             self.T_0 *= self.T_mult
             self.eta_max *= self.gamma
+
+class NlstXrayInference(nn.Module):
+
+    def __init__(
+        self,
+        CTClip: CTCLIPwithXray,
+        *,
+        split,
+        tokenizer,
+        batch_size,
+        label_variant,
+        cfg=None,
+        num_workers = 1,
+        feature_extraction_mode = True,
+        data_folder = "external_valid",
+        labels = "labels.csv",
+        accelerate_kwargs: dict = dict()
+        ):
+        super().__init__()
+        assert split in ['train', 'test', 'valid']
+
+        ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
+        self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], **accelerate_kwargs)
+        self.CTClip = CTClip
+        self.tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized', do_lower_case=True) if not tokenizer else tokenizer
+        self.register_buffer('steps', torch.Tensor([0]))
+        self.batch_size = batch_size
+        self.split = split
+
+        # Load the pre-trained weights
+        self.ds = NlstXrayDataset(
+            cfg=cfg,
+            data_folder=data_folder,
+            labels=labels, 
+            model_type=CTClip.xray_model_type,
+            split=split
+        )
+
+        # Split dataset into train and validation sets
+        self.dl = DataLoader(
+            self.ds,
+            num_workers=num_workers,
+            batch_size=batch_size,
+            shuffle = True,
+        )
+
+    def extract_xray_features(self, directory, pth_name='xray_features.pth', append=True):
+        pass
 
 class VinBigDataChestXrayInference(nn.Module):
     """
@@ -407,13 +455,7 @@ class CTClipInference(nn.Module):
         self.results_folder = results_folder
         self.register_buffer('steps', torch.Tensor([0]))
 
-        # self.num_train_steps = num_train_steps
         self.batch_size = batch_size
-
-        # all_parameters = set(CTClip.parameters())
-        # self.optim = get_optimizer(all_parameters, lr=lr, wd=wd)
-        # self.max_grad_norm = max_grad_norm
-        # self.lr=lr
 
         # NOTE: automatic toggle: alter to ULIP-style mode if the xray encoder exists in the CTCLIP
         self.triplet = False
@@ -421,7 +463,7 @@ class CTClipInference(nn.Module):
             self.triplet = True
             # max_grad_norm = None 
 
-        if self.triplet and dataset == 'ct-rate':
+        if self.triplet and dataset == 'ct-rate': # this is the pretraining dataset
             assert(img_embedding_paths.keys() == text_embedding_paths.keys())
             assert(cfg is not None)
 

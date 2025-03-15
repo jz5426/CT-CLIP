@@ -8,7 +8,6 @@ note that this file depends on the following are done:
 """
 
 import torch
-
 from linear_probe_utils import evaluate_classifier, get_train_internal_split, get_pathologies, linear_probing_main
 from eval_utils import LinearProbeModel, metadata_base_on_model_type, save_metric_results
 from transformers import BertModel
@@ -35,8 +34,6 @@ def main(cfg: DictConfig):
     OmegaConf.resolve(cfg)
 
     if "LOCAL_RANK" in os.environ:
-        # for ddp
-        # passed by torchrun or torch.distributed.launch
         local_rank = int(os.environ["LOCAL_RANK"])
     else:
         # for debugging
@@ -45,8 +42,6 @@ def main(cfg: DictConfig):
     if local_rank < 1:
         print(f"Configurations:\n{OmegaConf.to_yaml(cfg)}")
 
-    # seed_everything(1234)
-    # torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True # efficient performance optimization.
 
     # iterate 10 times and collect the stats
