@@ -940,6 +940,7 @@ def prepare_nlst_samples(data_folder, labels, file_extension):
         onehotlabels = test_df[test_df["pid"] == int(accession_number)]["one_hot_labels"].values
         if len(onehotlabels) == 1:
             samples.append((xray_file, onehotlabels[0], test_df["pid"]))
+            #TODO: for now, assume we take one instance from each subject for training but still need to figure out why only one vol in each subj.
             #TODO: there are multiple labels, just use one and stick to this.
             #TODO: check either use single number of two-class one-hot (preferred)
         # else:

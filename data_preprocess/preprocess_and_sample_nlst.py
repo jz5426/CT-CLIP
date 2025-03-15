@@ -33,6 +33,9 @@ def filter_split(
     
     # Convert Windows-style paths to Unix-style paths
     merged_df['File Location'] = merged_df['File Location'].str.replace('\\', '/')
+
+    # TODO: three is bug here for processing, the following makes only one vol in each subject.
+
     # Drop 'Series UID' column as it's redundant after merging
     merged_df.drop(columns=['Series UID'], inplace=True)
 
