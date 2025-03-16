@@ -71,7 +71,7 @@ def main(cfg: DictConfig):
 
         # save the results
         save_metric_results(
-            const.EXPERIMENT_RESULTS_SAVING_PATH,
+            os.path.join(const.EXPERIMENT_RESULTS_SAVING_PATH, cfg.linear_probing_params.auc_type),
             f'{cfg.linear_probing_params.evaluation_dataset}_linear_probe_multiRun_results.csv',
             pd.DataFrame(dict(merged_dict)),
             cfg.linear_probing_params.override_metric_results)
@@ -89,7 +89,7 @@ def main(cfg: DictConfig):
     # save it to a csv file
     metric_results[const.SEED] = [seed]
     save_metric_results(
-        const.EXPERIMENT_RESULTS_SAVING_PATH,
+        os.path.join(const.EXPERIMENT_RESULTS_SAVING_PATH, cfg.linear_probing_params.auc_type),
         f'{cfg.linear_probing_params.evaluation_dataset}_{cfg.linear_probing_params.auc_type}_linear_probe_results.csv',
         pd.DataFrame(metric_results),
         cfg.linear_probing_params.override_metric_results)
