@@ -99,7 +99,7 @@ def run(cfg_dot):
         auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
 
-    if cfg_dot.xray_feature_caching_params.evaluation_dataset == 'nlst':
+    if cfg_dot.xray_feature_caching_params.evaluation_dataset == 'nlst_internal':
         split = 'train'
         train_split_inference = nlst_split(split, clip_xray, cfg, cfg_dot, tokenizer)
         train_split_inference.extract_xray_features( # get xray latent features from this particularly baseline model

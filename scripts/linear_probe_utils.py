@@ -30,10 +30,8 @@ def get_train_internal_split(cfg_dot, cfg):
         cfg_dot.linear_probing_params.baseline_type,
         pth_trailing_string='features')
 
-    if cfg_dot.linear_probing_params.evaluation_dataset == const.NLST:
+    if cfg_dot.linear_probing_params.evaluation_dataset == const.NLST_INTERNAL:
         print('Splitting NLST dataset')
-        
-        # TODO:
 
         # base on the baseline model, load the corresponding train split xray features
 
@@ -450,7 +448,7 @@ def get_pathologies(dataset='ct-rate'):
             "aneurysm",
             "atherosclerosis"
         ]
-    elif dataset == const.NLST:
+    elif dataset == const.NLST_INTERNAL:
         pathologies = [
             'cvd',
             'no_cvd'
@@ -711,10 +709,10 @@ def evaluate_classifier(params):
             'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
         }
         return test_loop(test_params)
-    elif dataset == const.NLST:
+    elif dataset == const.NLST_INTERNAL:
         #TODO:
         test_dataset = params['test_data']
-        print(f'size of the internal few-shot nlst data: {len(test_dataset)}')
+        print(f'size of the internal few-shot nlst_internal data: {len(test_dataset)}')
 
         test_loader = DataLoader(
             test_dataset, 
