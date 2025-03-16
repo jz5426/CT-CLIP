@@ -151,7 +151,10 @@ class NlstXrayInference(nn.Module):
 
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
         self.accelerator = Accelerator(kwargs_handlers=[ddp_kwargs], **accelerate_kwargs)
+        # prepare with accelerator
+        self.device = self.accelerator.device
         self.CTClip = CTClip
+        self.CTClip.to(self.device)
         self.tokenizer = BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized', do_lower_case=True) if not tokenizer else tokenizer
         self.register_buffer('steps', torch.Tensor([0]))
         self.batch_size = batch_size
@@ -173,6 +176,8 @@ class NlstXrayInference(nn.Module):
             batch_size=batch_size,
             shuffle = True,
         )
+
+
 
     def extract_xray_features(self, 
                               directory, 
@@ -536,7 +541,7 @@ class CTClipInference(nn.Module):
                     data_folder=data_folder,
                     csv_file=reports_file,
                     labels=labels)
-            elif dataset == 'radchest_ct': #TODO: integrate the pure dataset
+            elif dataset == 'radchest_ct':
                 self.ds = RadChestCTDataset(
                     data_folder=data_folder,
                     labels=labels)

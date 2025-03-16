@@ -100,27 +100,26 @@ def run(cfg_dot):
     )
 
     if cfg_dot.xray_feature_caching_params.evaluation_dataset == 'nlst':
-        #TODO:
         split = 'train'
         train_split_inference = nlst_split(split, clip_xray, cfg, cfg_dot, tokenizer)
-        train_split_inference.xray_feature_extraction( # get xray latent features from this particularly baseline model
-            directory='',
+        train_split_inference.extract_xray_features( # get xray latent features from this particularly baseline model
+            directory=f'/cluster/projects/mcintoshgroup/publicData/NLST/xray_features_embeddings',
             pth_name=pth_base_name, 
             append=True
         )
 
         split = 'valid'
         train_split_inference = nlst_split(split, clip_xray, cfg, cfg_dot, tokenizer)
-        train_split_inference.xray_feature_extraction( # get xray latent features from this particularly baseline model
-            directory='',
+        train_split_inference.extract_xray_features( # get xray latent features from this particularly baseline model
+            directory=f'/cluster/projects/mcintoshgroup/publicData/NLST/xray_features_embeddings',
             pth_name=pth_base_name, 
             append=True
         )
 
         split = 'test'
         train_split_inference = nlst_split(split, clip_xray, cfg, cfg_dot, tokenizer)
-        train_split_inference.xray_feature_extraction( # get xray latent features from this particularly baseline model
-            directory='',
+        train_split_inference.extract_xray_features( # get xray latent features from this particularly baseline model
+            directory=f'/cluster/projects/mcintoshgroup/publicData/NLST/xray_features_embeddings',
             pth_name=pth_base_name, 
             append=True
         )

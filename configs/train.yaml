@@ -117,18 +117,18 @@ zero_shot_params:
   batch_size: 512 # 1024
 
 ## FOR OFFICIAL
-# xray_feature_caching_params:
-#   baseline_type: 'medclip'
-#   num_workers: 10
-#   batch_size: 512
-#   evaluation_dataset: 'nlst' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal, radchest_ct_pure_internal_clean, radchest_ct_internal_clean  we don't need vinBig/vinBit_ct for now
+xray_feature_caching_params:
+  baseline_type: ''
+  num_workers: 10
+  batch_size: 512
+  evaluation_dataset: '' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal, radchest_ct_pure_internal_clean, radchest_ct_internal_clean  we don't need vinBig/vinBit_ct for now
 
 ## TOY
-xray_feature_caching_params:
-  baseline_type: 'medclip_resnet'
-  num_workers: 1
-  batch_size: 512
-  evaluation_dataset: 'nlst' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal, radchest_ct_pure_internal_clean, radchest_ct_internal_clean  we don't need vinBig/vinBit_ct for now
+# xray_feature_caching_params:
+#   baseline_type: 'medclip_resnet'
+#   num_workers: 1
+#   batch_size: 256
+#   evaluation_dataset: 'nlst' # ct-rate, vinBig, vinBig_ct, radchest_ct_internal, radchest_ct_pure_internal, radchest_ct_pure_internal_clean, radchest_ct_internal_clean  we don't need vinBig/vinBit_ct for now
 
 hydra:
   run:

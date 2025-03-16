@@ -17,6 +17,7 @@ import warnings
 import random
 from skmultilearn.model_selection import iterative_train_test_split
 import constants as const
+from pathlib import Path
 
 def resize_array(array, current_spacing, target_spacing):
     """
@@ -731,7 +732,7 @@ class NlstXrayDataset(Dataset):
         return rgb_image
 
     def __getitem__(self, index):
-        xray_file, label, instance_name = self.samples[index]
+        xray_file, label, _ = self.samples[index]
         # transformation borrowed from cxr_clip
         xray_image = self.xray_to_rgb(xray_file)
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
@@ -739,7 +740,7 @@ class NlstXrayDataset(Dataset):
         data = {
             'xray': xray_image,
             'label': label,
-            'instance_name': instance_name
+            'instance_name': xray_file
         }
         return data
 
@@ -928,25 +929,25 @@ class VinBigDataChestXrayDataset:
     
 def prepare_nlst_samples(data_folder, labels, file_extension):
     samples = []
-    patient_folders = glob.glob(os.path.join(data_folder, '*'))
+    all_instances = glob.glob(os.path.join(data_folder, '**', '*'), recursive=True)
+    all_instances = [f for f in all_instances if os.path.isfile(f)]
 
-    # Read labels once outside the loop
     test_df = pd.read_csv(labels)
     test_label_col = test_df.columns[4]
     test_df['one_hot_labels'] = list(test_df[test_label_col].values)
 
-    for xray_file in tqdm.tqdm(patient_folders):
-        accession_number = os.path.basename(xray_file)
+    for xray_file in tqdm.tqdm(all_instances):
+        path = Path(xray_file)
+        accession_number = path.parts[-2]
         onehotlabels = test_df[test_df["pid"] == int(accession_number)]["one_hot_labels"].values
-        if len(onehotlabels) == 1:
-            samples.append((xray_file, onehotlabels[0], test_df["pid"]))
-            #TODO: for now, assume we take one instance from each subject for training but still need to figure out why only one vol in each subj.
-            #TODO: there are multiple labels, just use one and stick to this.
-            #TODO: check either use single number of two-class one-hot (preferred)
-        # else:
-        #     # sanity check
-        #     print('the xray file not found in the labels')
-        #     assert False
+        if np.unique(onehotlabels).shape[0] == 1:
+            onehotlabels = np.unique(onehotlabels)
+            # index 0 is for having cvd and index 1 is for normal
+            onehotlabels = np.append(onehotlabels[0], 1 - onehotlabels[0])
+            samples.append((xray_file, onehotlabels, accession_number))
+        else:
+            print('the patient has different label for different intances')
+            assert False
     print('size of the sample: ', len(samples))
     return samples    
 
