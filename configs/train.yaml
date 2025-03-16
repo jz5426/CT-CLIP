@@ -92,8 +92,8 @@ linear_probing_params:
   multi_sweep_evaluation: false
   num_epochs: 1 # 1000
   patience: 20
-  batch_size: 2
-  test_loader_batch_size: 4
+  batch_size: 128
+  test_loader_batch_size: 128
   learning_rate: 5e-2 # 1e-2
   progress_window: 2
   num_workers: 2

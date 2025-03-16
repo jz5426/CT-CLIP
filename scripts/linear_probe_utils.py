@@ -660,7 +660,7 @@ def evaluate_classifier(params):
         return test_loop(test_params)
     elif dataset in [const.RADCHEST_CT_INTERNAL, const.RADCHEST_CT_PURE_INTERNAL, const.RADCHEST_CT_INTERNAL_CLEAN, const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_ALL_DISEASE_INTERNAL, const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL]:
         test_dataset = params['test_data']
-        print(f'size of the external radchest_ct data: {len(test_dataset)}')
+        print(f'size of the radchest_ct data: {len(test_dataset)}')
 
         test_loader = DataLoader(
             test_dataset, 
@@ -713,7 +713,23 @@ def evaluate_classifier(params):
         return test_loop(test_params)
     elif dataset == const.NLST:
         #TODO:
-        pass
+        test_dataset = params['test_data']
+        print(f'size of the internal few-shot nlst data: {len(test_dataset)}')
+
+        test_loader = DataLoader(
+            test_dataset, 
+            num_workers=cfg_dot.linear_probing_params.num_workers, 
+            batch_size=cfg_dot.linear_probing_params.test_loader_batch_size, 
+            shuffle=False)
+
+        test_params = {
+            **test_params,
+            'test_loader': test_loader,
+            'model': model,
+            'full_forward_pass': False, # if ran xray_feature_caching with this dataset => False, otherwise True
+            'pretrained_cpt_dest': best_ckpt_destination, # where to retrieve the best checkpoint
+        }
+        return test_loop(test_params)
 
     print('something wrong')
 
@@ -739,7 +755,7 @@ def test_loop(params):
         model.fc.load_state_dict(torch.load(params['pretrained_cpt_dest']))
     else:
         # default to be the classifier layer
-        model.load_state_dict(torch.load(params['pretrained_cpt_dest']))
+        model.load_state_dict(torch.load(params['pretrained_cpt_dest']), strict=True)
 
     print(f'Performing testing with size (in unit batch) {len(test_loader)}')
     model.eval()
