@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, RadChestXrayClassificationDataset, RadChestXrayDataset, RadChestXraySplitter, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
+from data import CTReportDataSplitter, CTReportXRayClassificationDataset, MimicCTReportXRayDataset, NLSTXrayClassificationDataset, NLSTXrayDataSplitter, RadChestXrayClassificationDataset, RadChestXrayDataset, RadChestXraySplitter, VinBigChestXrayClassificationDataset, VinBigChestXrayDataSplitter, VinBigDataChestXrayDataset
 from eval_utils import XrayClassificationModel, get_clean_model_name, metadata_base_on_model_type
 import os
 import torch
@@ -35,11 +35,64 @@ def get_train_internal_split(cfg_dot, cfg):
         
         # TODO:
 
-        # base on the baseline model, load the corresponding xray features
+        # base on the baseline model, load the corresponding train split xray features
+
+        # NOTE: train features
         xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/NLST/xray_features_embeddings/train/{pth_base_name}'
         train_xray_features = torch.load(xray_feature_path)
+        train_splitter = NLSTXrayDataSplitter(
+            labels='/cluster/projects/mcintoshgroup/publicData/NLST/NLST_data_split_from_CVD_risk_estimator_with_cvd_abnormal_labels.csv',
+            data_folder='/cluster/projects/mcintoshgroup/publicData/NLST/preprocessed_NLST_TRAIN/preprocessed_xray_mha'
+        )
+        train_sample = train_splitter.prepare_samples(
+            split=cfg_dot.linear_probing_params.train_data_portion
+        )
+        train_dataset = NLSTXrayClassificationDataset(
+            cfg=cfg,
+            data=train_sample, # actual data potentially with the embeddings
+            data_embeddings=train_xray_features,
+            model_type=xray_model_type,
+            split='train'
+        )
 
-        pass
+        # NOTE: valid features
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/NLST/xray_features_embeddings/valid/{pth_base_name}'
+        val_xray_features = torch.load(xray_feature_path)
+        val_splitter = NLSTXrayDataSplitter(
+            labels='/cluster/projects/mcintoshgroup/publicData/NLST/NLST_data_split_from_CVD_risk_estimator_with_cvd_abnormal_labels.csv',
+            data_folder='/cluster/projects/mcintoshgroup/publicData/NLST/preprocessed_NLST_VAL/preprocessed_xray_mha'
+        )
+        val_sample = val_splitter.prepare_samples(split=1)
+        val_dataset = NLSTXrayClassificationDataset(
+            cfg=cfg,
+            data=val_sample, # actual data potentially with the embeddings
+            data_embeddings=val_xray_features,
+            model_type=xray_model_type,
+            split='valid'
+        )
+
+        # NOTE: test features
+        xray_feature_path = f'/cluster/projects/mcintoshgroup/publicData/NLST/xray_features_embeddings/test/{pth_base_name}'
+        test_xray_features = torch.load(xray_feature_path)
+        test_splitter = NLSTXrayDataSplitter(
+            labels='/cluster/projects/mcintoshgroup/publicData/NLST/NLST_data_split_from_CVD_risk_estimator_with_cvd_abnormal_labels.csv',
+            data_folder='/cluster/projects/mcintoshgroup/publicData/NLST/preprocessed_NLST_TEST/preprocessed_xray_mha'
+        )
+        test_sample = test_splitter.prepare_samples(split=1)
+        test_dataset = NLSTXrayClassificationDataset(
+            cfg=cfg,
+            data=test_sample, # actual data potentially with the embeddings
+            data_embeddings=test_xray_features,
+            model_type=xray_model_type,
+            split='test'
+        )
+
+        results = {
+            'train_dataset': train_dataset,
+            'internal_val_dataset': val_dataset,
+            'test_dataset': test_dataset
+        }
+        
     elif cfg_dot.linear_probing_params.evaluation_dataset == 'mimic':
         print('Splitting ct-rate mimic version dataset: differences in the set of the labels')
 

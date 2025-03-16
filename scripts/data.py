@@ -285,6 +285,44 @@ class CTReportDataSplitter:
         print(f'internal test size: {len(samples)}')
         return samples
 
+class NLSTXrayDataSplitter:
+    def __init__(self, 
+                labels, 
+                data_folder):
+        self.labels = labels
+        self.xray_paths = []
+        self.data_folder = data_folder
+        self.parent_folder = os.path.basename(data_folder)
+        self.file_extension = '.mha' # make sure the xray data 
+    
+    def prepare_samples(self, split=1.):
+        """
+        this prepare the xray data in a dictionary format
+
+        split: proportion to be kept for linear probing
+        """
+        samples = prepare_nlst_samples(self.data_folder, self.labels)
+        sample_data, sample_labels = [s[0] for s in samples], [s[1] for s in samples]
+
+        #TODO:
+        # if the training size is smaller than 1, the internal validation should be extracted based on the splitted training set
+        if split < 1.0:
+            # First split to retain `train_split` amount of data
+            train_data, train_label, test_data, test_label = iterative_train_test_split(
+                np.array(sample_data).reshape(-1, 1), 
+                np.array(sample_labels), 
+                test_size=(1.0 - split)
+            )
+            
+            train_split_samples = [(x[0], np.array(y)) for x, y in zip(train_data.tolist(), train_label.tolist())]
+
+            print(f'training size: {len(train_split_samples)}')
+            return train_split_samples
+        
+        samples = [(s[0], s[1]) for s in samples]
+        return samples
+
+
 class RadChestXraySplitter:
     def __init__(self, 
                 labels, 
@@ -444,6 +482,40 @@ class XrayClassificationDataset:
 
     def __len__(self):
         return len(self.samples)
+
+class NLSTXrayClassificationDataset(XrayClassificationDataset):
+
+    def __init__(self,
+                 cfg, 
+                 data, # list of data processed from the prepare_sample
+                 model_type,
+                 data_embeddings=None,
+                 split='train'):
+        super().__init__(
+            cfg,
+            data,
+            model_type,
+            data_embeddings,
+            split
+        )
+    
+    def __getitem__(self, key_id):
+
+        # get the xray file
+        xray_file, label = self.samples[key_id]
+        # get the embedding
+        xray_embedding = self.embeddings[xray_file]
+
+        # transformation borrowed from cxr_clip
+        xray_image = self.xray_to_rgb(xray_file)
+        xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)
+        label = torch.from_numpy(label)
+        data = {
+            'xray': xray_embedding,
+            'label': label,
+            'instance_name': xray_file
+        }
+        return data
 
 class RadChestXrayClassificationDataset(XrayClassificationDataset):
     def __init__(self,
@@ -707,7 +779,7 @@ class NlstXrayDataset(Dataset):
         self.xray_to_rgb = partial(self.xray_mha_to_rgb, transform=self.xray_transform)
 
     def prepare_samples(self):
-        return prepare_nlst_samples(self.data_folder, self.labels, self.file_extension)
+        return prepare_nlst_samples(self.data_folder, self.labels)
 
     def __len__(self):
         return len(self.samples)
@@ -927,12 +999,13 @@ class VinBigDataChestXrayDataset:
     def __len__(self):
         return len(self.samples)
     
-def prepare_nlst_samples(data_folder, labels, file_extension):
+def prepare_nlst_samples(data_folder, labels):
     samples = []
     all_instances = glob.glob(os.path.join(data_folder, '**', '*'), recursive=True)
     all_instances = [f for f in all_instances if os.path.isfile(f)]
 
     test_df = pd.read_csv(labels)
+    test_df = test_df[test_df["has_cvd"] != -1]
     test_label_col = test_df.columns[4]
     test_df['one_hot_labels'] = list(test_df[test_label_col].values)
 
@@ -940,9 +1013,13 @@ def prepare_nlst_samples(data_folder, labels, file_extension):
         path = Path(xray_file)
         accession_number = path.parts[-2]
         onehotlabels = test_df[test_df["pid"] == int(accession_number)]["one_hot_labels"].values
-        if np.unique(onehotlabels).shape[0] == 1:
+        if np.unique(onehotlabels).shape[0] == 0:
+            # skipping the missing examples
+            continue
+        elif np.unique(onehotlabels).shape[0] == 1:
             onehotlabels = np.unique(onehotlabels)
             # index 0 is for having cvd and index 1 is for normal
+            assert onehotlabels[0].item() == 0 or onehotlabels[0].item() == 1
             onehotlabels = np.append(onehotlabels[0], 1 - onehotlabels[0])
             samples.append((xray_file, onehotlabels, accession_number))
         else:

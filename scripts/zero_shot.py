@@ -163,7 +163,7 @@ class NlstXrayInference(nn.Module):
         # Load the pre-trained weights
         self.ds = NlstXrayDataset(
             cfg=cfg,
-            data_folder=data_folder,
+            data_folder=data_folder, # already take into account the split.
             labels=labels, 
             model_type=CTClip.xray_model_type,
             split=split
