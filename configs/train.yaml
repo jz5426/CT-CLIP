@@ -41,10 +41,10 @@ training_params:
   weight_decay: 1e-4
   epochs: 200
   min_epochs: 50
-  training_pretrain_baseline: ''
+  training_pretrain_baseline: 'cxr_clip_swin'
   use_pretrained_xray_encoder: true
-  loss_function: '' # either siamese or infoNCE
-  projector_type: '' # either siamese style (3-layers projector) or infoNCE (on linear layer only without bn or anything)
+  loss_function: 'infoNCE' # either siamese or infoNCE
+  projector_type: 'infoNCE' # either siamese style (3-layers projector) or infoNCE (on linear layer only without bn or anything)
 
 ## TOY
 # training_params:
