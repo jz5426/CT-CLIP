@@ -14,7 +14,7 @@ from torch import nn
 from torch.utils.data import Dataset, DataLoader, random_split, Sampler
 from torch.utils.data.distributed import DistributedSampler
 
-from data import CTReportDataset, CTReportXRayDataset
+from data import CTReportDataset, CTReportXRayDataset, CustomCTDataset, CustomCTReportDataset
 from data_inference import CTReportDatasetinfer, CTReportXRayDatasetinfer
 
 import numpy as np
@@ -47,8 +47,6 @@ def apply_softmax(array):
     softmax = torch.nn.Softmax(dim=0)
     softmax_array = softmax(array)
     return softmax_array
-
-
 
 def tensor_to_nifti(tensor, path, affine=np.eye(4)):
     """
@@ -167,7 +165,8 @@ class CTClipTrainer(nn.Module):
         min_epochs,
         num_train_steps,
         batch_size,
-        model_type,
+        meta_data='',
+        model_type='undefined',
         text_cl_weight = 1.,
         ct_cl_weight = 1.,
         batch_style='patient',
@@ -206,10 +205,8 @@ class CTClipTrainer(nn.Module):
         self.triplet = False
         if hasattr(self.CTClip, 'xray_encoder'):
             self.triplet = True
-            # max_grad_norm = None
 
         self.max_grad_norm = max_grad_norm
-        
         self.tokenizer = tokenizer if tokenizer else BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
         self.register_buffer('steps', torch.Tensor([0]))
 
@@ -274,22 +271,39 @@ class CTClipTrainer(nn.Module):
             )
 
         else:
-            self.train_ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train)
-            self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels=labels)
+            # the following is for our preprocessed CT data.
+            # self.train_ds = CustomCTDataset(image_dir=data_train)
+            self.train_ds = CustomCTReportDataset(
+                data_folder=data_train, 
+                csv_file=reports_file_train,
+                meta_data=pd.read_csv(meta_data))
 
             self.dl = DataLoader(
                 self.train_ds,
                 num_workers=num_workers,
                 batch_size=self.batch_size,
-                shuffle = True,
+                shuffle = True
             )
+    
+            # NOTE VALID is missing for testing
 
-            self.valid_dl = DataLoader(
-                self.valid_ds,
-                num_workers=num_workers,
-                batch_size=1,
-                shuffle = False,
-            )
+            #  NOTE: # original implementation of CTCLIP training.
+            # self.train_ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train)
+            # self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels=labels)
+
+            # self.dl = DataLoader(
+            #     self.train_ds,
+            #     num_workers=num_workers,
+            #     batch_size=self.batch_size,
+            #     shuffle = True
+            # )
+
+            # self.valid_dl = DataLoader(
+            #     self.valid_ds,
+            #     num_workers=num_workers,
+            #     batch_size=1,
+            #     shuffle = False
+            # )
 
         # prepare with accelerator
         self.dl_iter=cycle(self.dl)
@@ -330,11 +344,14 @@ class CTClipTrainer(nn.Module):
         self.ct_cl_weight = ct_cl_weight
 
         # base file name for the checkpoints
-        if projector_type == 'infoNCE' and train_loss == 'infoNCE': # retro adapting the filename for the previous implementation.
+        if self.triplet and projector_type == 'infoNCE' and train_loss == 'infoNCE': # retro adapting the filename for the previous implementation.
             self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}'
             print('Both projector and tran loss are infoNCE!')
-        else:
+        elif self.triplet:
             self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}__ProjType_{projector_type}__trainLoss_{train_loss}'
+        else:
+            # TODO: this is for CT-CLIP model training without xray
+            pass
         print('base file name: ', self.base_file_name)
 
     def save(self, path):

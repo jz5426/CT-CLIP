@@ -124,7 +124,6 @@ if __name__ == "__main__":
     df = pd.read_csv("train_metadata.csv") #select the metadata
 
     num_workers = 18  # Number of worker processes
-
     # Process files using multiprocessing with tqdm progress bar
     with Pool(num_workers) as pool:
         list(tqdm(pool.imap(process_file, nii_files), total=len(nii_files)))
