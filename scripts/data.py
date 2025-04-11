@@ -1212,7 +1212,7 @@ class CustomCTReportDataset(CTReportDataset):
         # video_tensor = video_tensor.view(1, *video_tensor.size())
         # return image.to(torch.float32)
 
-        # preprocess the custom compressed CT (h5)
+        # preprocess the custom compressed CT (.h5 file)
         video_tensor = self.preprocess_ct(nii_file)
 
         input_text = input_text.replace('"', '')  

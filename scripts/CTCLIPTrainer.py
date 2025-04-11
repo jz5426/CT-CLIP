@@ -404,7 +404,7 @@ class CTClipTrainer(nn.Module):
                     text=text.to(device)
                 else:
                     # video, text = data
-                    video, text, xray = data['ct'], data['report']
+                    video, text = data['ct'], data['report']
                 video=video.to(device)
 
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.
