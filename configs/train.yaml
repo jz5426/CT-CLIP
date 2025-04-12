@@ -29,8 +29,8 @@ base:
 
 ## NOTE: train script version
 training_params:
-  batch_size: 360
-  num_workers: 10
+  batch_size: 2
+  num_workers: 1
   batch_style: experiment
   train_from_scratch: false
   epoch_based_patience: 25

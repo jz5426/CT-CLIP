@@ -182,7 +182,6 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
     rgb_image = Image.fromarray(rgb_image, mode="RGB")
     rgb_image.show()
     rgb_image.save(xray_rgb_save_path)
-    return
 
     xray_image = sitk.GetImageFromArray(xray_array)
     xray_image.SetSpacing((1.0, 1.0))  # Example spacing

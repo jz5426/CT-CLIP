@@ -229,6 +229,8 @@ class CTClipTrainer(nn.Module):
         # Load the pre-trained weights
         self.img_embedding_paths = img_embedding_paths
         self.text_embedding_paths = text_embedding_paths
+        self.dl = None
+        self.valid_dl = None
         if self.triplet:
 
             # train does not need csv file as it does not requires report
@@ -306,11 +308,14 @@ class CTClipTrainer(nn.Module):
             # )
 
         # prepare with accelerator
-        self.dl_iter=cycle(self.dl)
-        self.valid_dl_iter=cycle(self.valid_dl)
+        self.dl_iter, self.valid_dl_iter = None, None
+        if self.dl:
+            self.dl_iter=cycle(self.dl)
+        if self.valid_dl:
+            self.valid_dl_iter=cycle(self.valid_dl)
         self.device = self.accelerator.device
         self.CTClip.to(self.device)
-
+        
         (
  			self.dl_iter,
             self.valid_dl_iter,
@@ -347,12 +352,13 @@ class CTClipTrainer(nn.Module):
         if self.triplet and projector_type == 'infoNCE' and train_loss == 'infoNCE': # retro adapting the filename for the previous implementation.
             self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}'
             print('Both projector and tran loss are infoNCE!')
+            print('base file name: ', self.base_file_name)
         elif self.triplet:
             self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}__ProjType_{projector_type}__trainLoss_{train_loss}'
+            print('base file name: ', self.base_file_name)
         else:
             # TODO: this is for CT-CLIP model training without xray
             pass
-        print('base file name: ', self.base_file_name)
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
@@ -388,7 +394,7 @@ class CTClipTrainer(nn.Module):
 
         # in unit of batch size
         train_size = len(self.dl)
-        val_size = len(self.valid_dl)
+        val_size = len(self.valid_dl) if self.valid_dl else 0
 
         for epoch in range(epochs):
             self.CTClip.train()
@@ -409,6 +415,7 @@ class CTClipTrainer(nn.Module):
 
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.
                     if self.triplet:
+                        # x2ct-clip
                         loss = self.CTClip(text,
                                            video, 
                                            xray, 
@@ -437,8 +444,9 @@ class CTClipTrainer(nn.Module):
                 running_loss += loss.item()
 
             # run per-epoch validation and automatically save the model
-            print(f'Validation after epoch {epoch}')
-            exit_training = self.eval_on_validation_split(epoch, val_size, is_epoch_evaluation=True)
+            if val_size > 0:
+                print(f'Validation after epoch {epoch}')
+                exit_training = self.eval_on_validation_split(epoch, val_size, is_epoch_evaluation=True)
 
             # Print average loss for the epoch
             epoch_loss = running_loss / train_size
