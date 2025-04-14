@@ -831,7 +831,8 @@ class CTCLIP(nn.Module):
 
         if not return_loss and not self.use_all_token_embeds: # Global text-to-image similarity
             einsum_args = (text_latents_extra, image_latents_extra) if self.extra_latent_projection and not text_to_image else (text_latents, image_latents)
-            return einsum('b d, b d -> b', *einsum_args) * temp # NOTE: check the previous implementation, you see that the image feature is of the shape bxd under this condition
+            # return einsum('b d, b d -> b', *einsum_args) * temp # NOTE: check the previous implementation, you see that the image feature is of the shape bxd under this condition
+            return einsum('t d, i d -> t i', *einsum_args) * temp # NOTE: check the previous implementation, you see that the image feature is of the shape bxd under this condition
 
         # split out multiview dimension for text and images
         # NOTE: for not multi view, m = 1

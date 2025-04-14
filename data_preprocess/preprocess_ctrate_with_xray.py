@@ -161,7 +161,7 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
     ct_image = _scale_clip_resize(img_data, current, (target_z_spacing, target_x_spacing, target_y_spacing))
     xray_image = _scale_clip_resize(img_data, current, (1,1,1))
 
-    #TEST
+    #TEST to see the CT array
     sitk.WriteImage(sitk.GetImageFromArray(ct_image), os.path.join(shared_dst_dir, original_file_name))
     
     # for xray

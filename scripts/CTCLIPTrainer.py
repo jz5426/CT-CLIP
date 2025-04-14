@@ -274,17 +274,33 @@ class CTClipTrainer(nn.Module):
 
         else:
             # the following is for our preprocessed CT data.
-            # self.train_ds = CustomCTDataset(image_dir=data_train)
+            #TODO: potentially need to implement patient based or experiment based contrastive learning like x2ct-clip
             self.train_ds = CustomCTReportDataset(
                 data_folder=data_train, 
                 csv_file=reports_file_train,
-                meta_data=pd.read_csv(meta_data))
+                meta_data=pd.read_csv(meta_data),
+                split='train'
+            )
+            self.valid_ds = CustomCTReportDataset(
+                data_folder=data_valid, 
+                csv_file=reports_file_valid,
+                label_file=labels,
+                meta_data=pd.read_csv(meta_data),
+                split='val'
+            )
 
             self.dl = DataLoader(
                 self.train_ds,
                 num_workers=num_workers,
                 batch_size=self.batch_size,
                 shuffle = True
+            )
+    
+            self.valid_dl = DataLoader(
+                self.valid_ds,
+                num_workers=num_workers,
+                batch_size=self.batch_size,
+                shuffle = False
             )
     
             # NOTE VALID is missing for testing
@@ -358,6 +374,8 @@ class CTClipTrainer(nn.Module):
             print('base file name: ', self.base_file_name)
         else:
             # TODO: this is for CT-CLIP model training without xray
+            self.base_file_name = f'modeltype_ctclip__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}'
+            print('base file name: ', self.base_file_name)
             pass
 
     def save(self, path):
@@ -497,7 +515,7 @@ class CTClipTrainer(nn.Module):
                                                 is_image_latent_input=True)
                     else:
                         report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-                        val_cl_loss = self.CTClip(report_tokens, valid_data, xray_image, device=device)
+                        val_cl_loss = self.CTClip(report_tokens, valid_data, return_loss=True, device=device)
 
                     # Accumulate validation contrastive loss for this epochs
                     running_val_loss += val_cl_loss.item()
@@ -545,7 +563,8 @@ class CTClipTrainer(nn.Module):
                                                 is_image_latent_input=True,
                                                 return_logits_only=True) # need this to return logits
                         else:
-                            logits = self.CTClip(text_tokens, valid_data, xray_image, device=device, return_logits_only=True)
+                            logits = self.CTClip(text_tokens, valid_data, device=device)
+                            # logits = logits.unsqueeze(0)
 
                         outputs = apply_softmax(logits)
 

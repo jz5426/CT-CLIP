@@ -1152,31 +1152,41 @@ class CustomCTDataset(Dataset):
     def __len__(self):
         return len(self.image_files)
     
-    def load(self, file):
-        if self.format.endswith('pt'):
-            return torch.load(file, weights_only=False)
-        elif self.format.endswith('npz'):
-            return torch.from_numpy(np.load(file)['arr_0'])
-        elif self.format.endswith('h5'):
-            with h5py.File(file, "r") as f:
-                return torch.from_numpy(f["ct"][:])
+    # def load(self, file):
+    #     if self.format.endswith('pt'):
+    #         return torch.load(file, weights_only=False)
+    #     elif self.format.endswith('npz'):
+    #         return torch.from_numpy(np.load(file)['arr_0'])
+    #     elif self.format.endswith('h5'):
+    #         with h5py.File(file, "r") as f:
+    #             return torch.from_numpy(f["ct"][:])
 
-    def __getitem__(self, idx):
-        img_path = self.image_files[idx]
-        image = self.load(img_path)
-        image = image.view(1, *image.size())
-        return image.to(torch.float32)
+    # def __getitem__(self, idx):
+    #     img_path = self.image_files[idx]
+    #     image = self.load(img_path)
+    #     image = image.view(1, *image.size())
+    #     return image.to(torch.float32)
 
 class CustomCTReportDataset(CTReportDataset):
     def __init__(self, 
                  data_folder, 
                  csv_file, 
+                 label_file=None,
+                 split='train',
                  meta_data = None,
                  file_format='h5',
                  min_slices=20, 
                  resize_dim=500, 
                  force_num_frames=True
                 ):
+        assert split in ['train', 'val']
+        if split == 'val':
+            assert label_file is not None
+            self.label_df = pd.read_csv(label_file)
+            label_cols = list(self.label_df.columns[1:])
+            self.label_df['one_hot_labels'] = list(self.label_df[label_cols].values)
+
+        self.split = split
         self.format = file_format
         self.meta_data = meta_data # panda dataframe
         super().__init__(data_folder, csv_file, min_slices, resize_dim, force_num_frames)
@@ -1184,11 +1194,12 @@ class CustomCTReportDataset(CTReportDataset):
 
     def prepare_samples(self):
         self.customCTDatasetObj = CustomCTDataset(self.data_folder, format=self.format)
-
         samples = []
         for nii_file in self.customCTDatasetObj.image_files:
             accession_number = nii_file.split("/")[-1]
             accession_number = accession_number.replace(f".{self.format}", ".nii.gz")
+
+            # make sure the vol has the corresponding reports
             if accession_number not in self.accession_to_text:
                 continue
 
@@ -1201,13 +1212,26 @@ class CustomCTReportDataset(CTReportDataset):
             for text in impression_text:
                 input_text_concat = input_text_concat + str(text)
             input_text_concat = impression_text[0]
-            samples.append((nii_file, input_text_concat))
+
+            obj = [nii_file, input_text_concat]
+            if self.split == 'val':
+                onehotlabels = self.label_df[self.label_df["VolumeName"] == accession_number]["one_hot_labels"].values
+                # skip the ones without labels
+                if len(onehotlabels) == 0:
+                    continue
+                obj.append(onehotlabels[0])
+
+            samples.append(obj)
             self.paths.append(nii_file)
 
         return samples
 
     def __getitem__(self, index):
-        nii_file, input_text = self.samples[index]
+        sample = self.samples[index]
+        if self.split == 'val':
+            nii_file, input_text, label = sample
+        else:
+            nii_file, input_text = sample
         # video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this'] # TODO:
         # video_tensor = self.load(nii_file)
         # video_tensor = video_tensor.view(1, *video_tensor.size())
@@ -1229,6 +1253,8 @@ class CustomCTReportDataset(CTReportDataset):
             'instance_name': instance_name,
             'ct_file_path':nii_file
         }
+        if self.split == 'val':
+            data['label'] = label
         return data
 
     def load(self, file):
@@ -1249,6 +1275,10 @@ class CustomCTReportDataset(CTReportDataset):
 
         # preprocess the file in __get_item__
         img_data = self.load(nii_file)
+
+        # check the ct image in f32 format
+        # sitk.WriteImage(sitk.GetImageFromArray(img_data.astype(np.float32)), '/cluster/home/t135419uhn/CT-CLIP/ct_image/test.nii')
+        
         file_name = os.path.basename(nii_file)
         row = self.meta_data[self.meta_data['VolumeName'] == file_name.replace(f".{self.format}", ".nii.gz")]
         slope = float(row["RescaleSlope"].iloc[0])
@@ -1271,7 +1301,7 @@ class CustomCTReportDataset(CTReportDataset):
             # clip
             hu_min, hu_max = -1000, 1000
             _img_data = np.clip(_img_data, hu_min, hu_max)
-            _img_data = (((_img_data ) / 1000)).astype(np.float32) # as float is important
+            _img_data = (((_img_data ) / 1000))#.astype(np.float32) # as float is important
 
             _img_data = _img_data.transpose(2, 0, 1) # becomes: z, x, y
             ct_tensor = torch.tensor(_img_data)
@@ -1291,6 +1321,11 @@ class CustomCTReportDataset(CTReportDataset):
             current, 
             (target_z_spacing, target_x_spacing, target_y_spacing)
             )
+        
+        # convert to float32 after preprocessing
+        ct_image = ct_image.astype(np.float32)
+        # check the CT images
+        # sitk.WriteImage(sitk.GetImageFromArray(ct_image), '/cluster/home/t135419uhn/CT-CLIP/ct_image/f16_preprocessed.nii')
 
         # for ct
         tensor = torch.tensor(ct_image)
