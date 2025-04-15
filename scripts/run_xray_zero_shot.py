@@ -93,12 +93,12 @@ def run(cfg_dot):
 		# 1. copy the downloaded huggingface model in G:\Chris\CT-CLIP\predownloaded_models (shield external drive) to the CT-CLIP
 		# 2. for the image_encoder section of the yaml file (such as clip_Swin_clincial), replace the directory to the correct one
 	tokenizer = BertTokenizer.from_pretrained(
-		'/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+		'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/CT_CLIP/BertTokenizer/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
 		do_lower_case=True,
 		local_files_only=True
 	)
 	text_encoder = BertModel.from_pretrained(
-		'/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
+		'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/CT_CLIP/BertModel/models--microsoft--BiomedVLP-CXR-BERT-specialized/snapshots/f1cc2c6b7fac60f3724037746a129a5baf194dbc',
 		local_files_only=True
 	)
 

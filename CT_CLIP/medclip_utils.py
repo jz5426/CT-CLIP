@@ -59,7 +59,7 @@ class MedCLIPVisionModelViT(nn.Module):
         super().__init__()
         self.WEIGHTS_NAME = 'pytorch_model.bin'
         self.vit_type = 'microsoft/swin-tiny-patch4-window7-224' # constants.VIT_TYPE
-        self.cache_dir = '/cluster/home/t135419uhn/CT-CLIP/predownloaded_models/cxr-swinTiny/'
+        self.cache_dir = '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/CT_CLIP/cxr-swinTiny/'
         self.model = AutoModel.from_pretrained(
             self.vit_type, add_pooling_layer=False, cache_dir=self.cache_dir, local_files_only=True
         )
