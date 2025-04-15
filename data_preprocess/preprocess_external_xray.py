@@ -111,7 +111,7 @@ def process_file(file_instance_tuple, shared_dst_dir):
 if __name__ == "__main__":
     num_workers = 20
     if XRAY_DATA_TYPE == 'mimic':
-        csv_file_path = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label_pa_ap.csv'
+        csv_file_path = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/mimic_ct_report_paired_with_ordered_label_pa_ap.csv'
         shared_dst_dir = './preprocessed_mimic'
         dcm_files = read_mimic_dcm_files(csv_file_path)
     elif XRAY_DATA_TYPE == 'vinbigxray':

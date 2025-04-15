@@ -283,7 +283,7 @@ def ctclip_retrieval_evaluation():
         query_type=const.CT_REPORT,
         target_type=const.CT_IMAGE,
         model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         dataset=const.CT_RATE
     )
     csv_results = extend_dictionary(parent=csv_results, child=results)
@@ -296,7 +296,7 @@ def ctclip_retrieval_evaluation():
         query_type=const.CT_REPORT,
         target_type=const.CT_IMAGE,
         model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         dataset=const.CT_RATE
     )
     csv_results = extend_dictionary(parent=csv_results, child=results)
@@ -309,7 +309,7 @@ def ctclip_retrieval_evaluation():
         query_type=const.CT_IMAGE,
         target_type=const.CT_IMAGE,
         model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         dataset=const.CT_RATE
     )
     csv_results = extend_dictionary(parent=csv_results, child=results)
@@ -322,7 +322,7 @@ def ctclip_retrieval_evaluation():
         query_type=const.CT_IMAGE,
         target_type=const.CT_REPORT,
         model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         dataset=const.CT_RATE
     )
     csv_results = extend_dictionary(parent=csv_results, child=results)
@@ -335,7 +335,7 @@ def ctclip_retrieval_evaluation():
         query_type=const.CT_REPORT,
         target_type=const.CT_REPORT,
         model_baseline=get_clean_model_name(const.CT_CLIP),
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         dataset=const.CT_RATE
     )
     csv_results = extend_dictionary(parent=csv_results, child=results)
@@ -407,8 +407,8 @@ def ctrate_retrieval_evaluation(params):
             text_embedding_paths = {
                 f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
             },
-            reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
-            labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            reports_file = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/{split}_reports.csv',
+            labels = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             results_folder="./inference_zeroshot_retrieval",
             batch_size = 512,
             num_train_steps = -1, # placeholder
@@ -479,7 +479,7 @@ def ctrate_retrieval_evaluation(params):
             query_type=const.XRAY,
             target_type=const.CT_IMAGE,
             model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             dataset=const.CT_RATE)
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -490,7 +490,7 @@ def ctrate_retrieval_evaluation(params):
             query_type=const.CT_IMAGE,
             target_type=const.XRAY,
             model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             dataset=const.CT_RATE)
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -503,7 +503,7 @@ def ctrate_retrieval_evaluation(params):
             query_type=const.XRAY,
             target_type=const.CT_REPORT,
             model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             dataset=const.CT_RATE)
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -514,7 +514,7 @@ def ctrate_retrieval_evaluation(params):
             query_type=const.CT_REPORT,
             target_type=const.XRAY,
             model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             dataset=const.CT_RATE)
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
@@ -528,7 +528,7 @@ def ctrate_retrieval_evaluation(params):
             query_type=const.XRAY,
             target_type=const.XRAY,
             model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+            predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
             dataset=const.CT_RATE)
         csv_results = extend_dictionary(parent=csv_results, child=results)
     
@@ -699,9 +699,9 @@ def mimic_retrieval_evaluation(params):
             clip_xray,
             cfg=cfg,
             tokenizer=tokenizer,
-            data_folder= '/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
-            reports_file = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
-            labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            data_folder= '/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha',
+            reports_file = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/external_valid_mimic_report.csv',
+            labels = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
             results_folder="./inference_zeroshot_retrieval_mimic",
             batch_size = 256,
             num_workers = 5, # with the preprocess data as .pt file, the preprocessing should be fast, 1 is sufficient.
@@ -728,7 +728,7 @@ def mimic_retrieval_evaluation(params):
             query_type=const.XRAY,
             target_type=const.CT_REPORT,
             model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
             dataset=const.MIMIC)
         csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating xray 2 ct reports recall')
@@ -748,7 +748,7 @@ def mimic_retrieval_evaluation(params):
             query_type=const.XRAY,
             target_type=const.XRAY,
             model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
             dataset=const.MIMIC)
         csv_results = extend_dictionary(parent=csv_results, child=results)
         print('evaluating report 2 xray recall')
@@ -768,7 +768,7 @@ def mimic_retrieval_evaluation(params):
             query_type=const.CT_REPORT,
             target_type=const.XRAY,
             model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
+            predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv',
             dataset=const.MIMIC)
         csv_results = extend_dictionary(parent=csv_results, child=results)
 

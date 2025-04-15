@@ -229,8 +229,8 @@ def ct_rate_split(split, clip_xray, cfg, cfg_dot, tokenizer):
         text_embedding_paths = {
             f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
         },
-        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
-        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        reports_file = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/{split}_reports.csv',
+        labels = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
         results_folder="./inference_zeroshot_retrieval",
         batch_size = cfg_dot.xray_feature_caching_params.batch_size,
         num_train_steps = -1, # placeholder

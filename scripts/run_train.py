@@ -169,9 +169,9 @@ def run(cfg_dot):
             'train': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/train/text_features.pth',
             'valid': '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/valid/text_features.pth'
         },
-        reports_file_train = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-        reports_file_valid = '/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-        labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        reports_file_train = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/train_reports.csv',
+        reports_file_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/valid_reports.csv',
+        labels = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         results_folder=f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{xray_model_type}', # put the check point in a subdirectory under CT-RATE-CHECKPOINTS
         num_train_steps = 100001,
         batch_style=cfg_dot.training_params.batch_style,

@@ -398,9 +398,9 @@ def run(cfg):
             f'{split}': f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth'
         },
         # reports_file = f'/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
-        reports_file = f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+        reports_file = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/{split}_reports.csv',
         # labels = f"/mnt/c/Users/MaxYo/OneDrive/Desktop/MBP/Chris/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv",
-        labels = f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+        labels = f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
         results_folder="./inference_zeroshot_retrieval",
         batch_size = 512,
         num_train_steps = -1, # placeholder
@@ -433,7 +433,7 @@ def run(cfg):
     # map_retrieval_evaluation(
     #     xray_features,
     #     target_latents=image_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
     #     file_name=f'{ckpt_name}_synxray2ct_map',
     # )
 
@@ -441,14 +441,14 @@ def run(cfg):
     # map_retrieval_evaluation(
     #     xray_features,
     #     target_latents=xray_features,
-    #     predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+    #     predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
     #     file_name=f'{ckpt_name}_synxray2synxray_map'
     # )
 
     map_retrieval_evaluation(
         image_features,
         target_latents=image_features,
-        predicted_label_csv_path='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+        predicted_label_csv_path='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
         file_name=f'{ckpt_name}_ct2ct_map'
     )
 

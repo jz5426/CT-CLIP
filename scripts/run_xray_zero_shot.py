@@ -182,9 +182,9 @@ def run(cfg_dot):
 	if cfg_dot.zero_shot_params.test_bed == 'mimic':
 		test_bed = MimicCTReportXRayDataset(
 			cfg=cfg,
-			data_folder='/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
-			csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
-			labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
+			data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha',
+			csv_file='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/external_valid_mimic_report.csv',
+			labels='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
 			model_type=xray_model_type,
 			split='valid' # for transformation
 		)
@@ -204,11 +204,11 @@ def run(cfg_dot):
 			data_folder=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/{split}_preprocessed_xray_mha', # THIS IS CORRECT
 			model_type=xray_model_type,
 			cfg=cfg, 
-			csv_file=f'/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/{split}_reports.csv',
+			csv_file=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/{split}_reports.csv',
 			img_embedding_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/image_features.pth',
 			text_embedding_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/features_embeddings/{split}/text_features.pth',
 			batch_style='instance',
-			labels=f'/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv'
+			labels=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv'
 		)
 		# img_embedding, text_embedding, onehotlabels, xray_image, name_acc, xray_file
 		print(f'size of the {cfg_dot.zero_shot_params.test_bed}: {len(test_bed)}')

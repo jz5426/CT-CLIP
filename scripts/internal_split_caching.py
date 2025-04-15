@@ -75,8 +75,8 @@ def run(cfg_dot):
         # Set up the dataset and data loaders
         #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
         train_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
+            csv_file='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/train_reports.csv',
+            labels='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(

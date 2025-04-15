@@ -101,8 +101,8 @@ def get_train_internal_split(cfg_dot, cfg):
         # Set up the dataset and data loaders
         #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
         train_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
+            csv_file='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/train_reports.csv',
+            labels='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_mimic_labels.csv', #NOTE: the label need to be the mimic version
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
@@ -139,8 +139,8 @@ def get_train_internal_split(cfg_dot, cfg):
         # Set up the dataset and data loaders
         #NOTE: the label is the mimic version (with 11 labels) but the report and the data are the original CT-RATE
         train_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv', #NOTE: the label need to be the ct-rate version
+            csv_file='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/train_reports.csv',
+            labels='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv', #NOTE: the label need to be the ct-rate version
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         )
         train_sample, internal_val_samples = train_data_splitter.prepare_samples(
@@ -180,11 +180,11 @@ def get_train_internal_split(cfg_dot, cfg):
             # particularly, the calcification related labels are merged.
         dataset = cfg_dot.linear_probing_params.evaluation_dataset 
         if dataset == const.RADCHEST_CT:
-            labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv' 
+            labels = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv' 
         elif dataset == const.RADCHEST_CT_PURE:
-            labels = '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_pure_labels.csv'
+            labels = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_pure_labels.csv'
         train_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/train_reports.csv',
+            csv_file='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/train_reports.csv',
             labels=labels, #NOTE: the label need to be the radchest_ct or radchest_ct_pure version
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha',
         )
@@ -550,9 +550,9 @@ def evaluate_classifier(params):
     if dataset == 'mimic':
         test_dataset = MimicCTReportXRayDataset(
             cfg=cfg,
-            data_folder='/cluster/home/t135419uhn/CT-CLIP/preprocessed_mimic/mimic_preprocessed_xray_mha',
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/external_valid_mimic_report.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
+            data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha',
+            csv_file='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/external_valid_mimic_report.csv',
+            labels='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_external_valid_mimic_labels.csv', 
             model_type=xray_model_type,
             split='valid'
         )
@@ -590,8 +590,8 @@ def evaluate_classifier(params):
 
         # the whole validation dataset for internal validation.
         test_data_splitter = CTReportDataSplitter(
-            csv_file='/cluster/home/t135419uhn/CT-CLIP/dataset/radiology_text_reports/valid_reports.csv',
-            labels='/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
+            csv_file='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/valid_reports.csv',
+            labels='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_valid_predicted_labels.csv',
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha',
         )
         test_samples = test_data_splitter.prepare_samples(train_split=1., val_split=0.) # no splitting

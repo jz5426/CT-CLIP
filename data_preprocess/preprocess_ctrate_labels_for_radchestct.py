@@ -48,11 +48,11 @@ if __name__ == '__main__':
     # }
 
     # radchest_ctrate_labels = merge_disease_labels(
-    #     '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
+    #     '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
     #     radchest_ctrate_label_mappings
     # )
     # radchest_ctrate_labels.to_csv(
-    #     '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv',
+    #     '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_labels.csv',
     #     index=False
     # )
 
@@ -69,10 +69,10 @@ if __name__ == '__main__':
     }
 
     radchest_ctrate_labels = merge_disease_labels(
-        '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
+        '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv',
         radchest_ctrate_label_mappings
     )
     radchest_ctrate_labels.to_csv(
-        '/cluster/home/t135419uhn/CT-CLIP/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_pure_labels.csv',
+        '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_radchest_ct_pure_labels.csv',
         index=False
     )
