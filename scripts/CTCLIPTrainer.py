@@ -411,8 +411,8 @@ class CTClipTrainer(nn.Module):
         device = self.device
 
         # in unit of batch size
-        train_size = len(self.dl)
-        val_size = len(self.valid_dl) if self.valid_dl else 0
+        train_size = 3 # len(self.dl)
+        val_size = 2 # len(self.valid_dl) if self.valid_dl else 0
 
         for epoch in range(epochs):
             self.CTClip.train()

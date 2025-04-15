@@ -1232,11 +1232,7 @@ class CustomCTReportDataset(CTReportDataset):
             nii_file, input_text, label = sample
         else:
             nii_file, input_text = sample
-        # video_tensor = self.nii_to_tensor(nii_file) if not self.probing_mode else ['untoggle this'] # TODO:
-        # video_tensor = self.load(nii_file)
-        # video_tensor = video_tensor.view(1, *video_tensor.size())
-        # return image.to(torch.float32)
-
+            
         # preprocess the custom compressed CT (.h5 file)
         video_tensor = self.preprocess_ct(nii_file)
 
