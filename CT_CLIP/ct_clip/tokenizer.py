@@ -1,7 +1,6 @@
 # take from https://github.com/openai/CLIP/blob/main/clip/simple_tokenizer.py
 # to give users a quick easy start to training DALL-E without doing BPE
 
-
 import os
 import html
 from functools import lru_cache

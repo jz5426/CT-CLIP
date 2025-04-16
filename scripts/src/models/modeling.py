@@ -1,8 +1,4 @@
 import torch
-import copy
-
-#import clip.clip as clip
-
 from src.models import utils
 
 

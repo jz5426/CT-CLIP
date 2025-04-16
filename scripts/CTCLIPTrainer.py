@@ -1,27 +1,22 @@
 from pathlib import Path
-from shutil import rmtree
 from datetime import timedelta
 
 from transformer_maskgit.optimizer import get_optimizer
-from transformers import BertTokenizer, BertModel
+from transformers import BertTokenizer
 
-from eval import evaluate_internal, plot_roc, accuracy, sigmoid, bootstrap, compute_cis
-from sklearn.metrics import classification_report, confusion_matrix, multilabel_confusion_matrix, f1_score, accuracy_score
+from eval import evaluate_internal
+from sklearn.metrics import f1_score, accuracy_score
 
 
 import torch
 from torch import nn
-from torch.utils.data import Dataset, DataLoader, random_split, Sampler
-from torch.utils.data.distributed import DistributedSampler
+from torch.utils.data import DataLoader, Sampler
 
-from data import CTReportDataset, CTReportXRayDataset, CustomCTDataset, CustomCTReportDataset
-from data_inference import CTReportDatasetinfer, CTReportXRayDatasetinfer
+from data import CustomCTReportDataset
 
 import numpy as np
 import pandas as pd
 
-from einops import rearrange
-import accelerate
 from accelerate import Accelerator
 from accelerate import DistributedDataParallelKwargs
 from accelerate.utils import InitProcessGroupKwargs
@@ -48,28 +43,6 @@ def apply_softmax(array):
     softmax_array = softmax(array)
     return softmax_array
 
-def tensor_to_nifti(tensor, path, affine=np.eye(4)):
-    """
-    Save tensor as a NIfTI file.
-
-    Args:
-        tensor (torch.Tensor): The input tensor with shape (D, H, W) or (C, D, H, W).
-        path (str): The path to save the NIfTI file.
-        affine (np.ndarray, optional): The affine matrix for the NIfTI file. Defaults to np.eye(4).
-    """
-
-    tensor = tensor.cpu()
-
-    if tensor.dim() == 4:
-        # Assume single channel data if there are multiple channels
-        if tensor.size(0) != 1:
-            print("Warning: Saving only the first channel of the input tensor")
-        tensor = tensor.squeeze(0)
-    tensor=tensor.swapaxes(0,2)
-    numpy_data = tensor.detach().numpy().astype(np.float32)
-    nifti_img = nib.Nifti1Image(numpy_data, affine)
-    nib.save(nifti_img, path)
-
 def exists(val):
     return val is not None
 
@@ -80,16 +53,6 @@ def cycle(dl):
     while True:
         for data in dl:
             yield data
-
-def yes_or_no(question):
-    answer = input(f'{question} (y/n) ')
-    return answer.lower() in ('yes', 'y')
-
-def accum_log(log, new_logs):
-    for key, new_value in new_logs.items():
-        old_value = log.get(key, 0.)
-        log[key] = old_value + new_value
-    return log
 
 class CosineAnnealingWarmUpRestarts(lr_scheduler._LRScheduler):
     def __init__(self, optimizer, T_0, T_mult=1, eta_max=0.1, T_warmup=10000, gamma=1.0, last_epoch=-1):
@@ -163,21 +126,12 @@ class CTClipTrainer(nn.Module):
         CTClip: CTCLIP,
         *,
         min_epochs,
-        num_train_steps,
         batch_size,
         meta_data='',
-        model_type='undefined',
-        text_cl_weight = 1.,
-        ct_cl_weight = 1.,
         batch_style='patient',
         data_train = "train",
         data_valid = "valid",
         cfg=None,
-        pretrained_xray_encoder = True,
-        projector_type='infoNCE',
-        train_loss = 'infoNCE',
-        img_embedding_paths = {}, # contain both train and validation
-        text_embedding_paths = {}, # contian both train and validation
         reports_file_train = "data_reports.xslx",
         reports_file_valid = "data_reports.xslx",
         labels = "labels.csv",
@@ -191,7 +145,6 @@ class CTClipTrainer(nn.Module):
         save_model_every = 1000 ,
         results_folder = '',
         num_workers = 8,
-        train_from_scratch = True,
         accelerate_kwargs: dict = dict()
     ):
         super().__init__()
@@ -201,16 +154,10 @@ class CTClipTrainer(nn.Module):
         self.CTClip = CTClip
         self.min_epochs = min_epochs
 
-        # NOTE: automatic toggle: alter to ULIP-style mode if the xray encoder exists in the CTCLIP
-        self.triplet = False
-        if hasattr(self.CTClip, 'xray_encoder'):
-            self.triplet = True
-
         self.max_grad_norm = max_grad_norm
         self.tokenizer = tokenizer if tokenizer else BertTokenizer.from_pretrained('microsoft/BiomedVLP-CXR-BERT-specialized',do_lower_case=True)
         self.register_buffer('steps', torch.Tensor([0]))
 
-        self.num_train_steps = num_train_steps
         self.batch_size = batch_size
 
         all_parameters = set(CTClip.parameters())
@@ -226,102 +173,39 @@ class CTClipTrainer(nn.Module):
         self.optim = get_optimizer(all_parameters, lr=lr, wd=wd, group_wd_params=False)
         self.lr=lr
         
-        # Load the pre-trained weights
-        self.img_embedding_paths = img_embedding_paths
-        self.text_embedding_paths = text_embedding_paths
         self.dl = None
         self.valid_dl = None
-        if self.triplet:
 
-            # train does not need csv file as it does not requires report
-            self.train_ds = CTReportXRayDataset(
-                data_folder=data_train, 
-                cfg=cfg, 
-                model_type=CTClip.xray_model_type,
-                csv_file=reports_file_train,
-                img_embedding_path=img_embedding_paths['train'], 
-                text_embedding_path=text_embedding_paths['train'],
-                batch_style=batch_style
-            )
-            self.valid_ds = CTReportXRayDatasetinfer(
-                data_folder=data_valid, 
-                cfg=cfg, 
-                model_type=CTClip.xray_model_type,
-                csv_file=reports_file_valid,
-                img_embedding_path=img_embedding_paths['valid'],
-                text_embedding_path=text_embedding_paths['valid'],
-                batch_style=batch_style,
-                labels=labels
-            )
+        # the following is for our preprocessed CT data.
+        #TODO: potentially need to implement patient based or experiment based contrastive learning like x2ct-clip
+        self.train_ds = CustomCTReportDataset(
+            data_folder=data_train, 
+            csv_file=reports_file_train,
+            meta_data=pd.read_csv(meta_data),
+            split='train'
+        )
+        self.valid_ds = CustomCTReportDataset(
+            data_folder=data_valid, 
+            csv_file=reports_file_valid,
+            label_file=labels,
+            meta_data=pd.read_csv(meta_data),
+            split='val'
+        )
 
-            # custom sampler
-            custom_train_sampler = UniqueLevelSampler(self.train_ds.key_ids, self.batch_size)
-            custom_val_sampler = UniqueLevelSampler(self.valid_ds.key_ids, self.batch_size)
+        self.dl = DataLoader(
+            self.train_ds,
+            num_workers=num_workers,
+            batch_size=self.batch_size,
+            shuffle = True
+        )
 
-            self.dl = DataLoader(
-                self.train_ds,
-                num_workers=num_workers,
-                # shuffle = True,
-                batch_sampler=custom_train_sampler
-            )
+        self.valid_dl = DataLoader(
+            self.valid_ds,
+            num_workers=num_workers,
+            batch_size=self.batch_size,
+            shuffle = False
+        )
 
-            self.valid_dl = DataLoader(
-                self.valid_ds,
-                num_workers=num_workers,
-                # shuffle = False,
-                batch_sampler=custom_val_sampler
-            )
-
-        else:
-            # the following is for our preprocessed CT data.
-            #TODO: potentially need to implement patient based or experiment based contrastive learning like x2ct-clip
-            self.train_ds = CustomCTReportDataset(
-                data_folder=data_train, 
-                csv_file=reports_file_train,
-                meta_data=pd.read_csv(meta_data),
-                split='train'
-            )
-            self.valid_ds = CustomCTReportDataset(
-                data_folder=data_valid, 
-                csv_file=reports_file_valid,
-                label_file=labels,
-                meta_data=pd.read_csv(meta_data),
-                split='val'
-            )
-
-            self.dl = DataLoader(
-                self.train_ds,
-                num_workers=num_workers,
-                batch_size=self.batch_size,
-                shuffle = True
-            )
-    
-            self.valid_dl = DataLoader(
-                self.valid_ds,
-                num_workers=num_workers,
-                batch_size=self.batch_size,
-                shuffle = False
-            )
-    
-            # NOTE VALID is missing for testing
-
-            #  NOTE: # original implementation of CTCLIP training.
-            # self.train_ds = CTReportDataset(data_folder=data_train, csv_file=reports_file_train)
-            # self.valid_ds = CTReportDatasetinfer(data_folder=data_valid, csv_file=reports_file_valid, labels=labels)
-
-            # self.dl = DataLoader(
-            #     self.train_ds,
-            #     num_workers=num_workers,
-            #     batch_size=self.batch_size,
-            #     shuffle = True
-            # )
-
-            # self.valid_dl = DataLoader(
-            #     self.valid_ds,
-            #     num_workers=num_workers,
-            #     batch_size=1,
-            #     shuffle = False
-            # )
 
         # prepare with accelerator
         self.dl_iter, self.valid_dl_iter = None, None
@@ -351,32 +235,16 @@ class CTClipTrainer(nn.Module):
         self.early_stop_counter = 0
         self.results_folder = Path(results_folder)
 
-        # if len([*self.results_folder.glob('**/*')]) > 0 and train_from_scratch:
-        #     print('eliminating existing checkpoints')
-        #     rmtree(str(self.results_folder))
-
         self.results_folder.mkdir(parents=True, exist_ok=True)
 
         self.best_flat_val_acc = 0
         self.best_f1_val_acc = 0
         self.best_iter_based_val_cl_loss = float('inf')
         self.best_epoch_based_val_cl_loss = float('inf')
-        self.text_cl_weight = text_cl_weight
-        self.ct_cl_weight = ct_cl_weight
 
         # base file name for the checkpoints
-        if self.triplet and projector_type == 'infoNCE' and train_loss == 'infoNCE': # retro adapting the filename for the previous implementation.
-            self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}'
-            print('Both projector and tran loss are infoNCE!')
-            print('base file name: ', self.base_file_name)
-        elif self.triplet:
-            self.base_file_name = f'modeltype_{model_type}__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}__textcl_{self.text_cl_weight}__ctcl_{self.ct_cl_weight}__pretrained_{pretrained_xray_encoder}__ProjType_{projector_type}__trainLoss_{train_loss}'
-            print('base file name: ', self.base_file_name)
-        else:
-            # TODO: this is for CT-CLIP model training without xray
-            self.base_file_name = f'modeltype_ctclip__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}'
-            print('base file name: ', self.base_file_name)
-            pass
+        self.base_file_name = f'modeltype_ctclip__batchstyle_{batch_style}__bs_{batch_size}__lr_{lr}__wd_{wd}'
+        print('base file name: ', self.base_file_name)
 
     def save(self, path):
         if not self.accelerator.is_local_main_process:
@@ -421,31 +289,13 @@ class CTClipTrainer(nn.Module):
                 self.optim.zero_grad()
 
                 data = next(self.dl_iter)
-                if self.triplet:
-                    # video, text, _, xray, _, _ = data
-                    video, text, xray = data['ct'], data['report'], data['xray']
-                    xray=xray.to(device)
-                    text=text.to(device)
-                else:
-                    # video, text = data
-                    video, text = data['ct'], data['report']
+                video, text = data['ct'], data['report']
                 video=video.to(device)
 
                 with self.accelerator.autocast(): # forward pass of triplet ct_clip model.
-                    if self.triplet:
-                        # x2ct-clip
-                        loss = self.CTClip(text,
-                                           video, 
-                                           xray, 
-                                           device=device,
-                                           text_cl_weight = self.text_cl_weight,
-                                           ct_cl_weight = self.ct_cl_weight,
-                                           is_text_latent_input=True, 
-                                           is_image_latent_input=True)
-                    else:
-                        text = list(text)
-                        text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device) # automatically prepend the [CLS] token with id 2, 511 actual content maximum.
-                        loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
+                    text = list(text)
+                    text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device) # automatically prepend the [CLS] token with id 2, 511 actual content maximum.
+                    loss = self.CTClip(text_tokens, video, return_loss=True, device=device)
 
                 self.accelerator.backward(loss)
                 if exists(self.max_grad_norm): # NOTE: should i keep the gradient clip during training.
@@ -455,8 +305,6 @@ class CTClipTrainer(nn.Module):
                 # evaluate model based on iteration instead of epochs
                 if self.is_main and not (batch_idx % self.iteration_evaluate_frequency):
                     print(f"Epoch [{epoch}/{epochs}], Batch [{batch_idx}/{train_size}] in training split, Training Loss: {loss.item():.4f}")
-                    # print('    Evaluate based on iterations')
-                    # self.eval_on_validation_split(epoch, val_size, iteration=batch_idx, is_epoch_evaluation=False)
 
                 # Accumulate loss
                 running_loss += loss.item()
@@ -464,7 +312,7 @@ class CTClipTrainer(nn.Module):
             # run per-epoch validation and automatically save the model
             if val_size > 0:
                 print(f'Validation after epoch {epoch}')
-                exit_training = self.eval_on_validation_split(epoch, val_size, is_epoch_evaluation=True)
+                exit_training = self.eval_on_validation_split(epoch, val_size)
 
             # Print average loss for the epoch
             epoch_loss = running_loss / train_size
@@ -476,7 +324,7 @@ class CTClipTrainer(nn.Module):
 
         print('Training by epochs complete\n')
 
-    def eval_on_validation_split(self, epoch, val_size, iteration=-1, is_epoch_evaluation=False):
+    def eval_on_validation_split(self, epoch, val_size, iteration=-1):
         """
         return: boolean -> whether should stop training or nort.
         """
@@ -490,32 +338,12 @@ class CTClipTrainer(nn.Module):
                 running_val_loss = 0
                 for i in range(val_size): #NOTE: might need to change this to evaluate on the whole validation set.
                     val_data = next(self.valid_dl_iter)
-
-                    if self.triplet:
-                        # valid_data, text, onehotlabels, xray_image, _, _ = val_data
-                        valid_data, text, onehotlabels, xray_image = val_data['ct'], val_data['report'], val_data['label'], val_data['xray']
-                        xray_image = xray_image.to(device)
-                        text=text.to(device)
-                    else:
-                        # valid_data, text, onehotlabels, _, _ = val_data
-                        valid_data, text, onehotlabels = val_data['ct'], val_data['report'], val_data['label']
-            
-
+                    valid_data, text, onehotlabels = val_data['ct'], val_data['report'], val_data['label']
                     valid_data = valid_data.to(device)
 
                     # mainly for the validation contrastive loss
-                    if self.triplet:
-                        val_cl_loss = self.CTClip(text, 
-                                                valid_data, 
-                                                xray_image, 
-                                                device=device, 
-                                                text_cl_weight = self.text_cl_weight,
-                                                ct_cl_weight = self.ct_cl_weight,
-                                                is_text_latent_input=True, 
-                                                is_image_latent_input=True)
-                    else:
-                        report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
-                        val_cl_loss = self.CTClip(report_tokens, valid_data, return_loss=True, device=device)
+                    report_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
+                    val_cl_loss = self.CTClip(report_tokens, valid_data, return_loss=True, device=device)
 
                     # Accumulate validation contrastive loss for this epochs
                     running_val_loss += val_cl_loss.item()
@@ -554,17 +382,7 @@ class CTClipTrainer(nn.Module):
                         text_tokens=self.tokenizer(text, return_tensors="pt", padding="max_length", truncation=True, max_length=512).to(device)
 
                         # this should be the logit score between the text and xray
-                        if self.triplet:
-                            logits = self.CTClip(text_tokens, 
-                                                valid_data, 
-                                                xray_image, 
-                                                device=device, 
-                                                is_text_latent_input=False, 
-                                                is_image_latent_input=True,
-                                                return_logits_only=True) # need this to return logits
-                        else:
-                            logits = self.CTClip(text_tokens, valid_data, device=device)
-                            # logits = logits.unsqueeze(0)
+                        logits = self.CTClip(text_tokens, valid_data, device=device)
 
                         outputs = apply_softmax(logits)
 

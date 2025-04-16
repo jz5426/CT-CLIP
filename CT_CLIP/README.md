@@ -23,11 +23,7 @@ clip = CTCLIP(
     dim_image = 2097152,
     dim_text = 768,
     dim_latent = 512,
-    extra_latent_projection = False,         # whether to use separate projections for text-to-image vs image-to-text comparisons (CLOOB)
-    use_mlm = False,
-    downsample_image_embeds = False,
-    use_all_token_embeds = False
-
+    downsample_image_embeds = False
 )
 
 #Load the pretrained weights during inference
