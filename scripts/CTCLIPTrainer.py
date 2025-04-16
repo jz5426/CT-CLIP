@@ -131,13 +131,12 @@ class CTClipTrainer(nn.Module):
         batch_style='patient',
         data_train = "train",
         data_valid = "valid",
-        cfg=None,
         reports_file_train = "data_reports.xslx",
         reports_file_valid = "data_reports.xslx",
         labels = "labels.csv",
         tokenizer = None,
-        lr = 5e-5, # 1.25e-6, suggested by ULIP, 5e-5 from cxr-clip
-        wd = 1e-4, # NOTE: from cxr-clip
+        lr = 5e-5, # TODO: double check the original CTCLIPTrainer parameters
+        wd = 1e-4, # TODO: double check the original CTCLIPTrainer parameters
         max_grad_norm = 0.5,
         iteration_evaluate_frequency = 2,
         epoch_based_patience = 10,
@@ -159,16 +158,7 @@ class CTClipTrainer(nn.Module):
         self.register_buffer('steps', torch.Tensor([0]))
 
         self.batch_size = batch_size
-
         all_parameters = set(CTClip.parameters())
-
-        if cfg and cfg['optimizer']['name'] == 'adamw':
-            wd = wd
-            lr = lr
-        else:
-            # default parameters in original CTCLIPTrainer
-            wd = 0
-            lr = 1.25e-6
 
         self.optim = get_optimizer(all_parameters, lr=lr, wd=wd, group_wd_params=False)
         self.lr=lr
@@ -205,7 +195,6 @@ class CTClipTrainer(nn.Module):
             batch_size=self.batch_size,
             shuffle = False
         )
-
 
         # prepare with accelerator
         self.dl_iter, self.valid_dl_iter = None, None
@@ -279,8 +268,8 @@ class CTClipTrainer(nn.Module):
         device = self.device
 
         # in unit of batch size
-        train_size = 3 # len(self.dl)
-        val_size = 2 # len(self.valid_dl) if self.valid_dl else 0
+        train_size = len(self.dl)
+        val_size = len(self.valid_dl) if self.valid_dl else 0
 
         for epoch in range(epochs):
             self.CTClip.train()
@@ -419,54 +408,6 @@ class CTClipTrainer(nn.Module):
                 self._save_ckpt(epoch, 'last_epoch.pt', 'saving the last epoch checkpoint', iteration)
                 if epoch % self.min_epochs == 0:
                     self._save_ckpt(epoch, f'{epoch}_epoch.pt', f'saving the {epoch}th epoch checkpoint', iteration)
-
-                # # save model based on f1 metric
-                # if self.best_f1_val_acc < f1:
-                #     print(f'    Previous f1 {self.best_f1_val_acc} --> New best f1 {f1}')
-                #     self.best_f1_val_acc = f1
-                #     self._save_ckpt(epoch, 
-                #                     'CTClip_best_f1_val.pt', 
-                #                     'best f1 accuracy achieved!!', 
-                #                     iteration)
-                
-                # # save model based on flat acc
-                # if self.best_flat_val_acc < flat_acc:
-                #     print(f'    Previous flat accuracy {self.best_flat_val_acc} --> New best accuracy {flat_acc}')
-                #     self.best_flat_val_acc = flat_acc
-                #     self._save_ckpt(epoch, 
-                #                     'CTClip_best_flat_acc_val.pt', 
-                #                     'best flat accuracy achieved!!', 
-                #                     iteration)
-
-                # # save model based on contrastive loss on validation split DURING ITERATION EVALUATION
-                # epoch_val_cl_loss = running_val_loss / val_size
-
-                # if not is_epoch_evaluation and self.best_iter_based_val_cl_loss > epoch_val_cl_loss:
-                #     print(f'    Iteration evaluation: Previous validation contrastive loss {self.best_iter_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
-                #     self.best_iter_based_val_cl_loss = epoch_val_cl_loss
-                #     self._save_ckpt(epoch, 
-                #                     'CTClip_lowest_val_cl_loss_during_iterations.pt', 
-                #                     'best contrastive loss on validation split!!', 
-                #                     iteration)
-
-                # # save model based on contrastive loss on validation split DURING EPOCH EVALUATION
-                # if is_epoch_evaluation and self.best_epoch_based_val_cl_loss > epoch_val_cl_loss:
-                #     print(f'    After epoch evaluation: Previous validation contrastive loss {self.best_epoch_based_val_cl_loss} --> New validation contrastive loss {epoch_val_cl_loss}')
-                #     self.best_epoch_based_val_cl_loss = epoch_val_cl_loss
-                #     self.early_stop_counter = 0 # reset if there are any improvement
-                #     self._save_ckpt(epoch, 
-                #                     'CTClip_lowest_val_cl_loss_after_per_epochs.pt', 
-                #                     'best contrastive loss on validation split!!', 
-                #                     iteration)
-                # elif is_epoch_evaluation: # implies that based on epoch-to-epoch comparison, there is not improvement
-                #     # early stopping based on val cl loss
-                #     self.early_stop_counter += 1
-                #     print(f"No improvement in validation loss for {self.early_stop_counter} epochs.")
-
-                #     # make sure number of minimum epochs are trained.
-                #     if self.early_stop_counter >= self.epoch_based_patience and epoch > self.min_epochs:
-                #         print(f"Early stopping triggered. Stopping training. {epoch}")
-                #         return True # Exit training loop
 
         return False
 

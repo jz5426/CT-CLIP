@@ -9,13 +9,12 @@ from CTCLIPTrainer import CTClipTrainer
 import random
 import numpy as np
 
-
+# ENTRY POINT
 def convert_dictconfig_to_dict(cfg):
     if isinstance(cfg, DictConfig):
         return {k: convert_dictconfig_to_dict(v) for k, v in cfg.items()}
     else:
         return cfg
-    
 
 @hydra.main(
         version_base=None,

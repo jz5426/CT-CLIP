@@ -1,31 +1,8 @@
 defaults:
   - _self_
-  - data_train:
-    - mimic_cxr
-    - chexpert
-  - data_valid:
-    - mimic_cxr
-    - chexpert
-  - dataloader: dataloader_128
-  - tokenizer: clinical_bert
-  - transform: clahe
-  - model: clip_resnet_clinical # clip_swin_clinical # mainly for training
-  - resnet: clip_resnet_clinical
-  - swin: clip_swin_clinical
-  - optimizer: adamw
-  - scheduler: cosine_epoch15_warmup1
-  - loss: cxr_clip
 
 base:
   seed: 1234
-  amp : True
-  image_size: 224
-  text_max_length: 256
-  loss_best: contrastive
-  data_frac: 1.0
-  output:
-    checkpoint: ${hydra:run.dir}/checkpoints/
-    tensorboard: ${hydra:run.dir}/tensorboard/
 
 ## NOTE: train script version
 training_params:
@@ -38,8 +15,6 @@ training_params:
   weight_decay: 1e-4
   epochs: 2
   min_epochs: 50
-  loss_function: 'infoNCE' # either siamese or infoNCE
-  projector_type: 'infoNCE' # either siamese style (3-layers projector) or infoNCE (on linear layer only without bn or anything)
 
 hydra:
   run:
