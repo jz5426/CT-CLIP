@@ -494,7 +494,9 @@ class CTCLIP(nn.Module):
         path = Path(path)
         assert path.exists()
         pt = torch.load(str(path))
-        self.load_state_dict(pt, strict=False)
+        load_result = self.load_state_dict(pt, strict=False)
+        print("Missing keys from pretrained weights:", load_result.missing_keys)
+        print("Unexpected keys from pretrained weights:", load_result.unexpected_keys)
 
     def token_embedding(self,input_ids):
         input_shape = input_ids.size()

@@ -4,7 +4,7 @@
 #SBATCH --reservation=mcintoshgroup_gpu1
 #SBATCH -t 70:00:00
 #SBATCH --mem=40G
-#SBATCH -J train
+#SBATCH -J ctclip_train
 #SBATCH -p gpu
 #SBATCH -c 10
 #SBATCH -N 1
@@ -14,3 +14,4 @@
 source activate ctclip
 
 # here you put the python command line to run the code for training or hyperparameter search
+python /cluster/home/t135419uhn/CT-CLIP/scripts/run_train_ctclip.py

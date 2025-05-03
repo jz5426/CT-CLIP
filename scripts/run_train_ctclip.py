@@ -102,19 +102,21 @@ def run(cfg_dot):
     )
 
     # load the pretrained weights
+    # clip.load('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/CT-CLIP_v2.pt')
     clip.load('/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/models/CT-CLIP_v2.pt')
+
 
     # uhn cluster
     trainer = CTClipTrainer(
         clip,
         min_epochs=cfg_dot.training_params.min_epochs,
-        cfg=cfg,
+        # cfg=cfg,
         tokenizer=tokenizer,
         meta_data='/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/metadata/train_metadata.csv',
-        data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE-Processed/benchmark/CTRATE_Volumes_raw_h5_fp16',
-        data_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE-Processed/benchmark/CTRATE_Volumes_raw_h5_fp16_val', #TODO:
+        data_train= '/cluster/projects/mcintoshgroup/publicData/CT-RATE-Processed/benchmark/CTRATE_Volumes_raw_h5_fp16_noflip_train',
+        data_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE-Processed/benchmark/CTRATE_Volumes_raw_h5_fp16_noflip_val', #TODO:
         reports_file_train = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/train_reports.csv',
-        reports_file_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/train_reports.csv', #TODO:
+        reports_file_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/train_reports.csv', #TODO: currently the split set comes from the train split of ct-rate
         # reports_file_valid = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/radiology_text_reports/valid_reports.csv',
         labels = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_train_predicted_labels.csv', #TODO:
         results_folder=f'/cluster/projects/mcintoshgroup/CT-CLIP-CHECKPOINTS', # put the check point in a subdirectory under CT-RATE-CHECKPOINTS 
