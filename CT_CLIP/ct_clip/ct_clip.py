@@ -1188,7 +1188,7 @@ class CTCLIPwithXray(nn.Module):
             print(f'Loaded pretrained weights for medklip_resnet')
 
         else: 
-            # our pretrained model
+            # our pretrained xray encoder model
             ckpt_name = xray_model_type
             self.xray_encoder = load_cxr_clip_image_encoder(
                 cfg["swin"]["image_encoder"] if 'swin' in ckpt_name.lower() else cfg["resnet"]["image_encoder"]
@@ -1196,8 +1196,10 @@ class CTCLIPwithXray(nn.Module):
             self.to_xray_latent = nn.Linear(dim_xray, dim_latent, bias = False)
 
             if auto_load_pretrained_weights:
+                # NOTE: the following are our final pretrained checkpoints
                 # ckpt_name='modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch'
-                #NOTE: weights for projection layer and the encoder body will be loaded, guaranteed by strict=True
+                # ckpt_name='modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch.pt'
+                # weights for projection layer and the encoder body will be loaded, guaranteed by strict=True
                 self.load_our_pretrained_weights(f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt', freeze_weights=freeze_xray_pretrained_weights)
                 print(f'Loaded custom pretrained weights from {ckpt_name}')
             else:

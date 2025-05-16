@@ -39,10 +39,11 @@ training_params:
   ct_cl_weight: 1.0
   learning_rate: 5e-5
   weight_decay: 1e-4
-  epochs: 200
+  epochs: 51
   min_epochs: 50
   training_pretrain_baseline: 'cxr_clip_swin'
   use_pretrained_xray_encoder: true
+  checkpoint_saving_directory: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/Ablation' # for ablation, should place the checkpoint in the ablation checkpoint directory
   loss_function: 'infoNCE' # either siamese or infoNCE
   projector_type: 'infoNCE' # either siamese style (3-layers projector) or infoNCE (on linear layer only without bn or anything)
 
@@ -62,28 +63,29 @@ training_params:
 #   min_epochs: 2
 #   training_pretrain_baseline: 'cxr_clip_resnet'
 #   use_pretrained_xray_encoder: false
+  # checkpoint_saving_directory: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/'
 #   loss_function: 'siamese' # either siamese or infoNCE
 #   projector_type: 'siamese' # either siamese style (3-layers projector) or infoNCE (on linear layer only without bn or anything)
 
 ## FOR OFFICIAL
-linear_probing_params:
-  baseline_type: ''
-  is_linear_probe_eval: true
-  multi_sweep_evaluation: false
-  num_epochs: 300 # 1000
-  patience: 20
-  batch_size: 4096 # radchest: 256
-  test_loader_batch_size: 256
-  learning_rate: 5e-3 # other: 5e-2 nlst: 5e-4
-  progress_window: 2
-  num_workers: 10
-  train_data_portion: 0.1
-  evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
-  cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
-  override_metric_results: false
-  windows_wsl_env: false # implies that the script is ran on the windows wsl environment
-  mnt_cpt_dest: './mnt_linear_probe_ckpts'
-  auc_type: ''
+# linear_probing_params:
+#   baseline_type: ''
+#   is_linear_probe_eval: true
+#   multi_sweep_evaluation: false
+#   num_epochs: 300 # 1000
+#   patience: 20
+#   batch_size: 4096 # radchest: 256
+#   test_loader_batch_size: 256
+#   learning_rate: 5e-3 # other: 5e-2 nlst: 5e-4
+#   progress_window: 2
+#   num_workers: 10
+#   train_data_portion: 0.1
+#   evaluation_dataset: '' # ct-rate, mimic, vinBig, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
+#   cpt_dest: '/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/linear_probe_evaluation'
+#   override_metric_results: false
+#   windows_wsl_env: false # implies that the script is ran on the windows wsl environment
+#   mnt_cpt_dest: './mnt_linear_probe_ckpts'
+#   auc_type: ''
 
 ## TOY
 # linear_probing_params:
