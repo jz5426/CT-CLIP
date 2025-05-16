@@ -23,13 +23,17 @@ def load_cached_ct_rate_xray_features(pth_base_name, split):
     return xray_features
 
 def get_train_internal_split(cfg_dot, cfg):
-    """implementation copied from internal_split_caching.py"""
+    """implementation copied from internal_split_caching.py
+    
+    NOTE: assume you have the xray features already cached.
+    """
 
     # get the metadata
     _, xray_model_type, pth_base_name, _ = metadata_base_on_model_type(
         cfg_dot.linear_probing_params.baseline_type,
         pth_trailing_string='features')
 
+    # TODO: May 16th 2025, may be first check if the split already exists, retrieve if it is there otherwise process it and then cache it somewhere
     if cfg_dot.linear_probing_params.evaluation_dataset == const.NLST_INTERNAL:
         print('Splitting NLST dataset')
 
@@ -550,6 +554,7 @@ def evaluate_classifier(params):
     }
 
     if dataset == 'mimic':
+        # note that the whole mimic-ct datasets come from the curated data.
         test_dataset = MimicCTReportXRayDataset(
             cfg=cfg,
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha',
@@ -585,7 +590,7 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
     elif dataset == 'ct-rate':
-
+        # use the valid split of ct-rate dataset to evaluate the model.
         # split=valid is the test set for internal validation and the pth_base_name is mainly use to retrieve the xray features of the particular backbone.
         val_xray_features = load_cached_ct_rate_xray_features(pth_base_name, split='valid') # the split to be tested.
         print('Xray feature extraction completed on the validation split for this particular baseline model')

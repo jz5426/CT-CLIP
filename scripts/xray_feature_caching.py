@@ -2,8 +2,8 @@
 this script responsible for caching the xray features from the assigned baseline and mainly used to only
 forward pass the classifier layer and forget about the backbone during TRAINING phrase.
 
-NOTE: this only support ct-rate and vinBig
-    - potentially vinBig will be removed.
+NOTE: this only support ct-rate, vinBig, nlst, and radchest ct
+    - mimic-ct is not included as only limited number of instances available for testing.
 """
 
 import torch

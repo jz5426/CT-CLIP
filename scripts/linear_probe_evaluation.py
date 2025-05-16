@@ -1,10 +1,15 @@
 """
+NOTE: this is the main script for linear probing evaluation (few-shot or external validation)
 - this script is intended to merge the external_linear_probing and internal_linear_probing evaluation
 
 note that this file depends on the following are done:
-- the xray feature for each baseline is cached using the ctrate_xray_feature_caching.py
-- the internal split is already cached using the internal_split_caching.py
-- the implementation of the linear_probe_utils.py, which depends on above.
+1. the xray feature for each baseline is cached using the xray_feature_caching.py
+    - the xray features need to be cached with respect to the weights of the backbone (for each configuration of the pretrained model)
+    - the file cache the xray feature for the training and test split.
+
+2. the internal split is already cached using the internal_split_caching.py (DEPREICATED, NO LONGER USES SEPERATELY BEFORE RUNNING THIS SCRIPT)
+    - 
+3. the implementation of the linear_probe_utils.py, which depends on above.
 """
 
 import torch
@@ -141,6 +146,7 @@ def run(cfg_dot):
         auto_load_pretrained_weights=True # NOTE: automatically load the model weights based on the xray_model_type
     )
 
+    # get the train, valid, and test split for evaluation of linear probe.
     # train_dataset, internal_val_dataset = get_train_internal_split(cfg_dot, cfg)
     datasets = get_train_internal_split(cfg_dot, cfg)
     train_dataset = datasets['train_dataset']

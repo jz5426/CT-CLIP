@@ -13,6 +13,8 @@
 
 source activate ctclip
 
+# NOTE: LEGACY CODE, internal_split_caching.py script no longer uses
+
 # vinBig_ct
 
 python /cluster/home/t135419uhn/CT-CLIP/scripts/internal_split_caching.py internal_split_caching_params.evaluation_dataset=vinBig_ct internal_split_caching_params.train_data_portion=0.01 internal_split_caching_params.baseline_type=modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch
