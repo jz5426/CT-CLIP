@@ -403,6 +403,7 @@ def get_pathologies(dataset='ct-rate'):
         ]
         pathologies = [p.lower() for p in pathologies]
     elif dataset in [const.RADCHEST_CT_PURE_INTERNAL,const.RADCHEST_CT_PURE_INTERNAL_CLEAN, const.RADCHEST_CT_PURE]:
+        # external validation table in the paper
         pathologies = [
             'calcification',
             'pericardial_effusion',
@@ -437,6 +438,7 @@ def get_pathologies(dataset='ct-rate'):
             "scattered_nod"
         ]
     elif dataset == const.RADCHEST_CT_ALL_DISEASE_CT_ONLY_INTERNAL:
+        # few-shot adaptation table for the RadChest-CT dataset
         pathologies = [
             "tree_in_bud",
             "bronchiolectasis",
