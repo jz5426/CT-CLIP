@@ -8,7 +8,8 @@ note that this file depends on the following are done:
     - the file cache the xray feature for the training and test split.
 
 2. the internal split is already cached using the internal_split_caching.py (DEPREICATED, NO LONGER USES SEPERATELY BEFORE RUNNING THIS SCRIPT)
-    - 
+    - this is not used anymore, so after running the xray_feature_caching, run this script directly
+
 3. the implementation of the linear_probe_utils.py, which depends on above.
 """
 

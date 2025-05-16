@@ -535,7 +535,7 @@ def linear_probing_main(params):
     return model
 
 def evaluate_classifier(params):
-    dataset = params['dataset']
+    dataset = params['dataset'] # the dataset name
     cfg = params['cfg']
     cfg_dot = params['cfg_dot']
     clip_xray = params['clip_xray']
@@ -554,7 +554,7 @@ def evaluate_classifier(params):
     }
 
     if dataset == 'mimic':
-        # note that the whole mimic-ct datasets come from the curated data.
+        # NOTE: that the whole mimic-ct datasets come from the curated data.
         test_dataset = MimicCTReportXRayDataset(
             cfg=cfg,
             data_folder='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha',
@@ -590,7 +590,7 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
     elif dataset == 'ct-rate':
-        # use the valid split of ct-rate dataset to evaluate the model.
+        # NOTE: use the valid split of ct-rate dataset to evaluate the model.
         # split=valid is the test set for internal validation and the pth_base_name is mainly use to retrieve the xray features of the particular backbone.
         val_xray_features = load_cached_ct_rate_xray_features(pth_base_name, split='valid') # the split to be tested.
         print('Xray feature extraction completed on the validation split for this particular baseline model')
@@ -628,6 +628,8 @@ def evaluate_classifier(params):
         }
         return test_loop(test_params)
     elif dataset in [const.RADCHEST_CT, const.RADCHEST_CT_PURE]:
+        #NOTE: in here, most likely using the CT-RATE dataset that shared the same labels to train the classifier
+        # and then test the performance on the entire radchest ct dataset.
         if dataset == const.RADCHEST_CT:
             labels = '/cluster/projects/mcintoshgroup/publicData/RADChestCT/final_labels_clean.csv'
         elif dataset == const.RADCHEST_CT_PURE:
