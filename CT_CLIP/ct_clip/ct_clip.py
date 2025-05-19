@@ -978,7 +978,6 @@ class CTCLIPwithXray(nn.Module):
             cfg=None,
             auto_load_pretrained_weights=True,
             freeze_xray_pretrained_weights=True,
-            is_ablation_study=False,
             loss='infoNCE',
             projector_type='infoNCE',
             **kwargs
@@ -1202,7 +1201,7 @@ class CTCLIPwithXray(nn.Module):
                 # ckpt_name='modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch.pt'
                 # weights for projection layer and the encoder body will be loaded, guaranteed by strict=True
 
-                ckpt_path = f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt' if is_ablation_study else f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/Ablation/{ckpt_name}.pt'
+                ckpt_path = f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/Ablation/cxr_clip_swin/{ckpt_name}.pt' if cfg['base']['is_ablation_study'] else f'/cluster/projects/mcintoshgroup/CT-RATE-CHECKPOINTS/{ckpt_name}.pt'
                 self.load_our_pretrained_weights(ckpt_path, freeze_weights=freeze_xray_pretrained_weights)
                 print(f'Loaded custom pretrained weights from {ckpt_name}')
             else:

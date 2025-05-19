@@ -164,7 +164,6 @@ def run(cfg_dot):
 		use_mlm=False,
 		downsample_image_embeds = False,
 		use_all_token_embeds = False,
-		is_ablation_study = cfg.is_ablation_study, # it will vary the checkpoint path accordingly so that the yaml file only need to care about the ckpt name.
 		cfg=cfg,
 		auto_load_pretrained_weights=True # because it loads it later.
 	)
@@ -281,9 +280,13 @@ def zero_shot_evaluation(
 		for val_data in valid_dl:
 			num_batch_texts = num_batch_images = 1
 			if cfg.zero_shot_params.test_bed == 'ct-rate':
-				vision_latents, onehotlabels = val_data['ct'], val_data['label']
-				vision_latents = vision_latents.to(device)
-				vision_latents = rearrange(vision_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
+				if cfg.zero_shot_params.baseline_type == 'ct_clip':
+					vision_latents, onehotlabels = val_data['ct'], val_data['label']
+					vision_latents = vision_latents.to(device)
+					vision_latents = rearrange(vision_latents, '(m b) ... -> m b ...', m = num_batch_images) #NOTE: 1xbxd
+				else:
+					xray_image, onehotlabels = val_data['xray'], val_data['label']
+					xray_image = xray_image.to(device)
 			elif cfg.zero_shot_params.test_bed == 'mimic':
 				# valid_data is the xray_image
 				xray_image, onehotlabels = val_data['xray'], val_data['label']
@@ -353,22 +356,61 @@ def zero_shot_evaluation(
 		pr_auc_score_macro = average_precision_score(all_labels, all_probs, average='macro')
 		pr_auc_score_weighted = average_precision_score(all_labels, all_probs, average='weighted')
 		print('Results are computed with xray encoder' if is_xray else 'Results are computed with CT encoder')
+		print(f'Results from model {cfg.zero_shot_params.baseline_type}')
 		print(f"Test Results for micro average: F1 Score: {f1_micro:.4f}, Recall: {recall_micro:.4f}, Precision: {precision_micro:.4f}, AUC: {auc_micro:.4f}, PR_AUC: {pr_auc_score_micro:.4f}")
 		print(f"Test Results for weighted average: F1 Score: {f1_weighted:.4f}, Recall: {recall_weighted:.4f}, Precision: {precision_weighted:.4f}, AUC: {auc_weighted:.4f}, PR_AUC: {pr_auc_score_weighted:.4f}")
 		print(f"Test Results for macro average: F1 Score: {f1_macro:.4f}, Recall: {recall_macro:.4f}, Precision: {precision_macro:.4f}, AUC: {auc_macro:.4f}, PR_AUC: {pr_auc_score_macro:.4f}")
 
 		print('Saving the metrics results')
-		metrics_data = {
-			'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC'],
-			'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro],
-			'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted],
-			'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro]
+		# metrics_data = {
+		# 	'Metric': ['Precision', 'Recall', 'F1 Score', 'AUC', 'PR_AUC'],
+		# 	'Micro': [precision_micro, recall_micro, f1_micro, auc_micro, pr_auc_score_micro],
+		# 	'Weighted': [precision_weighted, recall_weighted, f1_weighted, auc_weighted, pr_auc_score_weighted],
+		# 	'Macro': [precision_macro, recall_macro, f1_macro, auc_macro, pr_auc_score_macro]
+		# }
+
+		# metrics_df = pd.DataFrame(metrics_data)
+		# os.makedirs(os.path.dirname(metric_saving_path), exist_ok=True)
+		# metrics_df.to_excel(metric_saving_path, index=False)
+		# print(f"Metric results saved to {metric_saving_path}")
+
+		# Prepare the single-row metrics data
+		row_data = {
+			'model': cfg.zero_shot_params.baseline_type,
+			'Precision_Micro': precision_micro,
+			'Recall_Micro': recall_micro,
+			'PR_AUC_Micro': pr_auc_score_micro,
+			'Precision_Weighted': precision_weighted,
+			'Recall_Weighted': recall_weighted,
+			'PR_AUC_Weighted': pr_auc_score_weighted,
+			'Precision_Macro': precision_macro,
+			'Recall_Macro': recall_macro,
+			'F1_Weighted': f1_weighted,
+			'AUC_Weighted': auc_weighted,
+			'F1_Macro': f1_macro,
+			'AUC_Macro': auc_macro,
+			'PR_AUC_Macro': pr_auc_score_macro,
+			'F1_Micro': f1_micro,
+			'AUC_Micro': auc_micro
 		}
 
-		metrics_df = pd.DataFrame(metrics_data)
+		row_df = pd.DataFrame([row_data])  # Make it a single row
+
+		# Ensure the directory exists
 		os.makedirs(os.path.dirname(metric_saving_path), exist_ok=True)
-		metrics_df.to_excel(metric_saving_path, index=False)
-		print(f"Metric results saved to {metric_saving_path}")
+
+		# Check if the Excel file exists
+		if os.path.exists(metric_saving_path):
+			# Load existing data and append
+			existing_df = pd.read_excel(metric_saving_path)
+			updated_df = pd.concat([existing_df, row_df], ignore_index=True)
+		else:
+			# Start new DataFrame
+			updated_df = row_df
+
+		# Save the updated DataFrame back to Excel
+		updated_df.to_excel(metric_saving_path, index=False)
+		print(f"Metric row appended to {metric_saving_path}")
 
 
 if __name__ == '__main__':

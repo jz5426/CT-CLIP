@@ -95,42 +95,38 @@ def run(cfg_dot):
     ]
 
     # NOTE: ablation model configuration model runs
-
-    # modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.1__pretrained_True_50_epoch.pt
     baselines = [
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.1__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.2__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.4__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.8__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_1__pretrained_True_50_epoch.pt',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.1__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.2__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.4__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.8__pretrained_True_50_epoch',
+        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_1__pretrained_True_50_epoch',
 
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.1__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.2__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.4__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_1__pretrained_True_50_epoch.pt',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.1__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.2__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.4__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_0.8__pretrained_True_50_epoch',
+        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.2__ctcl_1__pretrained_True_50_epoch',
 
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_0.1__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_0.2__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_0.4__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_0.8__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_1__pretrained_True_50_epoch.pt',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_0.1__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_0.2__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_0.4__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_0.8__pretrained_True_50_epoch',
+        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.4__ctcl_1__pretrained_True_50_epoch',
 
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.1__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.2__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.4__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.8__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_1__pretrained_True_50_epoch.pt',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.1__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.2__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.4__pretrained_True_50_epoch',
+        # 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_0.8__pretrained_True_50_epoch',
+        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.8__ctcl_1__pretrained_True_50_epoch',
 
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0.1__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0.2__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0.4__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0.8__pretrained_True_50_epoch.pt',
-        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_1__pretrained_True_50_epoch.pt',
+        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0.1__pretrained_True_50_epoch',
+        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0.2__pretrained_True_50_epoch',
+        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0.4__pretrained_True_50_epoch',
+        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_0.8__pretrained_True_50_epoch',
+        'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1__ctcl_1__pretrained_True_50_epoch',
 
         # best pretrained model in the paper.
-        'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
         'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
         'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
     ]

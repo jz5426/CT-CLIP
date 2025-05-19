@@ -17,6 +17,7 @@ defaults:
   - loss: cxr_clip
 
 base:
+  is_ablation_study: false
   seed: 1234
   amp : True
   image_size: 224
@@ -109,11 +110,12 @@ training_params:
 
 ## FOR OFFICIAL
 retrieval_params:
-  evaluation_dataset: 'radchest_ct_pure' # ct-rate, mimic, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
+  evaluation_dataset: '' # ct-rate, mimic, radchest_ct, radchest_ct_pure, radchest_ct_pure_internal_clean, radchest_ct_internal_clean 
   override_metric_results: false
 
 zero_shot_params:
-  is_ablation_study: false
+  # baseline_type: 'modeltype_cxr_clip_swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_0.1__ctcl_0.1__pretrained_True_50_epoch' # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' # just like the one in linear probe with additional option as ct_clip
+  # test_bed: 'ct-rate' # the dataset that the vision and text encoders suppose to run on.
   baseline_type: '' # 'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' #'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch' # just like the one in linear probe with additional option as ct_clip
   test_bed: '' # the dataset that the vision and text encoders suppose to run on.
   num_workers: 10 # 10

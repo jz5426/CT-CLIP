@@ -13,14 +13,14 @@
 
 source activate ctclip
 
+# # ablation study
+python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=ct-rate base.is_ablation_study=true
+
 # # mimic
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=mimic
 
 # # radchest_ct_pure
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=radchest_ct_pure
-
-# # # internal retrieval
-python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=ct-rate
 
 # # # radchest_ct
 # python /cluster/home/t135419uhn/CT-CLIP/scripts/retrieval_evaluation.py retrieval_params.evaluation_dataset=radchest_ct

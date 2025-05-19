@@ -386,7 +386,6 @@ def ctrate_retrieval_evaluation(params):
             use_mlm=False,
             downsample_image_embeds = False,
             use_all_token_embeds = False,
-            is_ablation_study = cfg.is_ablation_study,
             cfg=cfg
         )
 
@@ -439,7 +438,7 @@ def ctrate_retrieval_evaluation(params):
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
         
-        if not cfg.is_ablation_study:
+        if not cfg['base']['is_ablation_study']:
             print('evaluating ct_volumes 2 xray recall')
             results = recall_retrieval_evaluation(
                 query_latents=[triple[0] for triple in triplet_embeddings],
@@ -462,7 +461,7 @@ def ctrate_retrieval_evaluation(params):
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
-        if not cfg.is_ablation_study:
+        if not cfg['base']['is_ablation_study']:
             print('evaluating ct_reports 2 xray recall')
             results = recall_retrieval_evaluation(
                 query_latents=[triple[1] for triple in triplet_embeddings],
@@ -485,7 +484,7 @@ def ctrate_retrieval_evaluation(params):
             dataset=const.CT_RATE)
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
-        if not cfg.is_ablation_study:
+        if not cfg['base']['is_ablation_study']:
             print('evaluating ct_volumes 2 xray MAP')
             results = map_retrieval_evaluation(
                 image_features,
@@ -508,7 +507,7 @@ def ctrate_retrieval_evaluation(params):
             dataset=const.CT_RATE)
         csv_results = extend_dictionary(parent=csv_results, child=results)
 
-        if not cfg.is_ablation_study:
+        if not cfg['base']['is_ablation_study']:
             print('evaluating ct_reports 2 xray MAP')
             results = map_retrieval_evaluation(
                 text_features,
@@ -520,7 +519,7 @@ def ctrate_retrieval_evaluation(params):
                 dataset=const.CT_RATE)
             csv_results = extend_dictionary(parent=csv_results, child=results)
 
-        if not cfg.is_ablation_study:
+        if not cfg['base']['is_ablation_study']:
             # there is not symmetric retrieval and recall for this one.
             print('evaluating xray 2 xray MAP')
             results = map_retrieval_evaluation(
