@@ -164,6 +164,7 @@ def run(cfg_dot):
 		use_mlm=False,
 		downsample_image_embeds = False,
 		use_all_token_embeds = False,
+		is_ablation_study = cfg.is_ablation_study, # it will vary the checkpoint path accordingly so that the yaml file only need to care about the ckpt name.
 		cfg=cfg,
 		auto_load_pretrained_weights=True # because it loads it later.
 	)
@@ -267,7 +268,7 @@ def run(cfg_dot):
 
 def zero_shot_evaluation(
 		valid_dl, 
-		cfg, 
+	 	cfg, 
 		pathologies, 
 		tokenizer, 
 		xray_ctclip : CTCLIPwithXray, 

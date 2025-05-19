@@ -138,6 +138,7 @@ def  get_clean_model_name(messy_custom_model_name):
 
         return '_'.join(parts)
     else:
+        # if the model is customed train, we keep the original checkpoint name.
         return messy_custom_model_name
 
 
