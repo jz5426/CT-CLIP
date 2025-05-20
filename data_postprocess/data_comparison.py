@@ -93,7 +93,6 @@ def collect_one_mha_per_subfolder(folder):
         print(f"Loading matched paths from existing pickle for CT-RATE xrays: {pickle_path}")
         with open(pickle_path, "rb") as f:
             selected_files = pickle.load(f)
-        selected_files = random.sample(selected_files, sample_size)
         return selected_files
 
     selected_files = []

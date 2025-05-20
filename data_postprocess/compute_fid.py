@@ -37,7 +37,7 @@ def preprocess_image_xrv(path):
 
     # Normalize to [0, 1] then scale to [-1, 1]
     arr = (arr - arr.min()) / (arr.max() - arr.min() + 1e-8)
-    arr = (arr - 0.5) / 0.5  # Normalize to [-1, 1], since the previous line of code already normalize it to range [0, 1]
+    # arr = (arr - 0.5) / 0.5  # Normalize to [-1, 1], since the previous line of code already normalize it to range [0, 1]
 
     # Center crop to 224x224
     h, w = arr.shape

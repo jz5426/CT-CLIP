@@ -95,7 +95,7 @@ def process_file(file_instance_tuple, shared_dst_dir):
 
     rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
     rgb_image = Image.fromarray(rgb_image, mode="RGB")
-    # rgb_image.show()
+    rgb_image.show()
 
     xray_image = sitk.GetImageFromArray(xray_array)
     xray_image.SetSpacing((1.0, 1.0))  # Example spacing
