@@ -31,7 +31,7 @@ def parse_mimic_jpg_labels(mimic_jpg_label_csv):
 def parse_mimic_jpg_files(mimic_jpg_label_csv, root_dir, sample_size):
 
     # retrieve the object file if exists
-    pickle_path = os.path.join(mimic_jpg_label_csv, 'an_mimic_jpg.pkl')
+    pickle_path = os.path.join(os.path.dirname(mimic_jpg_label_csv), 'an_mimic_jpg.pkl')
     if os.path.exists(pickle_path):
         print(f"Loading matched paths from existing pickle: {pickle_path}")
         with open(pickle_path, "rb") as f:
@@ -87,12 +87,26 @@ def compute_histogram(img, bins=256):
 
 def collect_one_mha_per_subfolder(folder):
     """Collect at most one .mha file per subdirectory."""
+
+    pickle_path = os.path.join(os.path.dirname(folder), 'train_ctrate_xray_paths.pkl' if 'train' in folder else 'valid_ctrate_xray_paths.pkl')
+    if os.path.exists(pickle_path):
+        print(f"Loading matched paths from existing pickle for CT-RATE xrays: {pickle_path}")
+        with open(pickle_path, "rb") as f:
+            selected_files = pickle.load(f)
+        selected_files = random.sample(selected_files, sample_size)
+        return selected_files
+
     selected_files = []
     for root, _, files in os.walk(folder):
         mha_files = [f for f in files if f.endswith('.mha')]
         if mha_files:
             chosen = random.choice(mha_files)
             selected_files.append(os.path.join(root, chosen))
+
+    # Save the list to the pickle file so that next time no need to parse it again
+    with open(pickle_path, "wb") as f:
+        pickle.dump(selected_files, f)
+
     return selected_files
 
 def collect_mha_files_flat(folder):
@@ -101,9 +115,19 @@ def collect_mha_files_flat(folder):
 
 # --- Main Computation ---
 def compute_histogram_emd_and_plot(folder1, folder2, n=50, bins=256):
-    assert 'mimic' in folder2
+
     files1 = collect_one_mha_per_subfolder(folder1)
-    files2 = collect_mha_files_flat(folder2)
+    assert 'mimic' in folder2.lower()
+    if 'MIMIC-CXR-JPG' in folder2: # the whole MIMIC-CXR-JPG folder
+        files2 = parse_mimic_jpg_files(
+            mimic_jpg_label_csv='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic-cxr-2.0.0-metadata.csv',
+            root_dir=folder2,
+            sample_size=sample_size
+        )
+    else: # the MIMIC-CT folder
+        files2 = collect_mha_files_flat(folder2)
+        files2 = random.sample(files2, sample_size)
+    # files2 = collect_mha_files_flat(folder2)
 
     if len(files1) < n or len(files2) < n:
         raise ValueError("Not enough .mha files in one of the folders to sample the requested amount.")
@@ -218,9 +242,10 @@ def compute_histogram_emd_and_plot(folder1, folder2, n=50, bins=256):
 if __name__ == "__main__":
 
     # one run to get the EMD comparison
-    folder1 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha'  # Contains nested folders
-    folder2 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha'  # Flat folder with .mha files
-    sample_size = 200  # Adjust as needed
+    folder1 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha'  # Contains nested folders
+    # folder2 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha'  # Flat folder with .mha files
+    folder2 = '/cluster/projects/mcintoshgroup/publicData/MIMIC-CXR/MIMIC-CXR-JPG'
+    sample_size = 2000  # Adjust as needed
     compute_histogram_emd_and_plot(folder1, folder2, n=sample_size, bins=128)
 
     # multiple runs to ge thte EMD comparison

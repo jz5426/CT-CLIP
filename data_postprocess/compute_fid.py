@@ -57,16 +57,16 @@ def preprocess_image_xrv(path):
 # --- 3. Extract Features for a Folder ---
 def extract_chexnet_features(folder, model, sample_size=100):
     feats = []
-    if 'mimic' not in folder.lower():
+    if 'mimic' not in folder.lower(): # default is CT-RATE dataset
         files = collect_one_mha_per_subfolder(folder)
         files = random.sample(files, sample_size)
-    elif 'MIMIC-CXR-JPG' in folder:
+    elif 'MIMIC-CXR-JPG' in folder: # the whole MIMIC-CXR-JPG folder
         files = parse_mimic_jpg_files(
             mimic_jpg_label_csv='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic-cxr-2.0.0-metadata.csv',
             root_dir=folder,
             sample_size=sample_size
         )
-    else:
+    else: # the MIMIC-CT folder
         files = collect_mha_files_flat(folder)
         files = random.sample(files, sample_size)
 
@@ -101,24 +101,25 @@ def compute_medical_fid_chexnet(folder1, folder2, sample_size):
     mu2, sigma2 = np.mean(feats2, axis=0), np.cov(feats2, rowvar=False)
 
     fid_score = compute_fid(mu1, sigma1, mu2, sigma2)
-    print(f"\n✅ Medical FID (CheXNet features, ChestX-ray14): {fid_score:.4f}")
+    print(f"\n✅ Medical FID (CheXNet features, ChestX-ray14): {fid_score}")
     return fid_score
 
 # --- Run Example ---
 if __name__ == "__main__":
-    # folder1 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha'  # Contains nested folders
+    folder1 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/train_preprocessed_xray_mha'  # Contains nested folders
     # folder2 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha'  # Flat folder with .mha files
-    # compute_medical_fid_chexnet(folder1, folder2, sample_size=200)
+    folder2 = '/cluster/projects/mcintoshgroup/publicData/MIMIC-CXR/MIMIC-CXR-JPG'
+    compute_medical_fid_chexnet(folder1, folder2, sample_size=200)
 
     # conclusion, with the 200 images, they are indistinguishable.
 
     # TODO: base on https://github.com/bioinf-jku/TTUR we should try bigger size (use the whole mimic-jpg)
-    mimic_jpg_files = parse_mimic_jpg_files(
-            mimic_jpg_label_csv='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic-cxr-2.0.0-metadata.csv',
-            root_dir='/cluster/projects/mcintoshgroup/publicData/MIMIC-CXR/MIMIC-CXR-JPG',
-            sample_size=5
-        )
-
+    # mimic_jpg_files = parse_mimic_jpg_files(
+    #         mimic_jpg_label_csv='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic-cxr-2.0.0-metadata.csv',
+    #         root_dir='/cluster/projects/mcintoshgroup/publicData/MIMIC-CXR/MIMIC-CXR-JPG',
+    #         sample_size=5
+    #     )
+    # print('done')
 
     # the whole mimic-cxr-jpg dataset label file to get the frontal view
     # /cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic-cxr-2.0.0-metadata.csv
