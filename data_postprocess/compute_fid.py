@@ -3,9 +3,10 @@ import numpy as np
 from tqdm import tqdm
 import torch
 import torchxrayvision as xrv
+from PIL import Image
 import SimpleITK as sitk
 from scipy.linalg import sqrtm
-from data_comparison import collect_one_mha_per_subfolder, collect_mha_files_flat
+from data_comparison import collect_one_mha_per_subfolder, collect_mha_files_flat, parse_mimic_jpg_files
 import random
 
 # --- 1. Load CheXNet from torchxrayvision ---
@@ -20,12 +21,19 @@ def load_chexnet_model():
 # --- 2. Preprocess Image as Expected by CheXNet ---
 def preprocess_image_xrv(path):
     """Load .mha medical image, center crop, normalize, and prepare for CheXNet input."""
-    img = sitk.ReadImage(path)
-    arr = sitk.GetArrayFromImage(img)
-    
-    # Take center slice if 3D
-    if arr.ndim == 3:
-        arr = arr[arr.shape[0] // 2]
+    ext = os.path.splitext(path)[1].lower()
+
+    # handle both file format case
+    if ext in ['.jpg', '.jpeg', '.png']:
+        img = Image.open(path).convert('L')  # Convert to grayscale
+        arr = np.array(img).astype(np.float32)
+    elif ext == '.mha':
+        img = sitk.ReadImage(path)
+        arr = sitk.GetArrayFromImage(img)
+        
+        # Take center slice if 3D
+        if arr.ndim == 3:
+            arr = arr[arr.shape[0] // 2]
 
     # Normalize to [0, 1] then scale to [-1, 1]
     arr = (arr - arr.min()) / (arr.max() - arr.min() + 1e-8)
@@ -49,12 +57,18 @@ def preprocess_image_xrv(path):
 # --- 3. Extract Features for a Folder ---
 def extract_chexnet_features(folder, model, sample_size=100):
     feats = []
-
-    if 'mimic' not in folder:
+    if 'mimic' not in folder.lower():
         files = collect_one_mha_per_subfolder(folder)
+        files = random.sample(files, sample_size)
+    elif 'MIMIC-CXR-JPG' in folder:
+        files = parse_mimic_jpg_files(
+            mimic_jpg_label_csv='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic-cxr-2.0.0-metadata.csv',
+            root_dir=folder,
+            sample_size=sample_size
+        )
     else:
         files = collect_mha_files_flat(folder)
-    files = random.sample(files, sample_size)
+        files = random.sample(files, sample_size)
 
     for fname in tqdm(sorted(files), desc=f"Extracting from {os.path.basename(folder)}"):
         path = os.path.join(folder, fname)
@@ -92,6 +106,21 @@ def compute_medical_fid_chexnet(folder1, folder2, sample_size):
 
 # --- Run Example ---
 if __name__ == "__main__":
-    folder1 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha'  # Contains nested folders
-    folder2 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha'  # Flat folder with .mha files
-    compute_medical_fid_chexnet(folder1, folder2, sample_size=200)
+    # folder1 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/processed_dataset/valid_preprocessed_xray_mha'  # Contains nested folders
+    # folder2 = '/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic_preprocessed_xray_mha'  # Flat folder with .mha files
+    # compute_medical_fid_chexnet(folder1, folder2, sample_size=200)
+
+    # conclusion, with the 200 images, they are indistinguishable.
+
+    # TODO: base on https://github.com/bioinf-jku/TTUR we should try bigger size (use the whole mimic-jpg)
+    mimic_jpg_files = parse_mimic_jpg_files(
+            mimic_jpg_label_csv='/cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic-cxr-2.0.0-metadata.csv',
+            root_dir='/cluster/projects/mcintoshgroup/publicData/MIMIC-CXR/MIMIC-CXR-JPG',
+            sample_size=5
+        )
+
+
+    # the whole mimic-cxr-jpg dataset label file to get the frontal view
+    # /cluster/projects/mcintoshgroup/publicData/CT-RATE/preprocessed_mimic/mimic-cxr-2.0.0-metadata.csv
+    # the directory that list all the files.
+    # /cluster/projects/mcintoshgroup/publicData/MIMIC-CXR/MIMIC-CXR-JPG

@@ -1,3 +1,7 @@
+"""
+This script mainly to generate histogram EMD to compare synthetic and real xray data
+"""
+
 import os
 import numpy as np
 import matplotlib.pyplot as plt
@@ -5,8 +9,58 @@ from tqdm import tqdm
 import SimpleITK as sitk
 from scipy.stats import wasserstein_distance
 import random
+import pandas as pd
+import pickle
 
 # --- Helper Functions ---
+
+def parse_mimic_jpg_labels(mimic_jpg_label_csv):
+    # Load the CSV file
+    df = pd.read_csv(mimic_jpg_label_csv)
+
+    # Filter rows where ViewCodeSequence_CodeMeaning is "antero-posterior"
+    filtered_df = df[df['ViewCodeSequence_CodeMeaning'].str.lower() == 'antero-posterior']
+
+    # Create the dictionary
+    dicom_to_view = dict(zip(filtered_df['dicom_id'], filtered_df['ViewCodeSequence_CodeMeaning']))
+
+    # Optional: print or inspect
+    print(f"Created dictionary with {len(dicom_to_view)} entries")
+    return set(dicom_to_view.keys())
+
+def parse_mimic_jpg_files(mimic_jpg_label_csv, root_dir, sample_size):
+
+    # retrieve the object file if exists
+    pickle_path = os.path.join(mimic_jpg_label_csv, 'an_mimic_jpg.pkl')
+    if os.path.exists(pickle_path):
+        print(f"Loading matched paths from existing pickle: {pickle_path}")
+        with open(pickle_path, "rb") as f:
+            matched_jpg_paths = pickle.load(f)
+        return matched_jpg_paths
+
+    dicom_to_view = parse_mimic_jpg_labels(mimic_jpg_label_csv)
+    files = random.sample(dicom_to_view, sample_size)
+
+    # List to store matched file paths
+    matched_jpg_paths = []
+
+    # Traverse all subdirectories
+    for dirpath, _, filenames in os.walk(root_dir):
+        for fname in filenames:
+            if fname.lower().endswith('.jpg'):
+                dicom_id = os.path.splitext(fname)[0]
+                if dicom_id in files:
+                    full_path = os.path.join(dirpath, fname)
+                    matched_jpg_paths.append(full_path)
+
+    print(f"Found {len(matched_jpg_paths)} matching .jpg files.")
+
+    # Save the list to the pickle file so that next time no need to parse it again
+    with open(pickle_path, "wb") as f:
+        pickle.dump(matched_jpg_paths, f)
+
+    return matched_jpg_paths
+
 def load_grayscale_image(path):
     """Load .mha medical image and convert to 2D grayscale numpy array."""
     img = sitk.ReadImage(path)
