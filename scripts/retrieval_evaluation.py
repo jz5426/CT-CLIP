@@ -75,24 +75,24 @@ def run(cfg_dot):
     print('Starting Xray related retrieval experiments')
     # our retrival results: from cxr_clip model, from our pretrained xray encoder distilled from ct_clip NOTE: shared
 
-    # NOTE: all comparison models run
-    baselines = [
-        # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
-        # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
-        # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
-        'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
-        'cxr_clip_swin_m',
-        'cxr_clip_resnet_m',
-        'medclip_vit',
-        'medclip_resnet',
-        ## 'gloria_densenet', # NOTE: no retreival for gloria
-        ## 'gloria_resnet', #NOTE: no retrieval for gloria
-        # MISSING -> BI-Mamba
-    ]
+    # # NOTE: all comparison models run
+    # baselines = [
+    #     # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
+    #     # 'modeltype_cxr_clip_swin__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+    #     # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
+    #     # 'modeltype_cxr_clip_resnet__batchstyle_instance__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+    #     'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+    #     'modeltype_Resnet__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
+    #     'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_True_50_epoch',
+    #     'modeltype_Swin__batchstyle_experiment__bs_360__lr_5e-05__wd_0.0001__textcl_1.0__ctcl_1.0__pretrained_False_50_epoch',
+    #     'cxr_clip_swin_m',
+    #     'cxr_clip_resnet_m',
+    #     'medclip_vit',
+    #     'medclip_resnet',
+    #     ## 'gloria_densenet', # NOTE: no retreival for gloria
+    #     ## 'gloria_resnet', #NOTE: no retrieval for gloria
+    #     # MISSING -> BI-Mamba
+    # ]
 
     # NOTE: ablation model configuration model runs
     baselines = [

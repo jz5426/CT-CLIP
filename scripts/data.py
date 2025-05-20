@@ -1219,6 +1219,7 @@ class CTReportXRayDataset(CTReportDataset):
         selected_sample = random.choice(self.samples[key_id])
         img_embedding, text_embedding, xray_file = selected_sample
 
+        # the following normalize the image within the gray scale range.
         xray_image = self.xray_to_rgb(xray_file)
         # transformation borrowed from cxr_clip
         xray_image = transform_image(self.xray_transform, xray_image, normalize=self.normalize)

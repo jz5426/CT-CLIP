@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import os
+import re
 
 class LinearProbeModel(nn.Module):
     def __init__(self, in_features: int, num_classes: int):
@@ -131,10 +132,24 @@ def  get_clean_model_name(messy_custom_model_name):
         else:
             parts.append('infoNCE') # default option (even the model name does not have this)
 
-        if 'textcl_0__ctcl_1' in messy_custom_model_name:
-            parts.append('textcl_0__ctcl_1')
-        elif 'textcl_1__ctcl_0' in messy_custom_model_name:
-            parts.append('textcl_1__ctcl_0')
+        # extract the alpha and beta configuration based on the model name.
+        def _extract_textcl_ctcl(s):
+            match = re.search(r'textcl_([0-9.]+)__ctcl_([0-9.]+)', s)
+            if match:
+                textcl_val = float(match.group(1))
+                ctcl_val = float(match.group(2))
+                return textcl_val, ctcl_val
+            else:
+                return None
+        config = _extract_textcl_ctcl(messy_custom_model_name)
+        if config is not None:
+            textcl, ctcl = config
+            parts.append(f'textcl_{textcl}__ctcl_{ctcl}')
+
+        # if 'textcl_0__ctcl_1' in messy_custom_model_name:
+        #     parts.append('textcl_0__ctcl_1')
+        # elif 'textcl_1__ctcl_0' in messy_custom_model_name:
+        #     parts.append('textcl_1__ctcl_0')
 
         return '_'.join(parts)
     else:

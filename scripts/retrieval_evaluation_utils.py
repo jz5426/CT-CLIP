@@ -45,7 +45,7 @@ def map_retrieval_evaluation(
       target_type,
       model_baseline,
       predicted_label_csv_path='path_to_valid_predicted_labels.csv',
-      k_list=[1, 5, 10, 50, 100],
+      k_list=[1, 5, 10, 50],
       batch_size=1024,
       dataset=const.CT_RATE # ct-rate => internal, mimic => external, radchestct => external
     ):
@@ -438,7 +438,7 @@ def ctrate_retrieval_evaluation(params):
         )
         csv_results = extend_dictionary(parent=csv_results, child=results)
         
-        if not cfg['base']['is_ablation_study']:
+        if not cfg['base']['is_ablation_study']: # skip the case when ablation study is true.
             print('evaluating ct_volumes 2 xray recall')
             results = recall_retrieval_evaluation(
                 query_latents=[triple[0] for triple in triplet_embeddings],
@@ -473,16 +473,17 @@ def ctrate_retrieval_evaluation(params):
             )
             csv_results = extend_dictionary(parent=csv_results, child=results)
 
-        print('evaluating xray 2 ct_volumes MAP')
-        results = map_retrieval_evaluation(
-            xray_features,
-            target_latents=image_features,
-            query_type=const.XRAY,
-            target_type=const.CT_IMAGE,
-            model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            dataset=const.CT_RATE)
-        csv_results = extend_dictionary(parent=csv_results, child=results)
+        if not cfg['base']['is_ablation_study']:
+            print('evaluating xray 2 ct_volumes MAP')
+            results = map_retrieval_evaluation(
+                xray_features,
+                target_latents=image_features,
+                query_type=const.XRAY,
+                target_type=const.CT_IMAGE,
+                model_baseline=get_clean_model_name(baseline),
+                predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+                dataset=const.CT_RATE)
+            csv_results = extend_dictionary(parent=csv_results, child=results)
 
         if not cfg['base']['is_ablation_study']:
             print('evaluating ct_volumes 2 xray MAP')
@@ -496,16 +497,17 @@ def ctrate_retrieval_evaluation(params):
                 dataset=const.CT_RATE)
             csv_results = extend_dictionary(parent=csv_results, child=results)
 
-        print('evaluating xray 2 ct_reports MAP')
-        results = map_retrieval_evaluation(
-            xray_features,
-            target_latents=text_features,
-            query_type=const.XRAY,
-            target_type=const.CT_REPORT,
-            model_baseline=get_clean_model_name(baseline),
-            predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
-            dataset=const.CT_RATE)
-        csv_results = extend_dictionary(parent=csv_results, child=results)
+        if not cfg['base']['is_ablation_study']:
+            print('evaluating xray 2 ct_reports MAP')
+            results = map_retrieval_evaluation(
+                xray_features,
+                target_latents=text_features,
+                query_type=const.XRAY,
+                target_type=const.CT_REPORT,
+                model_baseline=get_clean_model_name(baseline),
+                predicted_label_csv_path=f'/cluster/projects/mcintoshgroup/publicData/CT-RATE/dataset/multi_abnormality_labels/dataset_multi_abnormality_labels_{split}_predicted_labels.csv',
+                dataset=const.CT_RATE)
+            csv_results = extend_dictionary(parent=csv_results, child=results)
 
         if not cfg['base']['is_ablation_study']:
             print('evaluating ct_reports 2 xray MAP')
