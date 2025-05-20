@@ -36,12 +36,10 @@ def parse_mimic_jpg_files(mimic_jpg_label_csv, root_dir, sample_size):
         print(f"Loading matched paths from existing pickle: {pickle_path}")
         with open(pickle_path, "rb") as f:
             matched_jpg_paths = pickle.load(f)
+        matched_jpg_paths = random.sample(matched_jpg_paths, sample_size)
         return matched_jpg_paths
 
     dicom_to_view = parse_mimic_jpg_labels(mimic_jpg_label_csv)
-    files = random.sample(dicom_to_view, sample_size)
-
-    # List to store matched file paths
     matched_jpg_paths = []
 
     # Traverse all subdirectories
@@ -49,7 +47,7 @@ def parse_mimic_jpg_files(mimic_jpg_label_csv, root_dir, sample_size):
         for fname in filenames:
             if fname.lower().endswith('.jpg'):
                 dicom_id = os.path.splitext(fname)[0]
-                if dicom_id in files:
+                if dicom_id in dicom_to_view:
                     full_path = os.path.join(dirpath, fname)
                     matched_jpg_paths.append(full_path)
 
@@ -58,7 +56,7 @@ def parse_mimic_jpg_files(mimic_jpg_label_csv, root_dir, sample_size):
     # Save the list to the pickle file so that next time no need to parse it again
     with open(pickle_path, "wb") as f:
         pickle.dump(matched_jpg_paths, f)
-
+    matched_jpg_paths = random.sample(matched_jpg_paths, sample_size)
     return matched_jpg_paths
 
 def load_grayscale_image(path):
