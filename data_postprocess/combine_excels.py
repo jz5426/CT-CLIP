@@ -5,8 +5,8 @@ mainly for the ablation study zero-shot where when text_cl = 1 it has one excel 
 import pandas as pd
 
 # Load the two Excel files
-df1 = pd.read_excel('/cluster/home/t135419uhn/CT-CLIP/shell_scripts/experiment_results/ct-rate_swin_pretrained_exp_infoNCE_textcl_1__ctcl_0_zero_shot_metric_results.xlsx')
-df2 = pd.read_excel('/cluster/home/t135419uhn/CT-CLIP/shell_scripts/experiment_results/ct-rate_swin_pretrained_exp_infoNCE_zero_shot_metric_results.xlsx')
+df1 = pd.read_excel('/cluster/home/t135419uhn/CT-CLIP/shell_scripts/experiment_results/ablation_zero_shot.xlsx')
+df2 = pd.read_excel('/cluster/home/t135419uhn/CT-CLIP/shell_scripts/experiment_results/ablation_zero_shot_another.xlsx')
 
 # Concatenate the dataframes row-wise
 combined_df = pd.concat([df1, df2], ignore_index=True)

@@ -2,7 +2,7 @@
 
 #SBATCH -A mcintoshgroup_gpu
 #SBATCH --reservation=mcintoshgroup_gpu1
-#SBATCH -t 70:00:00
+#SBATCH -t 40:00:00
 #SBATCH --mem=40G
 #SBATCH -J ctrate_retrieval
 #SBATCH -p gpu
