@@ -180,9 +180,9 @@ def process_file(file_path, split, shared_dst_dir): #'F:\\Chris\\dataset'
     np_image = np_image.astype(np.uint8)  # Convert to uint8 for PIL compatibility
     rgb_image = np.stack([np_image] * 3, axis=-1)  # Shape: (H, W, 3)
     rgb_image = Image.fromarray(rgb_image, mode="RGB")
-    rgb_image.show()
-    rgb_image.save(xray_rgb_save_path)
-    return
+    # rgb_image.show()
+    # rgb_image.save(xray_rgb_save_path)
+    # return
 
     xray_image = sitk.GetImageFromArray(xray_array)
     xray_image.SetSpacing((1.0, 1.0))  # Example spacing
