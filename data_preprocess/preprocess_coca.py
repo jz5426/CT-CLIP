@@ -1,3 +1,5 @@
+# /cluster/projects/mcintoshgroup/publicData/coca/cocacoronarycalciumandchestcts-2/Gated_release_final/patient
+
 import os
 import pydicom
 import nibabel as nib
@@ -12,51 +14,10 @@ from functools import partial
 import pandas as pd
 from pathlib import Path
 
-def filter_split(
-        input_dir='/mnt/g/NLST/manifest-NLST_allCT/',
-        nlst_split_csv='/mnt/g/NLST/manifest-NLST_allCT/NLST_data_split_from_CVD_risk_estimator.csv', 
-        nlst_metadata='/mnt/g/NLST/manifest-NLST_allCT/metadata.csv',
-        split='ALL'
-    ):
-
-    # Read CSV files
-    filtered_df = pd.read_csv(nlst_split_csv)
-    metadata_df = pd.read_csv(nlst_metadata)
-    
-    # Filter rows where 'group' column equals 'TEST'
-    if split != 'ALL':
-        filtered_df = filtered_df[filtered_df['group'] == split]
-    
-    # Merge with metadata based on 'vol' matching 'Series UID'
-    merged_df = filtered_df.merge(metadata_df[['Series UID', 'File Location']],
-                                  left_on='vol', right_on='Series UID', how='inner')
-    
-    # Convert Windows-style paths to Unix-style paths
-    merged_df['File Location'] = merged_df['File Location'].str.replace('\\', '/')
-
-    # TODO: there is bug here for processing, the following makes only one vol in each subject.
-
-    # Drop 'Series UID' column as it's redundant after merging
-    merged_df.drop(columns=['Series UID'], inplace=True)
-
-    # Sanity check: Print warning if any rows have missing 'File Location'
-    missing_file_location = merged_df['File Location'].isna().sum()
-    if missing_file_location > 0:
-        print(f"Warning: {missing_file_location} rows have missing 'File Location' values.")
-
-    # Check if DICOM files exist in each file location
-    def _contains_dicom_files(file_location):
-        dicoms_path = os.path.join(input_dir, file_location)
-        if pd.isna(file_location) or not os.path.isdir(dicoms_path):
-            return False
-        return len(os.listdir(dicoms_path)) > 0
-    
-    # Filter only rows where DICOM files exist in the corresponding location
-    merged_df['Has DICOM Files'] = merged_df['File Location'].apply(_contains_dicom_files)
-    merged_df = merged_df[merged_df['Has DICOM Files']]
-    merged_df.drop(columns=['Has DICOM Files'], inplace=True)  # Remove the helper column
-
-    return merged_df
+def find_patients_subdirs(path):
+    # based on the directory is named as number
+    path = Path(path)
+    return [str(p)+'/' for p in path.iterdir() if p.is_dir() and p.name.isdigit()]
 
 def resize_array(array, current_spacing, target_spacing):
     """
@@ -83,30 +44,26 @@ def resize_array(array, current_spacing, target_spacing):
     return resized_array
 
 # Function to convert DICOM files to NIfTI
-def convert_dicom_to_cxr(patient_id, filtered_df, input_dir, output_dir):
+def convert_dicom_to_cxr(patient_dcm_dir, output_dir):
     try:
-        nlst_location = filtered_df.loc[filtered_df['pid'] == patient_id, 'File Location'].values[0]
-        dicom_dir = os.path.join(os.path.dirname(input_dir), nlst_location)
-
-        path_parts = Path(nlst_location).parts
-        patient, experiment, instance = path_parts[1], path_parts[2], path_parts[-1]
-        assert int(patient) == patient_id
-        instance = instance.replace('.', '_')
-        image_name = f'{experiment}__{instance}' # __ is the separator for the experiment and the instance name
-
+        path_parts = Path(patient_dcm_dir).parts
+        
         # Create output directory structure
-        nifti_output_path = os.path.join(output_dir, 'preprocessed_xray_mha', patient)
-        rgb_output_path = os.path.join(output_dir, 'preprocessed_xray_rgb', patient)
+        # example: '/cluster/projects/mcintoshgroup/publicData/coca/cocacoronarycalciumandchestcts-2/synthetic_xrays/deidentified_nongated/preprocessed_xray_mha/37'
+        nifti_output_path = os.path.join(output_dir, 'preprocessed_xray_mha', path_parts[-1])
+        rgb_output_path = os.path.join(output_dir, 'preprocessed_xray_rgb', path_parts[-1])
+        if len(os.listdir(rgb_output_path)) > 0 and len(os.listdir(nifti_output_path)) > 0:
+            return
         os.makedirs(nifti_output_path, exist_ok=True)
         os.makedirs(rgb_output_path, exist_ok=True)
 
         # Convert DICOM files to NIfTI format and save
-        nifti_output_path = os.path.join(nifti_output_path, f'{image_name}.mha')
-        rgb_output_path = os.path.join(rgb_output_path, f'{image_name}.rgb')
+        nifti_output_path = os.path.join(nifti_output_path, f'{path_parts[-1]}.mha')
+        rgb_output_path = os.path.join(rgb_output_path, f'{path_parts[-1]}.rgb')
 
         # start real processing here.
-
-        dicom_files = [os.path.join(dicom_dir, f) for f in os.listdir(dicom_dir) if f.endswith('.dcm')]
+        patient_dcm_dir_root = os.path.isdir(os.path.join(patient_dcm_dir, path_parts[-1])) if os.path.isdir(os.path.join(patient_dcm_dir, path_parts[-1])) else patient_dcm_dir
+        dicom_files = [str(p) for p in Path(patient_dcm_dir_root).iterdir() if p.is_file() and p.suffix == '.dcm']
         if not dicom_files:
             return False
 
@@ -124,13 +81,7 @@ def convert_dicom_to_cxr(patient_id, filtered_df, input_dir, output_dir):
         slice_thickness = dicom_slices[0].SliceThickness if hasattr(dicom_slices[0], 'SliceThickness') else 1
 
         # manually find the slice spacing and the screening length of the CT
-        slice_spacing = np.abs(dicom_slices[1].ImagePositionPatient[2] - dicom_slices[0].ImagePositionPatient[2])
         z_positions = [ds.ImagePositionPatient[2] for ds in dicom_slices]
-        screening_length = abs(max(z_positions) - min(z_positions))  # Total Z-range
-
-        # preprocess according to the Deep learning predicts cardiovascular disease risks from lung cancer screening low dose computed tomography paper.
-        if slice_spacing > 3.0 or screening_length <= 200:
-            return False
 
         # Calculate Z-spacing
         z_positions = [float(s.ImagePositionPatient[2]) for s in dicom_slices]
@@ -142,9 +93,10 @@ def convert_dicom_to_cxr(patient_id, filtered_df, input_dir, output_dir):
         # remove the defected vols (unreadable vols)
         #TODO: double check this one more time.
         if len(img_data.shape) != 3 or img_data.shape[0] == 1 or z_spacing == 0 or z_spacing == 0.0:
+            print('skip processing files due to shape problem')
             return False
 
-        #NOTE: rotate the axis so that it matches the ct orientation of the ct-rate dataset
+        #NOTE: rotate the axis so that it matches the ct orientation of the ct-rate dataset ORIGINAL shape: (65, 512, 512)
         img_data = np.rot90(img_data, k=-1, axes=(0,2)) 
 
         def _scale_clip_resize(nii_data, current, target):
@@ -197,33 +149,30 @@ def convert_dicom_to_cxr(patient_id, filtered_df, input_dir, output_dir):
 
         return True
     except Exception as e:
-        print(f"Error processing {dicom_dir}: {e}")
+        print(f"Error processing {patient_dcm_dir}: {e}")
         return False
 
 
 def main():
 
     # Directory paths
-    input_dir = '/mnt/g/NLST/manifest-NLST_allCT/NLST'
-    output_dir = '/mnt/g/NLST/manifest-NLST_allCT/temp' # testing purpose
+    ct_type = 'deidentified_nongated'
+    input_dir = f'/cluster/projects/mcintoshgroup/publicData/coca/cocacoronarycalciumandchestcts-2/{ct_type}/'
+    output_dir = f'/cluster/projects/mcintoshgroup/publicData/coca/cocacoronarycalciumandchestcts-2/synthetic_xrays/{ct_type}/'
 
     # Ensure output directory is created
     os.makedirs(output_dir, exist_ok=True)
 
-    # Number of unique patients to sample
-    filtered_df = filter_split(input_dir=os.path.dirname(input_dir), split='TEST')
-    num_samples = filtered_df.shape[0]
-
-    # Get list of patient IDs in the input directory
-    patients = list(filtered_df['pid'])
+    # Number of unique patients
+    patient_dcm_dirs = find_patients_subdirs(input_dir)
+    num_samples = len(patient_dcm_dirs)
 
     # Iterate over each sampled patient
     total_processed = 0
-
     progress_bar = tqdm(total=num_samples, desc="Processing Patients")
 
-    for patient_id in patients:
-        results = convert_dicom_to_cxr(patient_id, filtered_df, input_dir, output_dir)
+    for patient_dcm_dir in patient_dcm_dirs:
+        results = convert_dicom_to_cxr(patient_dcm_dir, output_dir)
         if results:
             # update the progress only when a patient is successfully processed
             total_processed += 1
@@ -233,25 +182,5 @@ def main():
             break
 
 if __name__ == "__main__":
-    # main() # NOTE: test bed without multiworkers
+    main() # NOTE: test bed without multiworkers
     
-    # Directory paths
-    input_dir = '/mnt/g/NLST/manifest-NLST_allCT/NLST'
-    output_dir = '/mnt/g/NLST/manifest-NLST_allCT/preprocessed_NLST'
-
-    # Ensure output directory is created
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Number of unique patients to sample
-    filtered_df = filter_split(input_dir=os.path.dirname(input_dir), split='ALL') #NOTE: ALL might takes longer to process
-    num_samples = filtered_df.shape[0]
-
-    # Get list of patient IDs in the input directory
-    patients = list(filtered_df['pid'])
-
-    num_workers = 8  # Number of worker processes
-
-    # Process files using multiprocessing with tqdm progress bar
-    with Pool(num_workers) as pool:
-        func_with_arg = partial(convert_dicom_to_cxr, filtered_df=filtered_df, input_dir=input_dir, output_dir=output_dir)
-        list(tqdm(pool.imap_unordered(func_with_arg, patients), total=len(patients)))
